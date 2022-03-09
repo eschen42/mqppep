@@ -1,0 +1,653 @@
+{
+    "a_galaxy_workflow": "true",
+    "annotation": "phoshpoproteomic enrichment data pre-processing and ANOVA",
+    "creator": [
+        {
+            "class": "Person",
+            "identifier": "0000-0002-2882-0508",
+            "name": "Art Eschenlauer"
+        }
+    ],
+    "format-version": "0.1",
+    "license": "MIT",
+    "name": "ppenrich_suite_wf",
+    "steps": {
+        "0": {
+            "annotation": "The Phospho (STY)Sites.txt file produced by MaxQuant (found in the txt folder).",
+            "content_id": null,
+            "errors": null,
+            "id": 0,
+            "input_connections": {},
+            "inputs": [
+                {
+                    "description": "The Phospho (STY)Sites.txt file produced by MaxQuant (found in the txt folder).",
+                    "name": "Phospho (STY)Sites.txt"
+                }
+            ],
+            "label": "Phospho (STY)Sites.txt",
+            "name": "Input dataset",
+            "outputs": [],
+            "position": {
+                "bottom": 257.06666564941406,
+                "height": 81.39999389648438,
+                "left": 339.95001220703125,
+                "right": 539.9500122070312,
+                "top": 175.6666717529297,
+                "width": 200,
+                "x": 339.95001220703125,
+                "y": 175.6666717529297
+            },
+            "tool_id": null,
+            "tool_state": "{\"optional\": false, \"format\": [\"tabular\"], \"tag\": null}",
+            "tool_version": null,
+            "type": "data_input",
+            "uuid": "002d55e6-29a5-426d-9248-70ec33424b15",
+            "workflow_outputs": []
+        },
+        "1": {
+            "annotation": "FASTA file of all human canonical isoforms, derived from Swiss-Prot (e.g., merge of https://ftp.uniprot.org/pub/databases/uniprot/current_release/knowledgebase/complete/uniprot_sprot_varsplic.fasta.gz and https://ftp.uniprot.org/pub/databases/uniprot/current_release/knowledgebase/complete/uniprot_sprot.fasta.gz)",
+            "content_id": null,
+            "errors": null,
+            "id": 1,
+            "input_connections": {},
+            "inputs": [
+                {
+                    "description": "FASTA file of all human canonical isoforms, derived from Swiss-Prot (e.g., merge of https://ftp.uniprot.org/pub/databases/uniprot/current_release/knowledgebase/complete/uniprot_sprot_varsplic.fasta.gz and https://ftp.uniprot.org/pub/databases/uniprot/current_release/knowledgebase/complete/uniprot_sprot.fasta.gz)",
+                    "name": "SwissProt_Human_Canonical_Isoform.fasta"
+                }
+            ],
+            "label": "SwissProt_Human_Canonical_Isoform.fasta",
+            "name": "Input dataset",
+            "outputs": [],
+            "position": {
+                "bottom": 411.4666748046875,
+                "height": 101.79998779296875,
+                "left": 379.95001220703125,
+                "right": 579.9500122070312,
+                "top": 309.66668701171875,
+                "width": 200,
+                "x": 379.95001220703125,
+                "y": 309.66668701171875
+            },
+            "tool_id": null,
+            "tool_state": "{\"optional\": false, \"format\": [\"fasta\"], \"tag\": null}",
+            "tool_version": null,
+            "type": "data_input",
+            "uuid": "8f079dcc-1843-47cd-b4dc-1830e4466430",
+            "workflow_outputs": []
+        },
+        "2": {
+            "annotation": "Derived from https://networkin.info/download/networkin_human_predictions_3.1.tsv.xz (which is free for non-commercial use - for required citation, see https://networkin.info/)",
+            "content_id": null,
+            "errors": null,
+            "id": 2,
+            "input_connections": {},
+            "inputs": [
+                {
+                    "description": "Derived from https://networkin.info/download/networkin_human_predictions_3.1.tsv.xz (which is free for non-commercial use - for required citation, see https://networkin.info/)",
+                    "name": "NetworKIN_cutoffscore2.0.tabular"
+                }
+            ],
+            "label": "NetworKIN_cutoffscore2.0.tabular",
+            "name": "Input dataset",
+            "outputs": [],
+            "position": {
+                "bottom": 573.4666748046875,
+                "height": 101.79998779296875,
+                "left": 418.95001220703125,
+                "right": 618.9500122070312,
+                "top": 471.66668701171875,
+                "width": 200,
+                "x": 418.95001220703125,
+                "y": 471.66668701171875
+            },
+            "tool_id": null,
+            "tool_state": "{\"optional\": false, \"format\": [\"tabular\"], \"tag\": null}",
+            "tool_version": null,
+            "type": "data_input",
+            "uuid": "dc894a94-97a3-40ff-811e-01b30d498478",
+            "workflow_outputs": []
+        },
+        "3": {
+            "annotation": "Derived from http://hprd.org/serine_motifs, http://hprd.org/tyrosine_motifs, and http://pegasus.biochem.mpg.de/phosida/help/motifs.aspx",
+            "content_id": null,
+            "errors": null,
+            "id": 3,
+            "input_connections": {},
+            "inputs": [
+                {
+                    "description": "Derived from http://hprd.org/serine_motifs, http://hprd.org/tyrosine_motifs, and http://pegasus.biochem.mpg.de/phosida/help/motifs.aspx",
+                    "name": "pSTY_Motifs.tabular"
+                }
+            ],
+            "label": "pSTY_Motifs.tabular",
+            "name": "Input dataset",
+            "outputs": [],
+            "position": {
+                "bottom": 726.0666809082031,
+                "height": 81.39999389648438,
+                "left": 459.95001220703125,
+                "right": 659.9500122070312,
+                "top": 644.6666870117188,
+                "width": 200,
+                "x": 459.95001220703125,
+                "y": 644.6666870117188
+            },
+            "tool_id": null,
+            "tool_state": "{\"optional\": false, \"format\": [\"tabular\"], \"tag\": null}",
+            "tool_version": null,
+            "type": "data_input",
+            "uuid": "6fc936ad-0b52-484f-a051-73c1776fdeb0",
+            "workflow_outputs": []
+        },
+        "4": {
+            "annotation": "Derived from Kinase_Substrate_Dataset.gz found at https://www.phosphosite.org/staticDownloads (free for non-commercial use  - see that link for citation.)",
+            "content_id": null,
+            "errors": null,
+            "id": 4,
+            "input_connections": {},
+            "inputs": [
+                {
+                    "description": "Derived from Kinase_Substrate_Dataset.gz found at https://www.phosphosite.org/staticDownloads (free for non-commercial use  - see that link for citation.)",
+                    "name": "PSP_Kinase_Substrate_Dataset.tabular"
+                }
+            ],
+            "label": "PSP_Kinase_Substrate_Dataset.tabular",
+            "name": "Input dataset",
+            "outputs": [],
+            "position": {
+                "bottom": 894.4666748046875,
+                "height": 101.79998779296875,
+                "left": 503.95001220703125,
+                "right": 703.9500122070312,
+                "top": 792.6666870117188,
+                "width": 200,
+                "x": 503.95001220703125,
+                "y": 792.6666870117188
+            },
+            "tool_id": null,
+            "tool_state": "{\"optional\": false, \"format\": [\"tabular\"], \"tag\": null}",
+            "tool_version": null,
+            "type": "data_input",
+            "uuid": "22b77482-2339-4b45-8fc6-d39f7175131b",
+            "workflow_outputs": []
+        },
+        "5": {
+            "annotation": "Derived from Regulatory_sites.gz found at https://www.phosphosite.org/staticDownloads (free for non-commercial use  - see that link for citation.)",
+            "content_id": null,
+            "errors": null,
+            "id": 5,
+            "input_connections": {},
+            "inputs": [
+                {
+                    "description": "Derived from Regulatory_sites.gz found at https://www.phosphosite.org/staticDownloads (free for non-commercial use  - see that link for citation.)",
+                    "name": "PSP_Regulatory_sites.tabular"
+                }
+            ],
+            "label": "PSP_Regulatory_sites.tabular",
+            "name": "Input dataset",
+            "outputs": [],
+            "position": {
+                "bottom": 1041.0666809082031,
+                "height": 81.39999389648438,
+                "left": 535.9500122070312,
+                "right": 735.9500122070312,
+                "top": 959.6666870117188,
+                "width": 200,
+                "x": 535.9500122070312,
+                "y": 959.6666870117188
+            },
+            "tool_id": null,
+            "tool_state": "{\"optional\": false, \"format\": [\"tabular\"], \"tag\": null}",
+            "tool_version": null,
+            "type": "data_input",
+            "uuid": "3d97a902-1408-403c-b82e-ddb6ca6a7d47",
+            "workflow_outputs": []
+        },
+        "6": {
+            "annotation": "List of alpha cutoff values for significance testing; text file having no header and a single line for each cutoff value.",
+            "content_id": null,
+            "errors": null,
+            "id": 6,
+            "input_connections": {},
+            "inputs": [
+                {
+                    "description": "List of alpha cutoff values for significance testing; text file having no header and a single line for each cutoff value.",
+                    "name": "alpha_levels.tabular"
+                }
+            ],
+            "label": "alpha_levels.tabular",
+            "name": "Input dataset",
+            "outputs": [],
+            "position": {
+                "bottom": 1210.5666198730469,
+                "height": 81.39999389648438,
+                "left": 562.9500122070312,
+                "right": 762.9500122070312,
+                "top": 1129.1666259765625,
+                "width": 200,
+                "x": 562.9500122070312,
+                "y": 1129.1666259765625
+            },
+            "tool_id": null,
+            "tool_state": "{\"optional\": false, \"format\": [\"tabular\"], \"tag\": null}",
+            "tool_version": null,
+            "type": "data_input",
+            "uuid": "7b5eab97-7dad-4b0e-81eb-22aac39dd5b6",
+            "workflow_outputs": []
+        },
+        "7": {
+            "annotation": "",
+            "content_id": "mqppep_preproc",
+            "errors": null,
+            "id": 7,
+            "input_connections": {
+                "networkin": {
+                    "id": 2,
+                    "output_name": "output"
+                },
+                "p_sty_motifs": {
+                    "id": 3,
+                    "output_name": "output"
+                },
+                "phosphoSites": {
+                    "id": 0,
+                    "output_name": "output"
+                },
+                "protein_fasta": {
+                    "id": 1,
+                    "output_name": "output"
+                },
+                "psp_kinase_substrate": {
+                    "id": 4,
+                    "output_name": "output"
+                },
+                "psp_regulatory_sites": {
+                    "id": 5,
+                    "output_name": "output"
+                }
+            },
+            "inputs": [],
+            "label": null,
+            "name": "MaxQuant Phosphopeptide Preprocessing",
+            "outputs": [
+                {
+                    "name": "phosphoPepIntensities",
+                    "type": "tabular"
+                },
+                {
+                    "name": "enrichGraph",
+                    "type": "pdf"
+                },
+                {
+                    "name": "locProbCutoffGraph",
+                    "type": "pdf"
+                },
+                {
+                    "name": "enrichGraph_svg",
+                    "type": "svg"
+                },
+                {
+                    "name": "locProbCutoffGraph_svg",
+                    "type": "svg"
+                },
+                {
+                    "name": "filteredData_tabular",
+                    "type": "tabular"
+                },
+                {
+                    "name": "quantData_tabular",
+                    "type": "tabular"
+                },
+                {
+                    "name": "mapped_phophopeptides",
+                    "type": "tabular"
+                },
+                {
+                    "name": "melted_phophopeptide_map",
+                    "type": "tabular"
+                },
+                {
+                    "name": "mqppep_output_sqlite",
+                    "type": "sqlite"
+                },
+                {
+                    "name": "preproc_tab",
+                    "type": "tabular"
+                },
+                {
+                    "name": "preproc_csv",
+                    "type": "csv"
+                },
+                {
+                    "name": "preproc_sqlite",
+                    "type": "sqlite"
+                }
+            ],
+            "position": {
+                "bottom": 1186.6000366210938,
+                "height": 812.933349609375,
+                "left": 945.4500122070312,
+                "right": 1145.4500122070312,
+                "top": 373.66668701171875,
+                "width": 200,
+                "x": 945.4500122070312,
+                "y": 373.66668701171875
+            },
+            "post_job_actions": {
+                "RenameDatasetActionenrichGraph": {
+                    "action_arguments": {
+                        "newname": "#{phosphoSites}.enrichGraph_pdf"
+                    },
+                    "action_type": "RenameDatasetAction",
+                    "output_name": "enrichGraph"
+                },
+                "RenameDatasetActionenrichGraph_svg": {
+                    "action_arguments": {
+                        "newname": "#{phosphoSites}.enrichGraph_svg"
+                    },
+                    "action_type": "RenameDatasetAction",
+                    "output_name": "enrichGraph_svg"
+                },
+                "RenameDatasetActionfilteredData_tabular": {
+                    "action_arguments": {
+                        "newname": "#{phosphoSites}.filteredData"
+                    },
+                    "action_type": "RenameDatasetAction",
+                    "output_name": "filteredData_tabular"
+                },
+                "RenameDatasetActionlocProbCutoffGraph": {
+                    "action_arguments": {
+                        "newname": "#{phosphoSites}.locProbCutoffGraph_pdf"
+                    },
+                    "action_type": "RenameDatasetAction",
+                    "output_name": "locProbCutoffGraph"
+                },
+                "RenameDatasetActionlocProbCutoffGraph_svg": {
+                    "action_arguments": {
+                        "newname": "#{phosphoSites}.locProbCutoffGraph_svg"
+                    },
+                    "action_type": "RenameDatasetAction",
+                    "output_name": "locProbCutoffGraph_svg"
+                },
+                "RenameDatasetActionmapped_phophopeptides": {
+                    "action_arguments": {
+                        "newname": "#{phosphoSites}.ppep_map"
+                    },
+                    "action_type": "RenameDatasetAction",
+                    "output_name": "mapped_phophopeptides"
+                },
+                "RenameDatasetActionmelted_phophopeptide_map": {
+                    "action_arguments": {
+                        "newname": "#{phosphoSites}.melted"
+                    },
+                    "action_type": "RenameDatasetAction",
+                    "output_name": "melted_phophopeptide_map"
+                },
+                "RenameDatasetActionmqppep_output_sqlite": {
+                    "action_arguments": {
+                        "newname": "#{phosphoSites}.ppep_mapping_sqlite"
+                    },
+                    "action_type": "RenameDatasetAction",
+                    "output_name": "mqppep_output_sqlite"
+                },
+                "RenameDatasetActionphosphoPepIntensities": {
+                    "action_arguments": {
+                        "newname": "#{phosphoSites}.ppep_intensities"
+                    },
+                    "action_type": "RenameDatasetAction",
+                    "output_name": "phosphoPepIntensities"
+                },
+                "RenameDatasetActionpreproc_csv": {
+                    "action_arguments": {
+                        "newname": "#{phosphoSites}.preproc_csv"
+                    },
+                    "action_type": "RenameDatasetAction",
+                    "output_name": "preproc_csv"
+                },
+                "RenameDatasetActionpreproc_sqlite": {
+                    "action_arguments": {
+                        "newname": "#{phosphoSites}.preproc_sqlite"
+                    },
+                    "action_type": "RenameDatasetAction",
+                    "output_name": "preproc_sqlite"
+                },
+                "RenameDatasetActionpreproc_tab": {
+                    "action_arguments": {
+                        "newname": "#{phosphoSites}.preproc_tab"
+                    },
+                    "action_type": "RenameDatasetAction",
+                    "output_name": "preproc_tab"
+                },
+                "RenameDatasetActionquantData_tabular": {
+                    "action_arguments": {
+                        "newname": "#{phosphoSites}.quantData"
+                    },
+                    "action_type": "RenameDatasetAction",
+                    "output_name": "quantData_tabular"
+                }
+            },
+            "tool_id": "mqppep_preproc",
+            "tool_state": "{\"collapseFunc\": \"sum\", \"enriched\": \"ST\", \"intervalCol\": \"1\", \"localProbCutoff\": \"0.75\", \"merge_function\": \"sum\", \"networkin\": {\"__class__\": \"ConnectedValue\"}, \"p_sty_motifs\": {\"__class__\": \"ConnectedValue\"}, \"phosphoCol\": \"^Number of Phospho [(]STY[)]$\", \"phosphoSites\": {\"__class__\": \"ConnectedValue\"}, \"phospho_type\": \"sty\", \"protein_fasta\": {\"__class__\": \"ConnectedValue\"}, \"psp_kinase_substrate\": {\"__class__\": \"ConnectedValue\"}, \"psp_regulatory_sites\": {\"__class__\": \"ConnectedValue\"}, \"species\": \"human\", \"startCol\": \"^Intensity[^_]\", \"__page__\": null, \"__rerun_remap_job_id__\": null}",
+            "tool_version": "0.1.0+galaxy0",
+            "type": "tool",
+            "uuid": "235b1a2e-ccc0-4c91-bb91-bbf4d272c870",
+            "workflow_outputs": [
+                {
+                    "label": "ppep_intensities",
+                    "output_name": "phosphoPepIntensities",
+                    "uuid": "92fd4e27-5d4b-4e9f-b3ad-6bdad53bb93d"
+                },
+                {
+                    "label": "enrichGraph_pdf",
+                    "output_name": "enrichGraph",
+                    "uuid": "4c1d5590-f8ba-421c-858c-4c026691b52e"
+                },
+                {
+                    "label": "locProbCutoffGraph_pdf",
+                    "output_name": "locProbCutoffGraph",
+                    "uuid": "66a79534-6372-4937-bcf2-8644be985eea"
+                },
+                {
+                    "label": "enrichGraph_svg",
+                    "output_name": "enrichGraph_svg",
+                    "uuid": "5e713d9c-1868-423b-be9a-25c0486e1472"
+                },
+                {
+                    "label": "locProbCutoffGraph_svg",
+                    "output_name": "locProbCutoffGraph_svg",
+                    "uuid": "4621ea21-ae90-4547-a68f-30dfc7857368"
+                },
+                {
+                    "label": "filteredData",
+                    "output_name": "filteredData_tabular",
+                    "uuid": "bb26d0fb-6f19-43c7-80ef-1cf81aa09ee8"
+                },
+                {
+                    "label": "quantData",
+                    "output_name": "quantData_tabular",
+                    "uuid": "20efe04f-2700-4af0-92c6-0830a42d8e75"
+                },
+                {
+                    "label": "ppep_map",
+                    "output_name": "mapped_phophopeptides",
+                    "uuid": "037e2b97-8fc8-436d-bcc3-af5ee685b752"
+                },
+                {
+                    "label": "melted_phosphopeptide_map",
+                    "output_name": "melted_phophopeptide_map",
+                    "uuid": "c3e5de84-2659-45eb-81a6-edef6037d8aa"
+                },
+                {
+                    "label": "ppep_mapping_sqlite",
+                    "output_name": "mqppep_output_sqlite",
+                    "uuid": "a1a4f827-1f1f-4175-ae51-c238f9e1f248"
+                },
+                {
+                    "label": "preproc_tab",
+                    "output_name": "preproc_tab",
+                    "uuid": "b22b4b56-9395-4f6d-945e-0089e8897069"
+                },
+                {
+                    "label": "preproc_csv",
+                    "output_name": "preproc_csv",
+                    "uuid": "54be90f9-1158-4686-af42-43d021088300"
+                },
+                {
+                    "label": "preproc_sqlite",
+                    "output_name": "preproc_sqlite",
+                    "uuid": "33663f9c-b718-4bdd-acc9-087c76bea678"
+                }
+            ]
+        },
+        "8": {
+            "annotation": "Perform ANOVA. For imputing missing values, use median of non-missing values from the same treatment group.",
+            "content_id": "mqppep_anova",
+            "errors": null,
+            "id": 8,
+            "input_connections": {
+                "alpha_file": {
+                    "id": 6,
+                    "output_name": "output"
+                },
+                "input_file": {
+                    "id": 7,
+                    "output_name": "preproc_tab"
+                }
+            },
+            "inputs": [],
+            "label": "MaxQuant Phosphopeptide ANOVA group-median imputed",
+            "name": "MaxQuant Phosphopeptide ANOVA",
+            "outputs": [
+                {
+                    "name": "imputed_data_file",
+                    "type": "tabular"
+                },
+                {
+                    "name": "report_file",
+                    "type": "html"
+                }
+            ],
+            "position": {
+                "bottom": 1488.0999603271484,
+                "height": 254.93333435058594,
+                "left": 1202.949951171875,
+                "right": 1402.949951171875,
+                "top": 1233.1666259765625,
+                "width": 200,
+                "x": 1202.949951171875,
+                "y": 1233.1666259765625
+            },
+            "post_job_actions": {
+                "RenameDatasetActionimputed_data_file": {
+                    "action_arguments": {
+                        "newname": "#{input_file}.intensities_group-mean-imputed_QN_LT"
+                    },
+                    "action_type": "RenameDatasetAction",
+                    "output_name": "imputed_data_file"
+                },
+                "RenameDatasetActionreport_file": {
+                    "action_arguments": {
+                        "newname": "#{input_file}.intensities_group-mean-imputed_report (download/unzip to view)"
+                    },
+                    "action_type": "RenameDatasetAction",
+                    "output_name": "report_file"
+                }
+            },
+            "tool_id": "mqppep_anova",
+            "tool_state": "{\"alpha_file\": {\"__class__\": \"ConnectedValue\"}, \"first_data_column\": \"Intensity\", \"imputation\": {\"imputation_method\": \"group-median\", \"__current_case__\": 0}, \"input_file\": {\"__class__\": \"ConnectedValue\"}, \"sample_grouping_regex\": \"(\\\\d+)\", \"sample_names_regex\": \"\\\\.(\\\\d+)[A-Z]$\", \"__page__\": null, \"__rerun_remap_job_id__\": null}",
+            "tool_version": "0.1.0+galaxy0",
+            "type": "tool",
+            "uuid": "2257286b-6f9a-45c1-90a3-bf5b972959d5",
+            "workflow_outputs": [
+                {
+                    "label": "intensities_group-mean-imputed_QN_LT",
+                    "output_name": "imputed_data_file",
+                    "uuid": "8e7317c6-95e9-4454-b4d7-31b4de6167a8"
+                },
+                {
+                    "label": "intensities_group-mean-imputed_report",
+                    "output_name": "report_file",
+                    "uuid": "dfe9b34e-1f3e-4971-8382-41178104e253"
+                }
+            ]
+        },
+        "9": {
+            "annotation": "Perform ANOVA. For imputing missing values, create random values.",
+            "content_id": "mqppep_anova",
+            "errors": null,
+            "id": 9,
+            "input_connections": {
+                "alpha_file": {
+                    "id": 6,
+                    "output_name": "output"
+                },
+                "input_file": {
+                    "id": 7,
+                    "output_name": "preproc_tab"
+                }
+            },
+            "inputs": [],
+            "label": "MaxQuant Phosphopeptide ANOVA randomly imputed",
+            "name": "MaxQuant Phosphopeptide ANOVA",
+            "outputs": [
+                {
+                    "name": "imputed_data_file",
+                    "type": "tabular"
+                },
+                {
+                    "name": "report_file",
+                    "type": "html"
+                }
+            ],
+            "position": {
+                "bottom": 1325.0999603271484,
+                "height": 254.93333435058594,
+                "left": 1452.949951171875,
+                "right": 1652.949951171875,
+                "top": 1070.1666259765625,
+                "width": 200,
+                "x": 1452.949951171875,
+                "y": 1070.1666259765625
+            },
+            "post_job_actions": {
+                "RenameDatasetActionimputed_data_file": {
+                    "action_arguments": {
+                        "newname": "#{input_file}.intensities_randomly-imputed_QN_LT"
+                    },
+                    "action_type": "RenameDatasetAction",
+                    "output_name": "imputed_data_file"
+                },
+                "RenameDatasetActionreport_file": {
+                    "action_arguments": {
+                        "newname": "#{input_file}.intensities_randomly-imputed_report (download/unzip to view)"
+                    },
+                    "action_type": "RenameDatasetAction",
+                    "output_name": "report_file"
+                }
+            },
+            "tool_id": "mqppep_anova",
+            "tool_state": "{\"alpha_file\": {\"__class__\": \"ConnectedValue\"}, \"first_data_column\": \"Intensity\", \"imputation\": {\"imputation_method\": \"random\", \"__current_case__\": 3, \"meanPercentile\": \"1\", \"sdPercentile\": \"0.2\"}, \"input_file\": {\"__class__\": \"ConnectedValue\"}, \"sample_grouping_regex\": \"(\\\\d+)\", \"sample_names_regex\": \"\\\\.(\\\\d+)[A-Z]$\", \"__page__\": null, \"__rerun_remap_job_id__\": null}",
+            "tool_version": "0.1.0+galaxy0",
+            "type": "tool",
+            "uuid": "9516971c-8532-4797-8bf9-4655ff104dbd",
+            "workflow_outputs": [
+                {
+                    "label": "intensities_randomly-imputed_QN_LT",
+                    "output_name": "imputed_data_file",
+                    "uuid": "8ceda029-d5fd-4d75-a2b3-ac582bb137c3"
+                },
+                {
+                    "label": "intensities_randomly-imputed_report",
+                    "output_name": "report_file",
+                    "uuid": "84bedf25-c15b-4cc7-97e0-92f746e89f9c"
+                }
+            ]
+        }
+    },
+    "tags": [
+        "ppenrich"
+    ],
+    "uuid": "ac7bf2d1-89fe-4bf6-920a-d5508842d3f9",
+    "version": 7
+}

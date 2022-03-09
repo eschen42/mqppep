@@ -1,5 +1,5 @@
-[![Galaxy Tool Linting and Tests for push and PR](https://github.com/galaxyproject/galaxy-tool-repository-template/actions/workflows/pr.yaml/badge.svg?branch=main)](https://github.com/galaxyproject/galaxy-tool-repository-template/actions/workflows/pr.yaml/badge.svg)
-[![Weekly global Tool Linting and Tests](https://github.com/galaxyproject/galaxy-tool-repository-template/actions/workflows/ci.yaml/badge.svg?branch=master)](https://github.com/galaxyproject/galaxy-tool-repository-template/actions/workflows/ci.yaml/badge.svg)
+[![Galaxy Tool Linting and Tests for push and PR](https://github.com/eschen42/galaxy-tool-repository-template/actions/workflows/pr.yaml/badge.svg?branch=main)](https://github.com/eschen42/galaxy-tool-repository-template/actions/workflows/pr.yaml/badge.svg)
+[![Weekly global Tool Linting and Tests](https://github.com/eschen42/galaxy-tool-repository-template/actions/workflows/ci.yaml/badge.svg?branch=master)](https://github.com/eschen42/galaxy-tool-repository-template/actions/workflows/ci.yaml/badge.svg)
 
 # Galaxy tool repository template
 
