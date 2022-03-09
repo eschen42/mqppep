@@ -338,7 +338,7 @@ This step searches phosphopeptides against several databases for known or predic
 **Input databases**
 
 ``networkin``
-  This table is the result of filtering the NetworkKIN database [Linding 2007; Horn 2014] for cutoff score > 2.0.  The ENSEMBL data used to generate the file were from Ensembl, `https://ensembl.org <https://ensembl.org>`_ [Howe 2021].
+    This table is the result of filtering the NetworkKIN database [Linding 2007; Horn 2014] for cutoff score > 2.0.  The ENSEMBL data used to generate the file were from Ensembl, `https://ensembl.org <https://web.archive.org/web/20220308011159/http://useast.ensembl.org/index.html>`_ [Howe 2021].
 
        *To generate this file:*
 
