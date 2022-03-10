@@ -213,7 +213,7 @@ Phopsphoproteomic Enrichment Pipeline ANOVA
 PERL-compatible regular expressions
 ===================================
 
-Note that the PERL-compatible regular expressions accepted by this tool are documented at https://rdrr.io/r/base/regex.html
+Note that the PERL-compatible regular expressions accepted by this tool are documented at http://rdrr.io/r/base/regex.html
 
     ]]></help>
     <citations>
