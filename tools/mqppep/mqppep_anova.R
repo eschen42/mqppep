@@ -3,10 +3,6 @@
 library(optparse)
 library(data.table)
 library(stringr)
-#library(ggplot2)
-#library(PTXQC)
-#require(PTXQC)
-#require(methods)
 # bioconductor-preprocesscore
 #  - libopenblas
 #  - r-data.table
@@ -18,7 +14,6 @@ library(stringr)
 
 # parse options
 option_list <- list(
-  # <param name="inputFilename" type="data" format="tabular" label="Phosphopeptide Intensities" help="First column label 'Phosphopeptide'; sample-intensities must begin in column 10 and must have column labels to match argument regexSampleNames"/>
   make_option(
     c("-i", "--inputFile"),
     action = "store",
@@ -31,7 +26,8 @@ option_list <- list(
     action = "store",
     default = NA,
     type = "character",
-    help = "List of alpha cutoff values for significance testing; path to text file having one column and no header"
+    help = paste0("List of alpha cutoff values for significance testing;",
+             " path to text file having one column and no header")
   ),
   make_option(
     c("-f", "--firstDataColumn"),
@@ -40,26 +36,29 @@ option_list <- list(
     type = "character",
     help = "First column of intensity values"
   ),
-  make_option( # imputationMethod <- c("group-median","median","mean","random")[1]
+  make_option(
     c("-m", "--imputationMethod"),
     action = "store",
     default = "group-median",
     type = "character",
-    help = "Method for missing-value imputation, one of c('group-median','median','mean','random')"
+    help = paste0("Method for missing-value imputation,",
+             " one of c('group-median','median','mean','random')")
   ),
   make_option(
     c("-p", "--meanPercentile"),
     action = "store",
     default = 3,
     type = "integer",
-    help = "Mean percentile for randomly generated imputed values; range [1,99]"
+    help = paste0("Mean percentile for randomly generated imputed values;",
+              ", range [1,99]")
   ),
   make_option(
     c("-d", "--sdPercentile"),
     action = "store",
     default = 3,
     type = "double",
-    help = "Adjustment value for standard deviation of randomly generated imputed values; real"
+    help = paste0("Adjustment value for standard deviation of",
+              " randomly generated imputed values; real")
   ),
   make_option(
     c("-s", "--regexSampleNames"),
@@ -73,9 +72,9 @@ option_list <- list(
     action = "store",
     default = "(\\d+)",
     type = "character",
-    help = "Regular expression extracting sample-group from an extracted sample-name"
+    help = paste0("Regular expression extracting sample-group",
+             " from an extracted sample-name")
   ),
-  # <data name="imputed_data_file" format="tabular" label="${input_file.name}.intensities_${imputation.imputation_method}-imputed_QN_LT" ></data>
   make_option(
     c("-o", "--imputedDataFile"),
     action = "store",
@@ -83,7 +82,6 @@ option_list <- list(
     type = "character",
     help = "Imputed Phosphopeptide Intensities output file path"
   ),
-  # <data name="report_file" format="html" label="report (download/unzip to view)" ></data>
   make_option(
     c("-r", "--reportFile"),
     action = "store",
@@ -92,82 +90,96 @@ option_list <- list(
     help = "HTML report file path"
   )
 )
-args <- parse_args(OptionParser(option_list=option_list))
+args <- parse_args(OptionParser(option_list = option_list))
+
 # Check parameter values
 
 if (! file.exists(args$inputFile)) {
   stop((paste("Input file", args$inputFile, "does not exist")))
 }
-inputFile <- args$inputFile
-alphaFile <- args$alphaFile
-firstDataColumn <- args$firstDataColumn
-imputationMethod <- args$imputationMethod
-meanPercentile <- args$meanPercentile
-sdPercentile <- args$sdPercentile
+input_file <- args$inputFile
+alpha_file <- args$alphaFile
+first_data_column <- args$firstDataColumn
+imputation_method <- args$imputationMethod
+mean_percentile <- args$meanPercentile
+sd_percentile <- args$sdPercentile
 
-regexSampleNames    <- gsub('^[ \t\n]*', ''  , readChar(args$regexSampleNames,  1000))
-regexSampleNames    <- gsub('[ \t\n]*$', ''  ,               regexSampleNames        )
-# regexSampleNames    <- gsub('\\\\'     , '@@',               regexSampleNames        )
-# regexSampleNames    <- gsub('@@'       , '\\',               regexSampleNames        )
-cat(regexSampleNames)
-cat('\n')
+regex_sample_names    <- gsub("^[ \t\n]*", "",
+                         readChar(args$regexSampleNames,  1000)
+                       )
+regex_sample_names    <- gsub("[ \t\n]*$", "",
+                         regex_sample_names
+                       )
+cat(regex_sample_names)
+cat("\n")
 
-regexSampleGrouping <- gsub('^[ \t\n]*', '', readChar(args$regexSampleGrouping, 1000))
-regexSampleGrouping <- gsub('[ \t\n]*$', '',               regexSampleGrouping       )
-# regexSampleGrouping <- gsub('\\\\'     , '@@',             regexSampleGrouping       )
-cat(regexSampleGrouping)
-cat('\n')
+regex_sample_grouping <- gsub("^[ \t\n]*", "",
+                           readChar(args$regexSampleGrouping, 1000)
+                         )
+regex_sample_grouping <- gsub("[ \t\n]*$", "",
+                           regex_sample_grouping
+                         )
+cat(regex_sample_grouping)
+cat("\n")
 
-# regexSampleGrouping <- gsub('@@'       , '\\',             regexSampleGrouping       )
-imputedDataFilename <- args$imputedDataFile
-reportFileName <- args$reportFile
+imputed_data_file_name <- args$imputedDataFile
+report_file_name <- args$reportFile
 
 print("args is:")
 cat(str(args))
 
-print("regexSampleNames is:")
-cat(str(regexSampleNames))
+print("regex_sample_names is:")
+cat(str(regex_sample_names))
 
-print("regexSampleGrouping is:")
-cat(str(regexSampleGrouping))
+print("regex_sample_grouping is:")
+cat(str(regex_sample_grouping))
 
-# from: https://github.com/molgenis/molgenis-pipelines/wiki/How-to-source-another_file.R-from-within-your-R-script
-LocationOfThisScript = function() # Function LocationOfThisScript returns the location of this .R script (may be needed to source other files in same dir)
-{
-    this.file = NULL
+# from: https://github.com/molgenis/molgenis-pipelines/wiki/
+#   How-to-source-another_file.R-from-within-your-R-script
+# Function location_of_this_script returns the location of this .R script
+#   (may be needed to source other files in same dir)
+location_of_this_script <- function() {
+    this_file <- NULL
     # This file may be 'sourced'
-    for (i in -(1:sys.nframe())) {
-        if (identical(sys.function(i), base::source)) this.file = (normalizePath(sys.frame(i)$ofile))
+    for (i in - (1:sys.nframe())) {
+        if (identical(sys.function(i), base::source)) {
+            this_file <- (normalizePath(sys.frame(i)$ofile))
+        }
     }
 
-    if (!is.null(this.file)) return(dirname(this.file))
+    if (!is.null(this_file)) return(dirname(this_file))
 
     # But it may also be called from the command line
-    cmd.args = commandArgs(trailingOnly = FALSE)
-    cmd.args.trailing = commandArgs(trailingOnly = TRUE)
-    cmd.args = cmd.args[seq.int(from=1, length.out=length(cmd.args) - length(cmd.args.trailing))]
-    res = gsub("^(?:--file=(.*)|.*)$", "\\1", cmd.args)
+    cmd_args <- commandArgs(trailingOnly = FALSE)
+    cmd_args_trailing <- commandArgs(trailingOnly = TRUE)
+    cmd_args <- cmd_args[
+      seq.int(
+        from = 1,
+        length.out = length(cmd_args) - length(cmd_args_trailing)
+        )
+      ]
+    res <- gsub("^(?:--file=(.*)|.*)$", "\\1", cmd_args)
 
     # If multiple --file arguments are given, R uses the last one
-    res = tail(res[res != ""], 1)
+    res <- tail(res[res != ""], 1)
     if (0 < length(res)) return(dirname(res))
 
     # Both are not the case. Maybe we are in an R GUI?
     return(NULL)
 }
 
-script.dir <-  LocationOfThisScript()
+script_dir <-  location_of_this_script()
 
 rmarkdown_params <- list(
-    inputFile = inputFile
-  , alphaFile = alphaFile
-  , firstDataColumn = firstDataColumn
-  , imputationMethod = imputationMethod
-  , meanPercentile = meanPercentile
-  , sdPercentile = sdPercentile
-  , regexSampleNames = regexSampleNames
-  , regexSampleGrouping = regexSampleGrouping
-  , imputedDataFilename = imputedDataFilename
+    inputFile = input_file
+  , alphaFile = alpha_file
+  , firstDataColumn = first_data_column
+  , imputationMethod = imputation_method
+  , meanPercentile = mean_percentile
+  , sdPercentile = sd_percentile
+  , regexSampleNames = regex_sample_names
+  , regexSampleGrouping = regex_sample_grouping
+  , imputedDataFilename = imputed_data_file_name
   )
 
 str(rmarkdown_params)
@@ -178,14 +190,15 @@ str(rmarkdown_params)
 # for reason:
 #   "The following dependencies are not available in conda"
 # reported here:
-#   https://github.com/ami-iit/bipedal-locomotion-framework/pull/457/commits/e98ccef8c8cb63e207df36628192af6ce22feb13
+#   https://github.com/ami-iit/bipedal-locomotion-framework/pull/457
 
-# freeze the random number generator so the same results will be produced from run to run
+# freeze the random number generator so the same results will be produced
+#  from run to run
 set.seed(28571)
 
 rmarkdown::render(
-  input = paste(script.dir, "mqppep_anova_script.Rmd", sep="/")
+  input = paste(script_dir, "mqppep_anova_script.Rmd", sep = "/")
 , output_format = rmarkdown::html_document(pandoc_args = "--self-contained")
-, output_file = reportFileName
+, output_file = report_file_name
 , params = rmarkdown_params
 )

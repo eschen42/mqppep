@@ -17,20 +17,24 @@
     </requirements>
     <!-- Rscript -e 'rmarkdown::render("QuantDataProcessingScript.Rmd")' -->
     <command detect_errors="exit_code"><![CDATA[
-cat $sample_names_regex_f; cat $sample_grouping_regex_f;
-Rscript '$__tool_directory__/mqppep_anova.R' 
---inputFile '$input_file' 
---alphaFile $alpha_file
---firstDataColumn $first_data_column
---imputationMethod $imputation.imputation_method
-#if '$imputation_method' == 'random':
-  --meanPercentile '$meanPercentile'
-  --sdPercentile   '$sdPercentile'
-#end if
---regexSampleNames $sample_names_regex_f
---regexSampleGrouping $sample_grouping_regex_f
---imputedDataFile $imputed_data_file
---reportFile $report_file
+      cd /tmp;
+      cp '$__tool_directory__/mqppep_anova_script.Rmd' . || exit 0;
+      cp '$__tool_directory__/mqppep_anova.R' . || exit 0;
+      \${CONDA_PREFIX}/bin/Rscript /tmp/mqppep_anova.R 
+      --inputFile '$input_file' 
+      --alphaFile $alpha_file
+      --firstDataColumn $first_data_column
+      --imputationMethod $imputation.imputation_method
+      #if '$imputation_method' == 'random':
+        --meanPercentile '$meanPercentile'
+        --sdPercentile   '$sdPercentile'
+      #end if
+      --regexSampleNames $sample_names_regex_f
+      --regexSampleGrouping $sample_grouping_regex_f
+      --imputedDataFile $imputed_data_file
+      --reportFile $report_file;
+      rm mqppep_anova_script.Rmd;
+      rm mqppep_anova.R
     ]]></command>
     <configfiles>
       <configfile name="sample_names_regex_f">
