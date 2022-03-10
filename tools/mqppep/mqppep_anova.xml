@@ -4,15 +4,15 @@
         <import>macros.xml</import>
     </macros>
     <requirements>
-        <requirement type="package" version="1.7.1">r-optparse</requirement>
-        <requirement type="package" version="1.4.0">r-stringr</requirement>
-        <requirement type="package" version="1.14.2">r-data.table</requirement>
-        <requirement type="package" version="3.3.5">r-ggplot2</requirement>
-        <requirement type="package" version="1.56.0">bioconductor-preprocesscore</requirement>
-        <requirement type="package" version="0.3.3" >openblas</requirement>
-        <requirement type="package" version="2.11"  >r-rmarkdown</requirement>
-        <requirement type="package" version="0.4.0" >r-sass</requirement>
-        <requirement type="package"                 >texlive-core</requirement>
+        <requirement type="package" version="1.7.1"   >r-optparse</requirement>
+        <requirement type="package" version="1.4.0"   >r-stringr</requirement>
+        <requirement type="package" version="1.14.2"  >r-data.table</requirement>
+        <requirement type="package" version="3.3.5"   >r-ggplot2</requirement>
+        <requirement type="package" version="1.56.0"  >bioconductor-preprocesscore</requirement>
+        <requirement type="package" version="0.3.3"   >openblas</requirement>
+        <requirement type="package" version="2.11"    >r-rmarkdown</requirement>
+        <requirement type="package" version="0.4.0"   >r-sass</requirement>
+        <requirement type="package" version="20210325">texlive-core</requirement>
 
     </requirements>
     <!-- Rscript -e 'rmarkdown::render("QuantDataProcessingScript.Rmd")' -->
