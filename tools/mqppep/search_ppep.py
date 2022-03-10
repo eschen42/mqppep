@@ -3,22 +3,18 @@
 
 import argparse
 import os.path
-import sqlite3
 import re
-from codecs import getreader as cx_getreader
+import sqlite3
+import sys  # import the sys module for exc_info
 import time
+import traceback  # import the traceback module for format_exception
+from codecs import getreader as cx_getreader
 
 # For Aho-Corasick search for fixed set of substrings
 # - add_word
 # - make_automaton
 # - iter
 import ahocorasick
-
-# import the traceback module for format_exception
-import traceback
-
-# import the sys module for exc_info
-import sys
 
 
 # ref: https://stackoverflow.com/a/8915613/15509512

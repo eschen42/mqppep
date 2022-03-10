@@ -2,24 +2,18 @@
 
 # Import the packages needed
 import argparse
+import operator  # for operator.itemgetter
 import os.path
-import sys
-
-import pandas
 import re
-import time
+import shutil  # for shutil.copyfile(src, dest)
 import sqlite3 as sql
+import sys  # import the sys module for exc_info
+import time
+import traceback  # for formatting stack-trace
 from codecs import getreader as cx_getreader
+
 import numpy as np
-
-#   for formatting stack-trace
-import traceback
-
-# for shutil.copyfile(src, dest)
-import shutil
-
-# for operator.itemgetter
-import operator
+import pandas
 
 # global constants
 N_A = "N/A"
