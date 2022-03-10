@@ -405,8 +405,9 @@ def __main__():
         # Execute query for unique seqs without fetching the results yet
         uniprot_unique_seq_cur = cur.execute(UNIPROT_UNIQUE_SEQ_SQL)
 
-        while batch := uniprot_unique_seq_cur.fetchmany(size=50):
-            if batch is None:
+        while 1:
+            batch = uniprot_unique_seq_cur.fetchmany(size=50)
+            if not batch:
                 # handle case where no records are returned
                 break
             for row in batch:
@@ -419,8 +420,9 @@ def __main__():
         # Execute query for seqs and metadata without fetching the results yet
         uniprot_seq_and_meta = cur.execute(UNIPROT_SEQ_AND_META_SQL)
 
-        while batch := uniprot_seq_and_meta.fetchmany(size=50):
-            if batch is None:
+        while 1:
+            batch = uniprot_seq_and_meta.fetchmany(size=50)
+            if not batch:
                 # handle case where no records are returned
                 break
             for (
@@ -478,8 +480,9 @@ def __main__():
         # Execute query for tuples without fetching the results yet
         ppep_pep_uniprotseq_cur = cur.execute(PPEP_PEP_UNIPROTSEQ_SQL)
 
-        while batch := ppep_pep_uniprotseq_cur.fetchmany(size=50):
-            if batch is None:
+        while 1:
+            batch = ppep_pep_uniprotseq_cur.fetchmany(size=50)
+            if not batch:
                 # handle case where no records are returned
                 break
             for (phospho_pep, dephospho_pep, sequence) in batch:

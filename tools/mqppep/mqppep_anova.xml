@@ -113,9 +113,9 @@
             <output name="imputed_data_file">
                 <assert_contents>
                     <has_text text="Phosphopeptide" />
-                    <has_text text="AAAAAAAGDpSDpSWDADAFSVEDPVRK" />
-                    <has_text text="23574000" />
-                    <has_text text="pSESELIDELSEDFDR" />
+                    <has_text text="AAAITDMADLEELSRLpSPLPPGpSPGSAAR" />
+                    <has_text text="7.935878" />
+                    <has_text text="pSQKQEEENPAEETGEEK" />
                 </assert_contents>
             </output>
         </test>
@@ -129,9 +129,9 @@
             <output name="imputed_data_file">
                 <assert_contents>
                     <has_text text="Phosphopeptide" />
-                    <has_text text="AAAAAAAGDpSDpSWDADAFSVEDPVRK" />
-                    <has_text text="997800000" />
-                    <has_text text="pSESELIDELSEDFDR" />
+                    <has_text text="AAAITDMADLEELSRLpSPLPPGpSPGSAAR" />
+                    <has_text text="0.82258" />
+                    <has_text text="pSQKQEEENPAEETGEEK" />
                 </assert_contents>
             </output>
         </test>

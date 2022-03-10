@@ -53,7 +53,7 @@
       ) && (
         echo '--- kinase-mapping step:'
       ) && (
-        perl '$__tool_directory__/PhosphoPeptide_Upstream_Kinase_Mapping.pl'
+        \$CONDA_PREFIX/bin/perl '$__tool_directory__/PhosphoPeptide_Upstream_Kinase_Mapping.pl'
         -i '$phosphoPepIntensities'
         -f '$protein_fasta'
         -n '$networkin'

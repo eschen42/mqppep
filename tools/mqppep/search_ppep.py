@@ -445,8 +445,9 @@ def __main__():
 
     # Execute query for seqs and metadata without fetching the results yet
     uniprot_seq_and_id = cur.execute(UNIPROT_SEQ_AND_ID_SQL)
-    while batch := uniprot_seq_and_id.fetchmany(size=50):
-        if batch is None:
+    while 1:
+        batch = uniprot_seq_and_id.fetchmany(size=50)
+        if not batch:
             break
         for Sequence, UniProtKB_id in batch:
             if Sequence is not None:
