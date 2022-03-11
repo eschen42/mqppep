@@ -521,6 +521,14 @@ metadata_df <- movetolast(metadata_df, c(colnames(quant_data)))
 # ---
 quant_write <- cbind(metadata_df[, "Sequence window"], quant_data)
 colnames(quant_write)[1] <- "Sequence.Window"
+write.table(
+  quant_write,
+  file = quant_file_name,
+  sep = "\t",
+  quote = FALSE,
+  col.names = TRUE,
+  row.names = FALSE
+)
 # ...
 
 
@@ -568,14 +576,6 @@ pct_multiphos <-
 pct_multiphos <- sprintf("%0.1f%s", 100 * pct_multiphos, "%")
 # ...
 
-write.table(
-  quant_data_qc_collapsed,
-  file = quant_file_name,
-  sep = "\t",
-  quote = FALSE,
-  col.names = TRUE,
-  row.names = FALSE
-)
 
 # Compute and visualize breakdown of pY, pS, and pT before enrichment filter
 # ---

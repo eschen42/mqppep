@@ -44,6 +44,19 @@ def catch(func, *args, handle=lambda e: e, **kwargs):
         return None
 
 
+def whine(func, *args, handle=lambda e: e, **kwargs):
+
+    try:
+        return func(*args, **kwargs)
+    except Exception as e:
+        print("Warning: For %s" % str(func))
+        print("  with args %s" % str(args))
+        print("  caught exception: %s" % str(e))
+        (ty, va, tb) = sys.exc_info()
+        print("  stack trace: " + str(traceback.format_exception(ty, va, tb)))
+        return None
+
+
 def ppep_join(x):
     x = [i for i in x if N_A != i]
     result = "%s" % " | ".join(x)
@@ -683,15 +696,15 @@ def __main__():
             #             message = pe.message))
             #             )
             #         )
+            if phospho_pep not in PhosphoPep_UniProtSeq_LUT:
+                raise PreconditionError(
+                    phospho_pep,
+                    "no matching phosphopeptide found in PhosphoPep_UniProtSeq_LUT",
+                )
             if dephospho_pep not in DephosphoPep_UniProtSeq_LUT:
                 raise PreconditionError(
                     dephospho_pep,
                     "dephosphorylated phosphopeptide not found in DephosphoPep_UniProtSeq_LUT",
-                )
-            if phospho_pep not in PhosphoPep_UniProtSeq_LUT:
-                raise PreconditionError(
-                    dephospho_pep,
-                    "no matching phosphopeptide found in PhosphoPep_UniProtSeq_LUT",
                 )
             if (
                 dephospho_pep
@@ -739,6 +752,10 @@ def __main__():
                 seq10s = []
                 while i < len(ploc):
                     start = UniProtSeq.find(dephospho_pep)
+                    # handle case where no sequence was found for dep-pep
+                    if start < 0:
+                        i += 1
+                        continue
                     psite = (
                         start + ploc[i]
                     )  # location of phosphoresidue on protein sequence
@@ -869,7 +886,6 @@ def __main__():
                             # val is a string
                             if val not in joined_set:
                                 joined_set.add(val)
-                                # joined_value += sep + '; '.join(map(str, val))
                                 joined_value += sep + val
                                 sep = "; "
                     # joined_value is a string
@@ -914,9 +930,10 @@ def __main__():
             return [phospho_pep, result]
 
         # Construct list of [string, dictionary] lists
-        #   where the dictionary provides the SwissProt metadata for a phosphopeptide
+        #   where the dictionary provides the SwissProt metadata
+        #   for a phosphopeptide
         result_list = [
-            catch(pseq_to_subdict, psequence)
+            whine(pseq_to_subdict, psequence)
             for psequence in data_in[PHOSPHOPEPTIDE_MATCH]
         ]
 
@@ -1021,7 +1038,8 @@ def __main__():
             how="left",
         )
 
-        # after merging df, select only the columns of interest - note that PROTEIN is absent here
+        # after merging df, select only the columns of interest;
+        #   note that PROTEIN is absent here
         merge_df = merge_df[
             [
                 PHOSPHOPEPTIDE,
@@ -1033,7 +1051,8 @@ def __main__():
                 ON_NOTES,
             ]
         ]
-        # combine column values of interest into one FUNCTION_PHOSPHORESIDUE column"
+        # combine column values of interest
+        #   into one FUNCTION_PHOSPHORESIDUE column"
         merge_df[FUNCTION_PHOSPHORESIDUE] = merge_df[ON_FUNCTION].str.cat(
             merge_df[ON_PROCESS], sep="; ", na_rep=""
         )

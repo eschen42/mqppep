@@ -25,7 +25,8 @@
 ###############################################################################################################################
 
 use strict;
-use warnings;
+#ACE use warnings;
+use warnings 'FATAL' => 'all';
 
 use Getopt::Std;
 use DBD::SQLite::Constants qw/:file_open/;
@@ -37,6 +38,9 @@ use Time::HiRes qw(gettimeofday);
 #use Data::Dump qw(dump);
 
 my $USE_SEARCH_PPEP_PY = 1;
+#my $FAILED_MATCH_SEQ = "Failed match";
+my $FAILED_MATCH_SEQ = 'No Sequence';
+my $FAILED_MATCH_GENE_NAME = 'No_Gene_Name';
 
 my $dirname = dirname(__FILE__);
 my %opts;
@@ -45,7 +49,7 @@ my $dbtype;
 my ($fasta_in, $networkin_in, $motifs_in, $PSP_Kinase_Substrate_in, $PSP_Regulatory_Sites_in);
 my (@samples, %sample_id_lut, %ppep_id_lut, %data, @tmp_data, %n);
 my $line = 0;
-my @failed_match = ("Failed match");
+my @failed_match = ($FAILED_MATCH_SEQ);
 my @failed_matches;
 my (%all_data);
 my (@p_peptides, @non_p_peptides);
@@ -571,6 +575,37 @@ if ($use_sqlite == 1) {
 
 print "$#accessions accessions were read from the UniProtKB/Swiss-Prot $dbtype file\n";
 
+######################
+  $dbh = DBI->connect("dbi:SQLite:$dbfile", undef, undef);
+  $stmth = $dbh->prepare("
+  INSERT INTO UniProtKB (
+    Uniprot_ID,
+    Description,
+    Organism_Name,
+    Organism_ID,
+    Gene_Name,
+    PE,
+    SV,
+    Sequence,
+    Database
+  ) VALUES (
+    'No Uniprot_ID',
+    'NO_GENE_SYMBOL No Description',
+    'No Organism_Name',
+    0,
+    '$FAILED_MATCH_GENE_NAME',
+    '0',
+    '0',
+    '$FAILED_MATCH_SEQ',
+    'No Database'
+  )
+  ");
+  if (not $stmth->execute()) {
+      print "Error inserting dummy row into UniProtKB: $stmth->errstr\n";
+  }
+  $dbh->disconnect if ( defined $dbh );
+######################
+
 @timeData = localtime(time);
 print "\n--- Start search at " . format_localtime_iso8601() ."\n";
 
@@ -579,6 +614,7 @@ if ($verbose) {
   $i = system("\$CONDA_PREFIX/bin/python $dirname/search_ppep.py -u $db_out -p $file_in --verbose");
 } else {
   $i = system("\$CONDA_PREFIX/bin/python $dirname/search_ppep.py -u $db_out -p $file_in");
+  #ACE DELETEME $i = system("\$CONDA_PREFIX/bin/python $dirname/search_ppep.py -u $db_out -p $file_in --verbose");
 }
 if ($i) {
   print "python $dirname/search_ppep.py -u $db_out -p $file_in\n  exited with exit code $i\n";
@@ -628,7 +664,7 @@ print "DB connection $dbh is to $db_out\n";
 
 my %ppep_to_count_lut;
 print "start select peptide counts " . format_localtime_iso8601() . "\n";
-$stmth = $dbh->prepare("
+my $uniprotkb_pep_ppep_view_stmth = $dbh->prepare("
     SELECT DISTINCT
       phosphopeptide
     , count(*) as i
@@ -639,10 +675,10 @@ $stmth = $dbh->prepare("
     ORDER BY
       phosphopeptide
 ");
-if (not $stmth->execute()) {
-    die "Error fetching peptide counts: $stmth->errstr\n";
+if (not $uniprotkb_pep_ppep_view_stmth->execute()) {
+    die "Error fetching peptide counts: $uniprotkb_pep_ppep_view_stmth->errstr\n";
 }
-while (my @row = $stmth->fetchrow_array) {
+while (my @row = $uniprotkb_pep_ppep_view_stmth->fetchrow_array) {
   $ppep_to_count_lut{$row[0]} = $row[1];
   #print "\$ppep_to_count_lut{$row[0]} = $ppep_to_count_lut{$row[0]}\n";
 }
@@ -662,7 +698,7 @@ my $COL_PPEP_ID          = 9;
 
 my %ppep_to_row_lut;
 print "start select all records without qualification " . format_localtime_iso8601() . "\n";
-$stmth = $dbh->prepare("
+$uniprotkb_pep_ppep_view_stmth = $dbh->prepare("
     SELECT DISTINCT
       accession
     , peptide
@@ -679,8 +715,8 @@ $stmth = $dbh->prepare("
     ORDER BY
       phosphopeptide
 ");
-if (not $stmth->execute()) {
-    die "Error fetching all records without qualification: $stmth->errstr\n";
+if (not $uniprotkb_pep_ppep_view_stmth->execute()) {
+    die "Error fetching all records without qualification: $uniprotkb_pep_ppep_view_stmth->errstr\n";
 }
 my $current_ppep;
 my $counter = 0;
@@ -689,7 +725,7 @@ my $former_ppep = "";
 @tmp_accessions = ();
 @tmp_names = ();
 @tmp_sites = ();
-while (my @row = $stmth->fetchrow_array) {
+while (my @row = $uniprotkb_pep_ppep_view_stmth->fetchrow_array) {
     # Identify phosphopeptide for current row;
     #   it is an error for it to change when the counter is not zero.
     $current_ppep = $row[$COL_PHOSPHOPEPTIDE];
@@ -833,7 +869,8 @@ for my $peptide_to_match ( keys %matched_sequences ) {
             my $arg2 = $tmp_p_residues[0] - $desired_residues_L;
             my $arg1 = $matched_sequences{$peptide_to_match}[$i];
 
-            if (length($arg1) > $arg2 + $total_length - 1) {
+            if (($total_length > 0) && (length($arg1) > $arg2 + $total_length - 1)) {
+                #ACE print "\$tmp_motif = substr($arg1, $arg2, $total_length)\n";
                 $tmp_motif = substr($arg1, $arg2, $total_length);
                 #ACE print "tmp_motif = $tmp_motif\ti = $i\tpeptide_to_match = $peptide_to_match\tmatched_sequences{peptide_to_match}[i] = $matched_sequences{$peptide_to_match}[$i]\targ2 = $arg2\targ3 = $total_length\n";
 
@@ -1664,21 +1701,7 @@ print sprintf("Average search time is %d microseconds per phopshopeptide\n", ($d
 
 print "Writing PSP_Regulatory_site records\n";
 
-#ACE $stmth = $dbh->prepare("
-#ACE     INSERT INTO PSP_Regulatory_site (
-#ACE       DOMAIN,
-#ACE       ON_FUNCTION,
-#ACE       ON_PROCESS,
-#ACE       ON_PROT_INTERACT,
-#ACE       ON_OTHER_INTERACT,
-#ACE       NOTES,
-#ACE       SITE_PLUSMINUS_7AA,
-#ACE       ORGANISM,
-#ACE       PROTEIN
-#ACE     ) VALUES (?,?,?,?,?,?,?,?,?)
-#ACE     ");
-
-$stmth = $dbh->prepare("
+my $psp_regulatory_site_stmth = $dbh->prepare("
     INSERT INTO PSP_Regulatory_site (
       DOMAIN,
       ON_FUNCTION,
@@ -1694,17 +1717,16 @@ $stmth = $dbh->prepare("
 foreach my $peptide (keys %data) {
     if (exists($domain_2{$peptide}) and (defined $domain_2{$peptide}) and (not $domain_2{$peptide} eq "") ) {
         #ACE print "writing domain $domain_2{$peptide} for regulatory site(s) $seq_plus7aa_2{$peptide}\n"; #ACE
-        $stmth->bind_param(1, $domain_2{$peptide});
-        $stmth->bind_param(2, $ON_FUNCTION_2{$peptide});
-        $stmth->bind_param(3, $ON_PROCESS_2{$peptide});
-        $stmth->bind_param(4, $ON_PROT_INTERACT_2{$peptide});
-        $stmth->bind_param(5, $ON_OTHER_INTERACT_2{$peptide});
-        $stmth->bind_param(6, $notes_2{$peptide});
-        $stmth->bind_param(7, $seq_plus7aa_2{$peptide});
-        $stmth->bind_param(8, $organism_2{$peptide});
-        #ACE $stmth->bind_param(9, $psp_regsite_protein_2{$peptide});
-        if (not $stmth->execute()) {
-            print "Error writing PSP_Regulatory_site for one regulatory site with peptide '$domain_2{$peptide}': $stmth->errstr\n";
+        $psp_regulatory_site_stmth->bind_param(1, $domain_2{$peptide});
+        $psp_regulatory_site_stmth->bind_param(2, $ON_FUNCTION_2{$peptide});
+        $psp_regulatory_site_stmth->bind_param(3, $ON_PROCESS_2{$peptide});
+        $psp_regulatory_site_stmth->bind_param(4, $ON_PROT_INTERACT_2{$peptide});
+        $psp_regulatory_site_stmth->bind_param(5, $ON_OTHER_INTERACT_2{$peptide});
+        $psp_regulatory_site_stmth->bind_param(6, $notes_2{$peptide});
+        $psp_regulatory_site_stmth->bind_param(7, $seq_plus7aa_2{$peptide});
+        $psp_regulatory_site_stmth->bind_param(8, $organism_2{$peptide});
+        if (not $psp_regulatory_site_stmth->execute()) {
+            print "Error writing PSP_Regulatory_site for one regulatory site with peptide '$domain_2{$peptide}': $psp_regulatory_site_stmth->errstr\n";
         } else {
             #ACE print "added domain for $domain_2{$peptide}\n";
         }
@@ -1714,7 +1736,7 @@ foreach my $peptide (keys %data) {
 }
 
 $dbh->{AutoCommit} = $auto_commit;
-# auto_commit implicitly finishes stmth, apparently # $stmth->finish;
+# auto_commit implicitly finishes psp_regulatory_site_stmth, apparently # $psp_regulatory_site_stmth->finish;
 $dbh->disconnect if ( defined $dbh );
 
 
@@ -1872,9 +1894,21 @@ foreach my $peptide (sort(keys %data)) {
     push (@ppep_metadata, $ppep_id);
     push (@ppep_intensity, $peptide);
 
+    my $verbose_cond = 0; # $peptide eq 'AAAAAAAGDpSDpSWDADAFSVEDPVR' || $peptide eq 'KKGGpSpSDEGPEPEAEEpSDLDSGSVHSASGRPDGPVR';
     # skip over failed matches
-    if ($matched_sequences{$peptide} eq "Failed match") {
+    print "\nfirst match for '$peptide' is '$matched_sequences{$peptide}[0]' and FAILED_MATCH_SEQ is '$FAILED_MATCH_SEQ'\n" if $verbose_cond;
+    if ($matched_sequences{$peptide}[0] eq $FAILED_MATCH_SEQ) {
+        # column 2: Protein description
+        # column 3: Gene name(s)
+        # column 4: FASTA name
+        # column 5: phospho-residues
+        # Column 6: UNIQUE phospho-motifs
+        # Column 7: accessions
+        # Column 8: ALL motifs with residue numbers
+        #          2                                     3   4   5   6   7   8
         print OUT "Sequence not found in FASTA database\tNA\tNA\tNA\tNA\tNA\tNA\t";
+        print "No match found for '$peptide' in sequence database\n";
+        $gene_names = '$FAILED_MATCH_GENE_NAME';
     } else {
         my @description = ();
         my %seen = ();
@@ -1904,15 +1938,15 @@ foreach my $peptide (sort(keys %data)) {
         print OUT $gene_names, "\t";
         push (@ppep_metadata, join(" /// ", @gene));
 
-        # print the entire names
         # column 4: FASTA name
         print OUT join(" /// ", @{$names{$peptide}}), "\t";
         push (@ppep_metadata, join(" /// ", @{$names{$peptide}}));
 
-        # Print the phospho-residues
-        # column 5:
+        # column 5: phospho-residues
         my $tmp_for_insert = "";
+        my $foobar;
         for my $i (0 .. $#{ $matched_sequences{$peptide} } ) {
+            print "match $i for '$peptide' is '$matched_sequences{$peptide}[$i]'\n" if $verbose_cond;
             if ($i < $#{ $matched_sequences{$peptide} }) {
                 if (defined $p_residues{$peptide}{$i}) {
                     @tmp_p_residues = @{$p_residues{$peptide}{$i}};
@@ -1931,34 +1965,52 @@ foreach my $peptide (sort(keys %data)) {
                 }
             }
             elsif ($i == $#{ $matched_sequences{$peptide} }) {
+                my $there_were_sites = 0;
                 if (defined $p_residues{$peptide}{$i}) {
                     @tmp_p_residues = @{$p_residues{$peptide}{$i}};
-                    for my $j (0 .. $#tmp_p_residues) {
-                        if ($j < $#tmp_p_residues) {
-                            my $tmp_site_for_printing = $p_residues{$peptide}{$i}[$j] + 1;        # added 12.05.2012 for Justin's data
-                            print OUT "p$residues{$peptide}{$i}[$j]$tmp_site_for_printing, ";
-                            $tmp_for_insert .= "p$residues{$peptide}{$i}[$j]$tmp_site_for_printing, ";
-                        }
-                        elsif ($j == $#tmp_p_residues) {
-                            my $tmp_site_for_printing = $p_residues{$peptide}{$i}[$j] + 1;        # added 12.05.2012 for Justin's data
-                            print OUT "p$residues{$peptide}{$i}[$j]$tmp_site_for_printing\t";
-                            $tmp_for_insert .= "p$residues{$peptide}{$i}[$j]$tmp_site_for_printing";
+                    if ($#tmp_p_residues > 0) {
+                        for my $j (0 .. $#tmp_p_residues) {
+                            if ($j < $#tmp_p_residues) {
+                                if (defined $p_residues{$peptide}{$i}[$j]) {
+                                    my $tmp_site_for_printing = $p_residues{$peptide}{$i}[$j] + 1;        # added 12.05.2012 for Justin's data
+                                    $foobar = $residues{$peptide}{$i}[$j];
+                                    if (defined $foobar) {
+                                        print OUT "$foobar";
+                                        print OUT "$tmp_site_for_printing, ";
+                                        $tmp_for_insert .= "p$residues{$peptide}{$i}[$j]$tmp_site_for_printing, ";
+                                        $there_were_sites = 1;
+                                    }
+                                }
+                            }
+                            elsif ($j == $#tmp_p_residues) {
+                                if (defined $p_residues{$peptide}{$i}[$j]) {
+                                    $foobar = $residues{$peptide}{$i}[$j];
+                                    if (defined $foobar) {
+                                        my $tmp_site_for_printing = $p_residues{$peptide}{$i}[$j] + 1;        # added 12.05.2012 for Justin's data
+                                        print OUT "$foobar";
+                                        print OUT "$tmp_site_for_printing\t";
+                                        #ACE print OUT "p$residues{$peptide}{$i}[$j]$tmp_site_for_printing\t";
+                                        $tmp_for_insert .= "p$residues{$peptide}{$i}[$j]$tmp_site_for_printing";
+                                        $there_were_sites = 1;
+                                    }
+                                }
+                            }
                         }
                     }
-                } else {
+                }
+                if (0 == $there_were_sites) {
                   print OUT "\t";
                 }
             }
         }
+        print "tmp_for_insert '$tmp_for_insert' for '$peptide'\n" if $verbose_cond;
         push (@ppep_metadata, $tmp_for_insert);
 
-        # Print the UNIQUE phospho-motifs
-        # Column 6:
+        # Column 6: UNIQUE phospho-motifs
         print OUT join(" /// ", @{$unique_motifs{$peptide}}), "\t";
         push (@ppep_metadata, join(" /// ", @{$unique_motifs{$peptide}}));
 
-        # Print the accessions
-        # Column 7:
+        # Column 7: accessions
         if (defined $accessions{$peptide}) {
             print OUT join(" /// ", @{$accessions{$peptide}}), "\t";
             push (@ppep_metadata, join(" /// ", @{$accessions{$peptide}}));
@@ -1967,8 +2019,7 @@ foreach my $peptide (sort(keys %data)) {
             push (@ppep_metadata, "");
         }
 
-        # print ALL motifs with residue numbers
-        # Column 8:
+        # Column 8: ALL motifs with residue numbers
         if (defined $p_motifs{$peptide}) {
             print OUT join(" /// ", @{$p_motifs{$peptide}}), "\t";
             push (@ppep_metadata, join(" /// ", @{$p_motifs{$peptide}}));

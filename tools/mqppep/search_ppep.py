@@ -516,6 +516,16 @@ def __main__():
     for row in ker.fetchall():
         print(row[0])
 
+    # link peptides not found in sequence database to a dummy sequence-record
+    ker.execute(
+        """
+        INSERT INTO deppep_UniProtKB(deppep_id,UniProtKB_id,pos_start,pos_end)
+          SELECT id, 'No Uniprot_ID', 0, 0
+          FROM   deppep
+          WHERE  id NOT IN (SELECT deppep_id FROM deppep_UniProtKB)
+        """
+    )
+
     con.commit()
     ker.execute("vacuum")
     con.close()
