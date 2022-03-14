@@ -25,7 +25,6 @@
 ###############################################################################################################################
 
 use strict;
-#ACE use warnings;
 use warnings 'FATAL' => 'all';
 
 use Getopt::Std;
@@ -67,7 +66,6 @@ my (@motif_sequence, %motif_type, %motif_count);
 my (@kinases_PhosphoSite, $kinases_PhosphoSite);
 my ($p_sequence_kinase_PhosphoSite, $p_sequence_PhosphoSite, $kinase_PhosphoSite);
 my (%regulatory_sites_PhosphoSite_hash);
-#ACE my %psp_regsite_protein;
 my (%domain, %ON_FUNCTION, %ON_PROCESS, %ON_PROT_INTERACT, %ON_OTHER_INTERACT, %notes, %organism);
 my (%unique_motifs);
 my ($kinase_substrate_NetworKIN_matches, $kinase_motif_matches, $kinase_substrate_PhosphoSite_matches);
@@ -196,8 +194,6 @@ sub pseudo_sed()
 
 getopts('i:f:s:n:m:p:r:P:F:o:O:D:hva', \%opts) ;
 
-#ACE print %opts; #ACE
-#ACE print "\n"; #ACE
 
 if (exists($opts{'h'})) {
     usage();
@@ -221,15 +217,6 @@ if (!exists($opts{'f'}) || !-e $opts{'f'}) {
     $fasta_in = $opts{'f'};
     $use_sqlite = 0;
 }
-#ACE  if (exists($opts{'s'}) && -e $opts{'s'}) {
-#ACE      $use_sqlite = 1;
-#ACE      $dbfile = $opts{'s'};
-#ACE  } elsif (!exists($opts{'f'}) || !-e $opts{'f'}) {
-#ACE      die('Neither input FASTA file nor input SQLite file was found');
-#ACE  } else {
-#ACE      $use_sqlite = 0;
-#ACE      $fasta_in = $opts{'f'};
-#ACE  }
 my $species;
 if ((!exists($opts{'s'})) || ($opts{'s'} eq '')) {
     $species = 'human';
@@ -426,8 +413,6 @@ if ($use_sqlite == 0) {
       push (@databases, $x[0]);
       push (@accessions, $x[1]);
       push (@names, $x[2]);
-      #ACE print "names $x[2]\n";
-      #ACE print "--- $_\n";
       pseudo_sed();
       s/$/\t/;
       push (@parsed_fasta, $_);
@@ -439,7 +424,6 @@ if ($use_sqlite == 0) {
       }
       $parsed_fasta[$#accessions] = $parsed_fasta[$#accessions].$x[0];
     }
-    #ACE print "... '$parsed_fasta[$#accessions]'\n";
   }
   close IN1;
   print "Done Reading FASTA file $fasta_in\n";
@@ -614,7 +598,6 @@ if ($verbose) {
   $i = system("\$CONDA_PREFIX/bin/python $dirname/search_ppep.py -u $db_out -p $file_in --verbose");
 } else {
   $i = system("\$CONDA_PREFIX/bin/python $dirname/search_ppep.py -u $db_out -p $file_in");
-  #ACE DELETEME $i = system("\$CONDA_PREFIX/bin/python $dirname/search_ppep.py -u $db_out -p $file_in --verbose");
 }
 if ($i) {
   print "python $dirname/search_ppep.py -u $db_out -p $file_in\n  exited with exit code $i\n";
@@ -634,7 +617,6 @@ print "... Finished search at " . format_localtime_iso8601() ."\n\n";
 #
 ###############################################################################################################################
 
-#ACE print OUT "$headers\tFormatted Motifs\tUnique Motifs\tPhospho-site(s)\tAccessions(s)\tName(s)\n";
 
 print "--- Match the non_p_peptides to the \@sequences array:\n";
 
@@ -750,7 +732,6 @@ while (my @row = $uniprotkb_pep_ppep_view_stmth->fetchrow_array) {
     }
 
     # Prepare counter and phosphopeptide tracker for next row
-    #ACE print "counter: $counter; phosphpepetide: $current_ppep\n";
     $former_ppep = $current_ppep;
     $counter -= 1;
 
@@ -822,15 +803,11 @@ for my $peptide_to_match ( keys %matched_sequences ) {
     my @matches = @{$matched_sequences{$peptide_to_match}};
     @tmp_motifs_array = ();
     for my $i (0 .. $#matches) {
-        #ACE print "Matching $peptide_to_match to match $i\n";
-        #ACE print "\$sites{\$peptide_to_match}[\$i] $sites{$peptide_to_match}[$i]\n";
 
         # Find the location of the phospo-site in the sequence(s)
         $tmp_site = 0; my $offset = 0;
         my $tmp_p_peptide = $peptide_to_match;
-        #ACE print "peptide_to_match: $peptide_to_match at position $sites{$peptide_to_match}[$i] in sequence $matched_sequences{$peptide_to_match}[$i]\n";
         $tmp_p_peptide =~ s/#//g; $tmp_p_peptide =~ s/\d//g; $tmp_p_peptide =~ s/\_//g; $tmp_p_peptide =~ s/\.//g;
-        #ACE print "tmp_p_peptide: $tmp_p_peptide\n";
 
         # Find all phosphorylated residues in the p_peptide
         @p_sites = ();
@@ -870,9 +847,7 @@ for my $peptide_to_match ( keys %matched_sequences ) {
             my $arg1 = $matched_sequences{$peptide_to_match}[$i];
 
             if (($total_length > 0) && (length($arg1) > $arg2 + $total_length - 1)) {
-                #ACE print "\$tmp_motif = substr($arg1, $arg2, $total_length)\n";
                 $tmp_motif = substr($arg1, $arg2, $total_length);
-                #ACE print "tmp_motif = $tmp_motif\ti = $i\tpeptide_to_match = $peptide_to_match\tmatched_sequences{peptide_to_match}[i] = $matched_sequences{$peptide_to_match}[$i]\targ2 = $arg2\targ3 = $total_length\n";
 
                 # Put the "p" back in front of the appropriate phospho-residue(s).
                 my (@tmp_residues, $tmp_position);
@@ -883,7 +858,6 @@ for my $peptide_to_match ( keys %matched_sequences ) {
                     } else {
                         $tmp_position = $desired_residues_L + $p_sites[$m] - $p_sites[0];
                     }
-                    #ACE print "Line 431: p_sites = $p_sites[$m]\ttmp_position = $tmp_position\ttmp_motif = $tmp_motif\n";
                     if ($tmp_position < length($tmp_motif) + 1) {
                         push (@tmp_residues, substr($tmp_motif, $tmp_position, 1));
                         if ($tmp_residues[$m] eq "S") {substr($tmp_motif, $tmp_position, 1, "s");}
@@ -1032,9 +1006,7 @@ while (<IN3>) {
         $x[$i] =~ s/\r//g; $x[$i]  =~ s/\n//g; $x[$i]  =~ s/\"//g;
         }
     if ($line != 0) {
-        #ACE FUE if (($species eq $species) && ($species eq $species)) {
         if (($species eq $x[3]) && ($species eq $x[8])) {
-            #ACE print "KIN_ORGANISM is '$x[3]' and SUB_ORGANISM is '$x[8]', line: $line\n";
             if (exists ($kinases_PhosphoSite -> {$x[0]})) {
                 #do nothing
             }
@@ -1154,7 +1126,6 @@ $stmth->execute();
 open (IN4, "$PSP_Regulatory_Sites_in") or die "I couldn't find $PSP_Regulatory_Sites_in\n";
 print "Reading the PhosphoSite regulatory site data:  $PSP_Regulatory_Sites_in\n";
 
-#ACE $i = system("head -n 4 $PSP_Regulatory_Sites_in");
 
 $line = -1;
 while (<IN4>) {
@@ -1177,7 +1148,6 @@ while (<IN4>) {
         $x[$i] =~ s/\r//g; $x[$i]  =~ s/\n//g; $x[$i]  =~ s/\"//g;
     }
     my $found_GENE=0;
-    #ACE print STDERR "line $line: $_\n";
     if ( (not exists($x[0])) ) {
         next;
     }
@@ -1197,19 +1167,13 @@ while (<IN4>) {
         }
     }
     elsif ($line != 0) {
-        #ACE print "PSPReg $line: $_\n" if ($x[9] eq 'KGQKYFDsGDYNMAK');
-        #ACE FUE if ($species ne $species) {
         if ($species ne $x[6]) {
             # Do nothing - this record was filtered out by the species filter
-            #ACE print "PSP_regsite line rejected: $line\n";
         }
         elsif (!exists($regulatory_sites_PhosphoSite_hash{$x[9]})) {
-            #ACE print "testing \$domain{\$x[9]} for \$regulatory_sites_PhosphoSite_hash{$x[9]}\n" if ($x[9] eq 'KGQKYFDsGDYNMAK'); #ACE
             if (!defined $domain{$x[9]} || $domain{$x[9]} eq "") {
-                #ACE print "adding found \$regulatory_sites_PhosphoSite_hash{$x[9]}\n" if ($x[9] eq 'KGQKYFDsGDYNMAK'); #ACE
                 $regulatory_sites_PhosphoSite_hash{$x[9]} = $x[9];
                 $domain{$x[9]} = $x[10];
-                #ACE $psp_regsite_protein{$x[9]} = $x[1];
                 $ON_FUNCTION{$x[9]} = $x[11];
                 $ON_PROCESS{$x[9]} = $x[12];
                 $ON_PROT_INTERACT{$x[9]} = $x[13];
@@ -1226,12 +1190,9 @@ while (<IN4>) {
                   }
                 else {
                   # do nothing
-                  #ACE print "WARNING line $line - no domain or 7aa for:  GENE $x[0]   PROTEIN $x[1]   PROT_TYPE $x[2]   ACC_ID $x[3]   GENE_ID $x[4]   HU_CHR_LOC $x[5]   ORGANISM $x[6]   MOD_RSD $x[7]   SITE_GRP_ID $x[8]   SITE_+/-7_AA $x[9]   DOMAIN $x[10]\n";
-                  #ACE print "$_\n";
                   }
             }
             else {
-                #ACE print "Checking $domain{$x[9]} =~ /$x[10]/\n";
                 if ($domain{$x[9]} =~ /$x[10]/) {
                   # do nothing
                   }
@@ -1453,10 +1414,8 @@ foreach my $peptide (keys %data) {
         if (($number_pY == 1) || ($number_pSTY == 1)) {
             my $seq_plus5aa = "";
             my $seq_plus7aa = "";
-            #ACE print "tmp_motif is $tmp_motif before replacement\n";
             $formatted_sequence = &replace_pSpTpY($tmp_motif, $phospho_type);
             print "       a #pY $number_pY; #pSTY $number_pSTY; matching formatted motif $formatted_sequence for peptide  $peptide at " . format_localtime_iso8601() ."\n" if ($verbose);
-            #ACE print "formatted_sequence is $formatted_sequence after replacement\n";
             if ($phospho_type eq 'y') {
                 $seq_plus5aa = (split(/(\w{0,5}y\w{0,5})/, $formatted_sequence))[1];
                 $seq_plus7aa = (split(/(\w{0,7}y\w{0,7})/, $formatted_sequence))[1];
@@ -1474,14 +1433,10 @@ foreach my $peptide (keys %data) {
                     print "Error writing tuple ($ppep_id_lut{$peptide},$seq_plus7aa) for peptide $peptide to ppep_regsite_LUT: $ppep_regsite_LUT_stmth->errstr\n";
                 }
             }
-            #ACE print "seq_plus5aa is $seq_plus5aa \n";
-            #ACE print "seq_plus7aa is $seq_plus7aa \n";
             for my $i (0 .. $#kinases_observed) {
                 if (defined $seq_plus5aa) {
                     my $tmp = $seq_plus5aa."_".$kinases_observed[$i];    #eg, should be PGRPLsSYGMD_PKCalpha
                     if (exists($p_sequence_kinase -> {$tmp})) {
-                        #ACE print($tmp."\t");
-                        #ACE print(($p_sequence_kinase -> {$tmp})."\n"); #ACE
                         $kinase_substrate_NetworKIN_matches{$peptide}{$kinases_observed[$i]} = "X"; #ACE
                     }
                 }
@@ -1489,7 +1444,6 @@ foreach my $peptide (keys %data) {
             for my $i (0 .. $#motif_sequence) {
                 if ($peptide =~ /$motif_sequence[$i]/) {
                     $kinase_motif_matches{$peptide}{$motif_sequence[$i]} = "X";
-                    #ACE print "\$kinase_motif_matches{$peptide}{$motif_sequence[$i]} = 'X'; $motif_type{$motif_sequence[$i]}\n"; #ACE
                 }
             }
             for my $i (0 .. $#kinases_PhosphoSite) {
@@ -1500,12 +1454,9 @@ foreach my $peptide (keys %data) {
                     }
                 }
             }
-            #ACE print "checking for existence of \$regulatory_sites_PhosphoSite_hash{$seq_plus7aa}\n"; #ACE
             if (exists($regulatory_sites_PhosphoSite_hash{$seq_plus7aa})) {
-                #ACE print "found regulatory_sites_PhosphoSite_hash{$seq_plus7aa}\n"; #ACE
                 $seq_plus7aa_2{$peptide} = $seq_plus7aa;
                 $domain_2{$peptide} = $domain{$seq_plus7aa};
-                #ACE $psp_regsite_protein_2{$peptide} = $psp_regsite_protein{$seq_plus7aa};
                 $ON_FUNCTION_2{$peptide} = $ON_FUNCTION{$seq_plus7aa};
                 $ON_PROCESS_2{$peptide} = $ON_PROCESS{$seq_plus7aa};
                 $ON_PROT_INTERACT_2{$peptide} = $ON_PROT_INTERACT{$seq_plus7aa};
@@ -1513,12 +1464,10 @@ foreach my $peptide (keys %data) {
                 $notes_2{$peptide} = $notes{$seq_plus7aa};
                 $organism_2{$peptide} = $organism{$seq_plus7aa};
             } else {
-                #ACE print "c not found \$regulatory_sites_PhosphoSite_hash{{$seq_plus7aa}\n"; #ACE
             }
         }
         elsif (($number_pY > 1) || ($number_pSTY > 1)) {  #eg, if $x[4] is 1308-[ VIYFQAIEEVpYpYDHLRSAAKKR ]-1329 and $number_pY == 2
             $formatted_sequence = $tmp_motif;
-            #ACE print "formatted_sequence is $formatted_sequence \n";
             $seq_plus5aa = "";
             $seq_plus7aa = "";
             #Create the sequences with only one phosphorylation site
@@ -1546,14 +1495,11 @@ foreach my $peptide (keys %data) {
 
             my @formatted_sequences;
             for my $k (0 .. $#sites) {
-                #ACE print "pSTY_sequences[k] is $pSTY_sequences[$k] before replacement\n";
                 $formatted_sequences[$k] = &replace_pSpTpY($pSTY_sequences[$k], $phospho_type);
-                #ACE print "formatted_sequences[k] is $formatted_sequences[$k] \n";
             }
 
             for my $k (0 .. $#formatted_sequences) {
                 print "       b #pY $number_pY; #pSTY $number_pSTY; matching formatted motif $formatted_sequences[$k] for peptide  $peptide at " . format_localtime_iso8601() ."\n" if ($verbose);
-                #ACE print "formatted_sequences[k] for phosphotype $phospho_type is $formatted_sequences[$k] \n";
                 if ($phospho_type eq 'y') {
                     $seq_plus5aa = (split(/(\w{0,5}y\w{0,5})/, $formatted_sequences[$k]))[1];
                     $seq_plus7aa = (split(/(\w{0,7}y\w{0,7})/, $formatted_sequences[$k]))[1];
@@ -1562,21 +1508,15 @@ foreach my $peptide (keys %data) {
                     $seq_plus5aa = (split(/(\w{0,5}(s|t|y)\w{0,5})/, $formatted_sequences[$k]))[1];
                     $seq_plus7aa = (split(/(\w{0,7}(s|t|y)\w{0,7})/, $formatted_sequences[$k]))[1];
                 }
-                #ACE print "seq_plus5aa is $seq_plus5aa \n";
-                #ACE print "seq_plus7aa is $seq_plus7aa \n";
                 for my $i (0 .. $#kinases_observed) {
                     my $tmp = $seq_plus5aa."_".$kinases_observed[$i];    #eg, should look like REEILsEMKKV_PKCalpha
-                    #ACE print "seq_plus5aa._.kinases_observed[i] is $tmp\n"; #ACE
                     if (exists($p_sequence_kinase -> {$tmp})) {
                         $kinase_substrate_NetworKIN_matches{$peptide}{$kinases_observed[$i]} = "X";
-                        #ACE print "$tmp matched\n";
                     }
                 }
                 $pSTY_sequence = $formatted_sequences[$k];
-                #ACE print "trying pSTY_sequence $pSTY_sequence \n";
                 for my $i (0 .. $#motif_sequence) {
                     if ($pSTY_sequence =~ /$motif_sequence[$i]/) {
-                        #ACE print "match for pSTY_sequence $pSTY_sequence was $motif_sequence[$i]\n";
                         $kinase_motif_matches{$peptide}{$motif_sequence[$i]} = "X";
                     }
                 }
@@ -1585,11 +1525,9 @@ foreach my $peptide (keys %data) {
                     #print "seq_plus7aa._.kinases_PhosphoSite[i] is $tmp";
                     if (exists($p_sequence_kinase_PhosphoSite -> {$tmp})) {
                         $kinase_substrate_PhosphoSite_matches{$peptide}{$kinases_PhosphoSite[$i]} = "X";
-                    #ACE print "$tmp matched \n";
                     }
                 }
                 if (exists($regulatory_sites_PhosphoSite -> {$seq_plus7aa})) {
-                    #ACE print "ACE processing seq_plus7aa '$domain{$seq_plus7aa}'\n"; #ACE
                     $seq_plus7aa_2{$peptide} = $seq_plus7aa;
 
                     # $domain
@@ -1603,16 +1541,6 @@ foreach my $peptide (keys %data) {
                         $domain_2{$peptide} = $domain_2{$peptide}." / ".$domain{$seq_plus7aa};
                     }
 
-                    #ACE # $psp_regsite_protein
-                    #ACE if ($psp_regsite_protein_2{$peptide} eq "") {
-                    #ACE     $psp_regsite_protein_2{$peptide} = $psp_regsite_protein{$seq_plus7aa};
-                    #ACE }
-                    #ACE elsif ($psp_regsite_protein{$seq_plus7aa} eq "") {
-                    #ACE     # do nothing
-                    #ACE }
-                    #ACE else {
-                    #ACE     $psp_regsite_protein_2{$peptide} = $psp_regsite_protein_2{$peptide}." / ".$psp_regsite_protein{$seq_plus7aa};
-                    #ACE }
 
                     # $ON_FUNCTION_2
                     if ($ON_FUNCTION_2{$peptide} eq "") {
@@ -1682,7 +1610,6 @@ foreach my $peptide (keys %data) {
                     }
                     $organism_2{$peptide} = $organism{$seq_plus7aa};
                 } else {
-                    #ACE print "d not found \$regulatory_sites_PhosphoSite_hash{{$seq_plus7aa}}\n";
                 } # if (exists($regulatory_sites_PhosphoSite -> {$seq_plus7aa}))
             } # for my $k (0 .. $#formatted_sequences) 
         } # if/else number of phosphosites
@@ -1716,7 +1643,6 @@ my $psp_regulatory_site_stmth = $dbh->prepare("
 
 foreach my $peptide (keys %data) {
     if (exists($domain_2{$peptide}) and (defined $domain_2{$peptide}) and (not $domain_2{$peptide} eq "") ) {
-        #ACE print "writing domain $domain_2{$peptide} for regulatory site(s) $seq_plus7aa_2{$peptide}\n"; #ACE
         $psp_regulatory_site_stmth->bind_param(1, $domain_2{$peptide});
         $psp_regulatory_site_stmth->bind_param(2, $ON_FUNCTION_2{$peptide});
         $psp_regulatory_site_stmth->bind_param(3, $ON_PROCESS_2{$peptide});
@@ -1728,7 +1654,6 @@ foreach my $peptide (keys %data) {
         if (not $psp_regulatory_site_stmth->execute()) {
             print "Error writing PSP_Regulatory_site for one regulatory site with peptide '$domain_2{$peptide}': $psp_regulatory_site_stmth->errstr\n";
         } else {
-            #ACE print "added domain for $domain_2{$peptide}\n";
         }
     } elsif (exists($domain_2{$peptide}) and (not defined $domain_2{$peptide})) {
         print "\$domain_2{$peptide} is undefined\n";  #ACE
@@ -1989,7 +1914,6 @@ foreach my $peptide (sort(keys %data)) {
                                         my $tmp_site_for_printing = $p_residues{$peptide}{$i}[$j] + 1;        # added 12.05.2012 for Justin's data
                                         print OUT "$foobar";
                                         print OUT "$tmp_site_for_printing\t";
-                                        #ACE print OUT "p$residues{$peptide}{$i}[$j]$tmp_site_for_printing\t";
                                         $tmp_for_insert .= "p$residues{$peptide}{$i}[$j]$tmp_site_for_printing";
                                         $there_were_sites = 1;
                                     }
@@ -2049,7 +1973,6 @@ foreach my $peptide (sort(keys %data)) {
     # begin store-to-SQLite "ppep_metadata" table
     # ---
     for $i (1..14) {
-        #ACE print "\$ppep_metadata_stmth->bind_param($i, " . $ppep_metadata[$i-1] . ")\n";
         $ppep_metadata_stmth->bind_param($i, $ppep_metadata[$i-1]);
     }
     if (not $ppep_metadata_stmth->execute()) {
@@ -2074,7 +1997,6 @@ foreach my $peptide (sort(keys %data)) {
         $ppep_intensity_stmth->bind_param( 1, $ppep_id                     );
         $ppep_intensity_stmth->bind_param( 2, $sample_id_lut{$samples[$i]} );
         $ppep_intensity_stmth->bind_param( 3, $intense                     );
-        #ACE print "insert ($peptide, $samples[$i], $intense)\n";
         if (not $ppep_intensity_stmth->execute()) {
             print "Error writing tuple ($peptide,$samples[$i],$intense): $ppep_intensity_stmth->errstr\n";
         }
@@ -2103,13 +2025,11 @@ foreach my $peptide (sort(keys %data)) {
         }
         else { print OUT "\t";}
     }
-    #ACE my %wrote_motif = {};
     my %wrote_motif;
     my $motif_parts_0;
     for my $i (0 .. $#motif_sequence) {
         if (exists($kinase_motif_matches{$peptide}{$motif_sequence[$i]})) {
             print OUT "X\t";
-            #ACE my @motif_parts = split(/ motif /, $motif_type{$motif_sequence[$i]});
             $motif_parts_0 = $motif_type{$motif_sequence[$i]}." ".$motif_sequence[$i];
             my $key = "$peptide\t$gene_names\t$motif_parts_0";
             if (!exists($wrote_motif{$key})) {

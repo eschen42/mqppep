@@ -695,7 +695,6 @@ head(quant_data_qc_enrichment)
 
 # Write phosphopeptides filtered by enrichment
 # --
-#ACE colnames(quant_data_qc_enrichment)[1] <- "Phosphopeptide"
 write.table(
   quant_data_qc_enrichment,
   file = output_filename,
