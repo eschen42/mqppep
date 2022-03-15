@@ -1,7 +1,15 @@
 {
     "a_galaxy_workflow": "true",
     "annotation": "phoshpoproteomic enrichment data pre-processing and ANOVA",
+    "creator": [
+        {
+            "class": "Person",
+            "identifier": "0000-0002-2882-0508",
+            "name": "Art Eschenlauer"
+        }
+    ],
     "format-version": "0.1",
+    "license": "MIT",
     "name": "ppenrich_suite_wf",
     "steps": {
         "0": {
@@ -20,20 +28,20 @@
             "name": "Input dataset",
             "outputs": [],
             "position": {
-                "bottom": -36.30000305175781,
-                "height": 82.19999694824219,
-                "left": 150,
-                "right": 350,
-                "top": -118.5,
+                "bottom": 346.3999938964844,
+                "height": 81.89999389648438,
+                "left": 495,
+                "right": 695,
+                "top": 264.5,
                 "width": 200,
-                "x": 150,
-                "y": -118.5
+                "x": 495,
+                "y": 264.5
             },
             "tool_id": null,
             "tool_state": "{\"optional\": false, \"format\": [\"tabular\"]}",
             "tool_version": null,
             "type": "data_input",
-            "uuid": "7c4e2a17-e8c0-423a-9100-85b63d81708b",
+            "uuid": "21c3c29d-9e8c-4ece-b585-9e68fed7a93f",
             "workflow_outputs": []
         },
         "1": {
@@ -52,20 +60,20 @@
             "name": "Input dataset",
             "outputs": [],
             "position": {
-                "bottom": 278.1000061035156,
-                "height": 102.60000610351562,
-                "left": 376,
-                "right": 576,
-                "top": 175.5,
+                "bottom": 708.8000030517578,
+                "height": 102.30000305175781,
+                "left": 685,
+                "right": 885,
+                "top": 606.5,
                 "width": 200,
-                "x": 376,
-                "y": 175.5
+                "x": 685,
+                "y": 606.5
             },
             "tool_id": null,
             "tool_state": "{\"optional\": false, \"format\": [\"fasta\"]}",
             "tool_version": null,
             "type": "data_input",
-            "uuid": "4faa79fe-4dca-44c4-97b8-758211c000c1",
+            "uuid": "5da7317c-4def-48f3-8eac-af95bd18b290",
             "workflow_outputs": []
         },
         "2": {
@@ -84,20 +92,20 @@
             "name": "Input dataset",
             "outputs": [],
             "position": {
-                "bottom": 423.1000061035156,
-                "height": 102.60000610351562,
-                "left": 387,
-                "right": 587,
-                "top": 320.5,
+                "bottom": 853.8000030517578,
+                "height": 102.30000305175781,
+                "left": 696,
+                "right": 896,
+                "top": 751.5,
                 "width": 200,
-                "x": 387,
-                "y": 320.5
+                "x": 696,
+                "y": 751.5
             },
             "tool_id": null,
             "tool_state": "{\"optional\": false, \"format\": [\"tabular\"]}",
             "tool_version": null,
             "type": "data_input",
-            "uuid": "14b747ca-e0a2-4aa5-984a-bca35c66d9ec",
+            "uuid": "2edff8de-4379-45e2-b6b9-6ed4706bbf00",
             "workflow_outputs": []
         },
         "3": {
@@ -116,20 +124,20 @@
             "name": "Input dataset",
             "outputs": [],
             "position": {
-                "bottom": 546.6999969482422,
-                "height": 82.19999694824219,
-                "left": 399,
-                "right": 599,
-                "top": 464.5,
+                "bottom": 977.3999938964844,
+                "height": 81.89999389648438,
+                "left": 708,
+                "right": 908,
+                "top": 895.5,
                 "width": 200,
-                "x": 399,
-                "y": 464.5
+                "x": 708,
+                "y": 895.5
             },
             "tool_id": null,
             "tool_state": "{\"optional\": false, \"format\": [\"tabular\"]}",
             "tool_version": null,
             "type": "data_input",
-            "uuid": "e676b688-4fac-4bfd-9dfe-4c9bda275eda",
+            "uuid": "86ebaaf2-b050-4eca-a88b-23a4c1af39f5",
             "workflow_outputs": []
         },
         "4": {
@@ -148,20 +156,20 @@
             "name": "Input dataset",
             "outputs": [],
             "position": {
-                "bottom": 696.1000061035156,
-                "height": 102.60000610351562,
-                "left": 420,
-                "right": 620,
-                "top": 593.5,
+                "bottom": 1126.8000030517578,
+                "height": 102.30000305175781,
+                "left": 729,
+                "right": 929,
+                "top": 1024.5,
                 "width": 200,
-                "x": 420,
-                "y": 593.5
+                "x": 729,
+                "y": 1024.5
             },
             "tool_id": null,
             "tool_state": "{\"optional\": false, \"format\": [\"tabular\"]}",
             "tool_version": null,
             "type": "data_input",
-            "uuid": "4adec9e7-1aa3-438b-94f8-94d1be5757ab",
+            "uuid": "92f16705-a19c-4fb9-b278-3ae8e11f09d8",
             "workflow_outputs": []
         },
         "5": {
@@ -180,20 +188,20 @@
             "name": "Input dataset",
             "outputs": [],
             "position": {
-                "bottom": 820.6999969482422,
-                "height": 82.19999694824219,
-                "left": 436,
-                "right": 636,
-                "top": 738.5,
+                "bottom": 1251.3999938964844,
+                "height": 81.89999389648438,
+                "left": 745,
+                "right": 945,
+                "top": 1169.5,
                 "width": 200,
-                "x": 436,
-                "y": 738.5
+                "x": 745,
+                "y": 1169.5
             },
             "tool_id": null,
             "tool_state": "{\"optional\": false, \"format\": [\"tabular\"]}",
             "tool_version": null,
             "type": "data_input",
-            "uuid": "c4d42daf-184a-4bc3-9e04-199b4bb3f01a",
+            "uuid": "5ab49d93-11e4-4e91-b30b-92269b319879",
             "workflow_outputs": []
         },
         "6": {
@@ -212,20 +220,20 @@
             "name": "Input dataset",
             "outputs": [],
             "position": {
-                "bottom": 1071.1999969482422,
-                "height": 82.19999694824219,
-                "left": 418,
-                "right": 618,
-                "top": 989,
+                "bottom": 1501.8999938964844,
+                "height": 81.89999389648438,
+                "left": 727,
+                "right": 927,
+                "top": 1420,
                 "width": 200,
-                "x": 418,
-                "y": 989
+                "x": 727,
+                "y": 1420
             },
             "tool_id": null,
             "tool_state": "{\"optional\": false, \"format\": [\"tabular\"]}",
             "tool_version": null,
             "type": "data_input",
-            "uuid": "2e82f34c-410c-42a5-86de-e7bebc8f6cfb",
+            "uuid": "481c627c-a4ce-45d7-b659-4f54692aafc7",
             "workflow_outputs": []
         },
         "7": {
@@ -259,32 +267,7 @@
                     "output_name": "output"
                 }
             },
-            "inputs": [
-                {
-                    "description": "runtime parameter for tool MaxQuant Phosphopeptide Preprocessing",
-                    "name": "networkin"
-                },
-                {
-                    "description": "runtime parameter for tool MaxQuant Phosphopeptide Preprocessing",
-                    "name": "p_sty_motifs"
-                },
-                {
-                    "description": "runtime parameter for tool MaxQuant Phosphopeptide Preprocessing",
-                    "name": "phosphoSites"
-                },
-                {
-                    "description": "runtime parameter for tool MaxQuant Phosphopeptide Preprocessing",
-                    "name": "protein_fasta"
-                },
-                {
-                    "description": "runtime parameter for tool MaxQuant Phosphopeptide Preprocessing",
-                    "name": "psp_kinase_substrate"
-                },
-                {
-                    "description": "runtime parameter for tool MaxQuant Phosphopeptide Preprocessing",
-                    "name": "psp_regulatory_sites"
-                }
-            ],
+            "inputs": [],
             "label": null,
             "name": "MaxQuant Phosphopeptide Preprocessing",
             "outputs": [
@@ -342,14 +325,14 @@
                 }
             ],
             "position": {
-                "bottom": 964.0999755859375,
-                "height": 793.5999755859375,
-                "left": 826.5,
-                "right": 1026.5,
-                "top": 170.5,
+                "bottom": 1408.7000122070312,
+                "height": 793.2000122070312,
+                "left": 1138.5,
+                "right": 1338.5,
+                "top": 615.5,
                 "width": 200,
-                "x": 826.5,
-                "y": 170.5
+                "x": 1138.5,
+                "y": 615.5
             },
             "post_job_actions": {
                 "RenameDatasetActionenrichGraph": {
@@ -451,75 +434,75 @@
                 "owner": "eschen42",
                 "tool_shed": "testtoolshed.g2.bx.psu.edu"
             },
-            "tool_state": "{\"collapseFunc\": \"sum\", \"intervalCol\": \"1\", \"localProbCutoff\": \"0.75\", \"merge_function\": \"sum\", \"networkin\": {\"__class__\": \"RuntimeValue\"}, \"p_sty_motifs\": {\"__class__\": \"RuntimeValue\"}, \"phosphoCol\": \"^Number of Phospho [(]STY[)]$\", \"phosphoSites\": {\"__class__\": \"RuntimeValue\"}, \"protein_fasta\": {\"__class__\": \"RuntimeValue\"}, \"psp_kinase_substrate\": {\"__class__\": \"RuntimeValue\"}, \"psp_regulatory_sites\": {\"__class__\": \"RuntimeValue\"}, \"pst_not_py\": \"true\", \"species\": \"human\", \"startCol\": \"^Intensity[^_]\", \"__page__\": null, \"__rerun_remap_job_id__\": null}",
-            "tool_version": null,
+            "tool_state": "{\"collapseFunc\": \"sum\", \"intervalCol\": \"1\", \"localProbCutoff\": \"0.75\", \"merge_function\": \"sum\", \"networkin\": {\"__class__\": \"ConnectedValue\"}, \"p_sty_motifs\": {\"__class__\": \"ConnectedValue\"}, \"phosphoCol\": \"^Number of Phospho [(]STY[)]$\", \"phosphoSites\": {\"__class__\": \"ConnectedValue\"}, \"protein_fasta\": {\"__class__\": \"ConnectedValue\"}, \"psp_kinase_substrate\": {\"__class__\": \"ConnectedValue\"}, \"psp_regulatory_sites\": {\"__class__\": \"ConnectedValue\"}, \"pst_not_py\": \"true\", \"species\": \"human\", \"startCol\": \"^Intensity[^_]\", \"__page__\": null, \"__rerun_remap_job_id__\": null}",
+            "tool_version": "0.1.3+galaxy0",
             "type": "tool",
-            "uuid": "e0be52f9-a7c1-4bf3-abc8-db11b72e807c",
+            "uuid": "1e983dba-edca-4aed-a589-49b1651b4a85",
             "workflow_outputs": [
                 {
-                    "label": "enrichGraph_pdf",
-                    "output_name": "enrichGraph",
-                    "uuid": "65925fdf-8348-4b6e-a847-222b2b207e98"
+                    "label": "preproc_csv",
+                    "output_name": "preproc_csv",
+                    "uuid": "8cba5367-b25c-40e0-a324-552225b1aa1d"
                 },
                 {
                     "label": "locProbCutoffGraph_pdf",
                     "output_name": "locProbCutoffGraph",
-                    "uuid": "c0262474-89ac-47ee-90c4-d37e188aa361"
-                },
-                {
-                    "label": "enrichGraph_svg",
-                    "output_name": "enrichGraph_svg",
-                    "uuid": "a9e7fa87-dcb6-4ff0-ace8-93adcca1e89a"
-                },
-                {
-                    "label": "ppep_intensities",
-                    "output_name": "phosphoPepIntensities",
-                    "uuid": "248aa43e-01b6-4ca4-9c2e-d7a65609feb6"
-                },
-                {
-                    "label": "locProbCutoffGraph_svg",
-                    "output_name": "locProbCutoffGraph_svg",
-                    "uuid": "ae2f3d10-ee8b-4a05-b260-2ab9d04072a8"
-                },
-                {
-                    "label": "filteredData",
-                    "output_name": "filteredData_tabular",
-                    "uuid": "d60ebf32-1c25-46aa-b146-7e4fa70dd9e8"
-                },
-                {
-                    "label": "quantData",
-                    "output_name": "quantData_tabular",
-                    "uuid": "28faae8b-8ae9-4513-a3b7-0a84deb2340c"
-                },
-                {
-                    "label": "ppep_map",
-                    "output_name": "mapped_phophopeptides",
-                    "uuid": "7bffd01c-c467-4ed5-bf7d-32b527f69b99"
+                    "uuid": "641c5959-dab4-42d1-986d-8e6aaeb74ef6"
                 },
                 {
                     "label": "melted_phosphopeptide_map",
                     "output_name": "melted_phophopeptide_map",
-                    "uuid": "07d767f4-1c24-4973-9ca0-fb8ad7bcce94"
+                    "uuid": "878dc817-26a3-4061-9dd4-56e737b3c4f7"
+                },
+                {
+                    "label": "enrichGraph_svg",
+                    "output_name": "enrichGraph_svg",
+                    "uuid": "4492366c-945e-492f-8381-1c97c4da2264"
+                },
+                {
+                    "label": "locProbCutoffGraph_svg",
+                    "output_name": "locProbCutoffGraph_svg",
+                    "uuid": "06faf93c-5f04-4cb3-9e41-58e465f6180e"
+                },
+                {
+                    "label": "filteredData",
+                    "output_name": "filteredData_tabular",
+                    "uuid": "76e2e268-f728-45f0-9973-793fbde0dd0a"
+                },
+                {
+                    "label": "ppep_map",
+                    "output_name": "mapped_phophopeptides",
+                    "uuid": "d0fea028-2ea5-4862-8a92-c2088edfcbe1"
                 },
                 {
                     "label": "ppep_mapping_sqlite",
                     "output_name": "mqppep_output_sqlite",
-                    "uuid": "53828a73-3bc4-48fe-b2ae-d749eaee1591"
+                    "uuid": "eb996931-c548-4f3b-aaaa-39cc711df516"
                 },
                 {
                     "label": "preproc_tab",
                     "output_name": "preproc_tab",
-                    "uuid": "fd1171a5-72cf-497d-bc54-054cc2567dda"
-                },
-                {
-                    "label": "preproc_csv",
-                    "output_name": "preproc_csv",
-                    "uuid": "38b34bd6-429b-4c93-954c-66914dd59199"
+                    "uuid": "c9410cf1-44a2-4aa6-b3df-06cef74f3a45"
                 },
                 {
                     "label": "preproc_sqlite",
                     "output_name": "preproc_sqlite",
-                    "uuid": "4e724bb1-9edf-4693-a884-1b0d6a1bbd5f"
+                    "uuid": "4eb22cc3-5879-4625-89c0-e0fddb01a197"
+                },
+                {
+                    "label": "ppep_intensities",
+                    "output_name": "phosphoPepIntensities",
+                    "uuid": "c704fd66-5ac3-4779-ad40-536955cd81e3"
+                },
+                {
+                    "label": "enrichGraph_pdf",
+                    "output_name": "enrichGraph",
+                    "uuid": "5bf2a478-0431-4d32-84a9-7d46aad80ec5"
+                },
+                {
+                    "label": "quantData",
+                    "output_name": "quantData_tabular",
+                    "uuid": "cc922a75-6e72-4e60-add2-4b6ed8f73cdb"
                 }
             ]
         },
@@ -552,14 +535,14 @@
                 }
             ],
             "position": {
-                "bottom": 1349,
-                "height": 256,
-                "left": 1058,
-                "right": 1258,
-                "top": 1093,
+                "bottom": 1775.6000061035156,
+                "height": 255.60000610351562,
+                "left": 1370,
+                "right": 1570,
+                "top": 1520,
                 "width": 200,
-                "x": 1058,
-                "y": 1093
+                "x": 1370,
+                "y": 1520
             },
             "post_job_actions": {
                 "RenameDatasetActionimputed_data_file": {
@@ -585,19 +568,19 @@
                 "tool_shed": "testtoolshed.g2.bx.psu.edu"
             },
             "tool_state": "{\"alpha_file\": {\"__class__\": \"ConnectedValue\"}, \"first_data_column\": \"Intensity\", \"imputation\": {\"imputation_method\": \"group-median\", \"__current_case__\": 0}, \"input_file\": {\"__class__\": \"ConnectedValue\"}, \"sample_grouping_regex\": \"(\\\\d+)\", \"sample_names_regex\": \"\\\\.(\\\\d+)[A-Z]$\", \"__page__\": null, \"__rerun_remap_job_id__\": null}",
-            "tool_version": null,
+            "tool_version": "0.1.3+galaxy0",
             "type": "tool",
-            "uuid": "5a208f7d-f33b-41ca-87ea-387f6a153b26",
+            "uuid": "ffa771c3-c52d-42a4-b78f-a60a39678792",
             "workflow_outputs": [
                 {
                     "label": "intensities_group-mean-imputed_QN_LT",
                     "output_name": "imputed_data_file",
-                    "uuid": "34480ea8-f88d-4732-b38d-c5ca720c7205"
+                    "uuid": "169d677f-0acb-4c56-b057-21f4aaf2b920"
                 },
                 {
                     "label": "intensities_group-mean-imputed_report",
                     "output_name": "report_file",
-                    "uuid": "1a8893d7-5990-429a-a779-6834afda27de"
+                    "uuid": "25edae88-3bb6-4ec9-8b98-686fded7ed79"
                 }
             ]
         },
@@ -630,14 +613,14 @@
                 }
             ],
             "position": {
-                "bottom": 1186,
-                "height": 256,
-                "left": 1308,
-                "right": 1508,
-                "top": 930,
+                "bottom": 1609.6000061035156,
+                "height": 255.60000610351562,
+                "left": 1617,
+                "right": 1817,
+                "top": 1354,
                 "width": 200,
-                "x": 1308,
-                "y": 930
+                "x": 1617,
+                "y": 1354
             },
             "post_job_actions": {
                 "RenameDatasetActionimputed_data_file": {
@@ -663,19 +646,19 @@
                 "tool_shed": "testtoolshed.g2.bx.psu.edu"
             },
             "tool_state": "{\"alpha_file\": {\"__class__\": \"ConnectedValue\"}, \"first_data_column\": \"Intensity\", \"imputation\": {\"imputation_method\": \"random\", \"__current_case__\": 3, \"meanPercentile\": \"1\", \"sdPercentile\": \"0.2\"}, \"input_file\": {\"__class__\": \"ConnectedValue\"}, \"sample_grouping_regex\": \"(\\\\d+)\", \"sample_names_regex\": \"\\\\.(\\\\d+)[A-Z]$\", \"__page__\": null, \"__rerun_remap_job_id__\": null}",
-            "tool_version": null,
+            "tool_version": "0.1.3+galaxy0",
             "type": "tool",
-            "uuid": "62146c80-cb6b-4347-a54c-2f471e3b9045",
+            "uuid": "f1f2bdf9-fbc0-4205-b834-9a8af5814dc9",
             "workflow_outputs": [
                 {
                     "label": "intensities_randomly-imputed_QN_LT",
                     "output_name": "imputed_data_file",
-                    "uuid": "815fa0c5-0087-4f7e-9418-f50835d0f82b"
+                    "uuid": "d70a3476-fb42-4533-831b-4fcb2bda74fc"
                 },
                 {
                     "label": "intensities_randomly-imputed_report",
                     "output_name": "report_file",
-                    "uuid": "11345526-011f-44ce-b6e7-c38775b11aa1"
+                    "uuid": "d6701a61-357b-4a27-8154-ca41eb16d8a6"
                 }
             ]
         }
@@ -683,6 +666,6 @@
     "tags": [
         "ppenrich"
     ],
-    "uuid": "d2c3844c-80fa-42f2-90be-24b63b638961",
-    "version": 1
+    "uuid": "445a0eb0-25c7-44c0-8259-a3346b01cbf3",
+    "version": 3
 }
