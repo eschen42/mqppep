@@ -78,7 +78,7 @@
                 />
             </when>
         </conditional>
-        <param name="sample_names_regex" type="text" value="\.(\d+)[A-Z]$"
+        <param name="sample_names_regex" type="text" value="\.\d+[A-Z]$"
                help="[sample_names_regex] PERL-compatible regular expression extracting sample-names from the the name of a spectrum file (without extension)"
                label="Sample-extraction regex">
           <sanitizer>
@@ -87,7 +87,7 @@
             </valid>
           </sanitizer>
         </param>
-        <param name="sample_grouping_regex" type="text" value="(\d+)"
+        <param name="sample_grouping_regex" type="text" value="\d+"
                help="[sample_grouping_regex] PERL-compatible regular expression extracting sample-group from each sample-name (i.e., extracted by previous regex pattern)"
                label="Group-extraction regex">
           <sanitizer>

@@ -24,7 +24,6 @@ suite:
   long_description: Phosphoproteomic Enrichment Pipeline provides tools for preprocessing the 'Phospho (STY)Sites.txt' file produced by MaxQuant and for ANOVA analysis of the preprocessed data.
 
 include:
-  - .shed.yml
   - MaxQuantProcessingScript.R
   - PhosphoPeptide_Upstream_Kinase_Mapping.pl
   - macros.xml

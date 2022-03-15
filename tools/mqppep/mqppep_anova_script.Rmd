@@ -11,8 +11,8 @@ params:
   imputationMethod: !r c("group-median", "median", "mean", "random")[1]
   meanPercentile: 1
   sdPercentile: 0.2
-  regexSampleNames: "\\.(\\d+)[A-Z]$"
-  regexSampleGrouping: "(\\d+)"
+  regexSampleNames: "\\.\\d+[A-Z]$"
+  regexSampleGrouping: "\\d+"
   imputedDataFilename: "Upstream_Map_pST_outputfile_STEP4_QN_LT.txt"
 ---
 ```{r setup, include = FALSE}
@@ -570,23 +570,62 @@ m2 <- regexpr(regex_sample_grouping, temp_matches, perl = TRUE)
 
 sample_factor_levels <- as.factor(regmatches(temp_matches, m2))
 
-
 if (length(levels(sample_factor_levels)) < 2) {
+  nuke_control_sequences <-
+    function(s) {
+      s <- gsub("[\\]", "xyzzy_plugh", s)
+      s <- gsub("[$]", "\\\\$", s)
+      s <- gsub("xyzzy_plugh", "$\\\\backslash$", s)
+      return(s)
+    }
   cat(
     "ERROR!!!! Cannot perform ANOVA analysis",
-    "because it requires two or more factor levels\n"
+    "(see next page)\\newpage\n"
   )
-  cat("Unparsed sample names are:\n")
-  print(names(quant_data_imp_qn_log))
-  cat(sprintf("Parsing rule for SampleNames is '%s'\n", regex_sample_names))
-  cat("Parsed names are:\n")
-  print(temp_matches)
-  cat(sprintf(
-    "Parsing rule for SampleGrouping is '%s'\n",
-    regex_sample_grouping
-  ))
-  cat("Sample group assignments are:\n")
-  print(regmatches(temp_matches, m2))
+  cat(
+    "ERROR: ANOVA analysis",
+    "requires two or more factor levels!\\newline\n"
+  )
+
+  cat("\\newline\\newline\n")
+  cat("Unparsed sample names are:\\newline\n",
+    "\\begin{quote}\n",
+    paste(names(quant_data_imp_qn_log), collapse = "\\newline\n"),
+    "\n\\end{quote}\n\n")
+
+  regex_sample_names <- nuke_control_sequences(regex_sample_names)
+
+  cat("\\leavevmode\\newline\n")
+  cat("Parsing rule for SampleNames is",
+    "\\newline\n",
+    "\\text{'",
+    regex_sample_names,
+    "'}\\newline\n",
+    sep = ""
+    )
+
+  cat("\nParsed sample names are:\n",
+    "\\begin{quote}\n",
+    paste(temp_matches, collapse = "\\newline\n"),
+    "\n\\end{quote}\n\n")
+
+  regex_sample_grouping <- nuke_control_sequences(regex_sample_grouping)
+
+  cat("\\leavevmode\\newline\n")
+  cat("Parsing rule for SampleGrouping is",
+    "\\newline\n",
+    "\\text{'",
+    regex_sample_grouping,
+    "'}\\newline\n",
+    sep = ""
+    )
+
+  cat("\\newline\n")
+  cat("Sample group assignments are:\n",
+    "\\begin{quote}\n",
+    paste(regmatches(temp_matches, m2), collapse = "\\newline\n"),
+    "\n\\end{quote}\n\n")
+
 } else {
   p_value_data_anova_ps <-
     apply(
@@ -707,8 +746,6 @@ if (length(levels(sample_factor_levels)) < 2) {
         }
       )
 
-
-
       anova_filtered <- data.table(
         anova_filtered_merge$Phosphopeptide
         ,
@@ -719,7 +756,7 @@ if (length(levels(sample_factor_levels)) < 2) {
       colnames(anova_filtered) <-
         c("Phosphopeptide", colnames(filtered_data_filtered))
 
-      # merge qualitative columns into the ANOVA data
+      # Merge qualitative columns into the ANOVA data
       output_table <- data.frame(anova_filtered$Phosphopeptide)
       output_table <- merge(
         x = output_table
@@ -731,9 +768,16 @@ if (length(levels(sample_factor_levels)) < 2) {
         by.y = "Phosphopeptide"
       )
 
-      #Produce heatmap to visualize significance and the effect of imputation
+      # Produce heatmap to visualize significance and the effect of imputation
       m <-
         as.matrix(unimputed_quant_data_log[anova_filtered_merge_order, ])
+      m_nan_rows <- rowSums(
+        matrix(
+          as.integer(is.na(m)),
+          nrow = nrow(m)
+          )
+        )
+      m <- m[!m_nan_rows, ]
       if (nrow(m) > 0) {
         rownames_m <- rownames(m)
         rownames(m) <- sapply(
@@ -741,53 +785,53 @@ if (length(levels(sample_factor_levels)) < 2) {
           ,
           FUN = function(i) {
             sprintf(
-              anova_filtered_merge_format[i]
-              ,
-              filtered_p$fdr_adjusted_anova_p[i]
-              ,
+              anova_filtered_merge_format[i],
+              filtered_p$fdr_adjusted_anova_p[i],
               rownames_m[i]
             )
           }
         )
-        margins <- c(max(nchar(colnames(m))) * 10 / 16 # col
-                     , max(nchar(rownames(m))) * 5 / 16 # row
-                     )
-                     how_many_peptides <- min(50, nrow(m))
+        margins <-
+          c(max(nchar(colnames(m))) * 10 / 16 # col
+            , max(nchar(rownames(m))) * 5 / 16 # row
+            )
+        how_many_peptides <- min(50, nrow(m))
 
-                     cat("\\newpage\n")
-                     if (nrow(m) > 50) {
-                       cat("Heatmap for the 50 most-significant peptides",
-                         sprintf(
-                           "whose adjusted p-value < %0.2f\n",
-                           cutoff)
-                       )
-                     } else {
-                       cat("Heatmap for peptides whose",
-                         sprintf("adjusted p-value < %0.2f\n",
-                         cutoff)
-                       )
-                     }
-                     cat("\\newline\n")
-                     cat("\\newline\n")
-                     op <- par("cex.main")
-                     try(
-                       if (nrow(m) > 1) {
-                         par(cex.main = 0.6)
-                         heatmap(
-                           m[how_many_peptides:1, ],
-                           Rowv = NA,
-                           Colv = NA,
-                           cexRow = 0.7,
-                           cexCol = 0.8,
-                           scale = "row",
-                           margins = margins,
-                           main =
-                             "Heatmap of unimputed, unnormalized intensities",
-                           xlab = ""
-                           )
-                       }
-                     )
-                     par(op)
+        cat("\\newpage\n")
+        if (nrow(m) > 50) {
+          cat("Heatmap for the 50 most-significant peptides",
+            sprintf(
+              "whose adjusted p-value < %0.2f\n",
+              cutoff)
+          )
+        } else {
+          cat("Heatmap for peptides whose",
+            sprintf("adjusted p-value < %0.2f\n",
+            cutoff)
+          )
+        }
+        cat("\\newline\n")
+        cat("\\newline\n")
+        op <- par("cex.main")
+        try(
+          if (nrow(m) > 1) {
+            par(cex.main = 0.6)
+            heatmap(
+              m[how_many_peptides:1, ],
+              Rowv = NA,
+              Colv = NA,
+              cexRow = 0.7,
+              cexCol = 0.8,
+              scale = "row",
+              #ACE scale = "none",
+              margins = margins,
+              main =
+                "Heatmap of unimputed, unnormalized intensities",
+              xlab = ""
+              )
+          }
+        )
+        par(op)
       }
     }
   }
