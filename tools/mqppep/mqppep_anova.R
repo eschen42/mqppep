@@ -196,9 +196,12 @@ str(rmarkdown_params)
 #  from run to run
 set.seed(28571)
 
+
+library(tinytex)
+tinytex::install_tinytex()
 rmarkdown::render(
   input = paste(script_dir, "mqppep_anova_script.Rmd", sep = "/")
-, output_format = rmarkdown::html_document(pandoc_args = "--self-contained")
+, output_format = rmarkdown::pdf_document()
 , output_file = report_file_name
 , params = rmarkdown_params
 )

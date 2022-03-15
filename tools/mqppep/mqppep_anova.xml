@@ -3,24 +3,23 @@
     <macros>
         <import>macros.xml</import>
     </macros>
-    <requirements>
-        <requirement type="package" version="1.7.1"   >r-optparse</requirement>
-        <requirement type="package" version="1.4.0"   >r-stringr</requirement>
-        <requirement type="package" version="1.14.2"  >r-data.table</requirement>
-        <requirement type="package" version="3.3.5"   >r-ggplot2</requirement>
-        <requirement type="package" version="1.56.0"  >bioconductor-preprocesscore</requirement>
-        <requirement type="package" version="0.3.3"   >openblas</requirement>
-        <requirement type="package" version="2.11"    >r-rmarkdown</requirement>
-        <requirement type="package" version="0.4.0"   >r-sass</requirement>
-        <requirement type="package" version="20210325">texlive-core</requirement>
-
-    </requirements>
-    <!-- Rscript -e 'rmarkdown::render("QuantDataProcessingScript.Rmd")' -->
+    <expand macro="requirements"/>
+    <!--
+      The weird invocation used here is because knitr and install_tinytex
+      both need access to a writeable directory, but most directories in a
+      biocontainer are read-only, so this builds a pseudo-home under /tmp
+    -->
     <command detect_errors="exit_code"><![CDATA[
-      cd /tmp;
+      export OLD_PWD=\$(dirname \$(pwd));
+      export HOME=/tmp\${OLD_PWD};
+      mkdir -p \$HOME/bin;
+      mkdir -p \$HOME/tmp;
+      export TEMP=\$HOME/tmp;
+      export TMPDIR=\$TEMP;
+      cd \$TEMP;
       cp '$__tool_directory__/mqppep_anova_script.Rmd' . || exit 0;
       cp '$__tool_directory__/mqppep_anova.R' . || exit 0;
-      \${CONDA_PREFIX}/bin/Rscript /tmp/mqppep_anova.R 
+      \${CONDA_PREFIX}/bin/Rscript \$TEMP/mqppep_anova.R 
       --inputFile '$input_file' 
       --alphaFile $alpha_file
       --firstDataColumn $first_data_column
@@ -33,8 +32,8 @@
       --regexSampleGrouping $sample_grouping_regex_f
       --imputedDataFile $imputed_data_file
       --reportFile $report_file;
-      rm mqppep_anova_script.Rmd;
-      rm mqppep_anova.R
+      cd \${OLD_PWD};
+      rm -rf \$HOME
     ]]></command>
     <configfiles>
       <configfile name="sample_names_regex_f">
@@ -99,8 +98,11 @@
         </param>
     </inputs>
     <outputs>
-        <data name="imputed_data_file" format="tabular" label="${input_file.name}.intensities_${imputation.imputation_method}-imputed_QN_LT" ></data>
-        <data name="report_file" format="html" label="${input_file.name}.report (download/unzip to view)" ></data>
+        <data name="imputed_data_file" format="tabular" label="${input_file.name}.${imputation.imputation_method}-imputed_QN_LT_intensities" ></data>
+        <!--
+        <data name="report_file" format="html" label="${input_file.name}.${imputation.imputation_method}-imputed_report (download/unzip to view)" ></data>
+        -->
+        <data name="report_file" format="pdf" label="${input_file.name}.${imputation.imputation_method}-imputed_report" ></data>
     </outputs>
     <tests>
         <test>
@@ -124,6 +126,8 @@
             <param name="alpha_file" ftype="tabular" value="alpha_levels.tabular"/>
             <param name="first_data_column" value="10"/>
             <param name="imputation_method" value="random"/>
+            <param name="meanPercentile" value="1" />
+            <param name="sdPercentile" value="0.2" />
             <param name="sample_names_regex" value="\.\d+[A-Z]$"/>
             <param name="sample_grouping_regex" value="\d+"/>
             <output name="imputed_data_file">
@@ -192,14 +196,7 @@ Phopsphoproteomic Enrichment Pipeline ANOVA
   Phosphopeptide MS intensities where missing values have been **imputed** by the chosen method, quantile-normalized (**QN**), and log10-transformed (**LT**), in tabular format.
 
 ``report_file``
-  (download/unzip to view) Summary report for normalization, imputation, and ANOVA.
-  This dataset is displayed in Galaxy as having a datatype of ``html`` in Galaxy,
-  but it is in fact a zipfile; the zip file contains
-  an HTML file.  Please download and unzip it locally to view the report.
-  Ideally this report would be a PDF, but there is an issue
-  `(linked here)
-  <https://github.com/conda-forge/texlive-core-feedstock/issues/19>`_.
-  that needs to be resolved first.
+  Summary report for normalization, imputation, and ANOVA, in PDF format.
 
 **Authors**
 

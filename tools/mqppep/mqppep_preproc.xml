@@ -5,37 +5,18 @@
     <macros>
         <import>macros.xml</import>
     </macros>
-    <requirements>
-      <!--
-      conda create -n foobar -c bioconda -c conda-forge pyahocorasick=1.4.0 pandas=1.4.1 python=3.9.10 numpy=1.22.2 r-data.table=1.14.2 r-optparse=1.7.1 r-stringr=1.4.0 r-ggplot2=3.3.5 perl=5.26.2 perl-dbd-sqlite=1.64
-      -->
-      <!-- localization filter -->
-        <requirement type="package" version="1.14.2">r-data.table</requirement>
-        <requirement type="package" version="1.7.1">r-optparse</requirement>
-        <requirement type="package" version="1.4.0">r-stringr</requirement>
-        <requirement type="package" version="3.3.5">r-ggplot2</requirement>
-      <!-- upstream kinase mapping -->
-        <requirement type="package" version="5.26.2">perl</requirement>
-        <requirement type="package" version="1.64">perl-dbd-sqlite</requirement>
-        <requirement type="package" version="1.4.0">pyahocorasick</requirement>
-      <!-- merge and filter -->
-        <requirement type="package" version="1.4.1">pandas</requirement>
-      <!-- multiple steps -->
-        <!--
-          pandas=1.4.1 pyahocorasick=1.4.0 implies python=3.9.10 numpy=1.22.2
-          However, add them here to speed solution of conda environment
-          during installation.
-        -->
-        <requirement type="package" version="3.9.10">python</requirement>
-        <requirement type="package" version="1.22.2">numpy</requirement>
-    </requirements>
+    <expand macro="requirements"/>
     <command detect_errors="exit_code"><![CDATA[
       (
         echo '--- localization-filter step:'
       ) && (
         \$CONDA_PREFIX/bin/Rscript '$__tool_directory__/MaxQuantProcessingScript.R'
         -i '$phosphoSites'
-        --enriched $enriched
+        #if $pst_not_py:
+            --enriched ST
+        #else
+            --enriched Y
+        #end if
         --phosphoCol '$phosphocol_script'
         --startCol '$startcol_script'
         --intervalCol $intervalCol
@@ -60,7 +41,11 @@
         -m '$p_sty_motifs'
         -p '$psp_kinase_substrate'
         -r '$psp_regulatory_sites'
-        -P $phospho_type
+        #if $pst_not_py:
+            -P sty
+        #else
+            -P y
+        #end if
         -F $merge_function
         -o '$mapped_phophopeptides'
         -O '$melted_phophopeptide_map'
@@ -116,13 +101,32 @@
         <param name="intervalCol" type="integer" value="1" min="1"
                label="Interval between the intensity column of samples"
                help="[intervalCol] E.g., 1 if subsequent column is next sample; 2 if next sample is two columns away, etc."/>
-        <param name="enriched" type="select"
-               label="Phospho enrichment type"
-               help="[enriched] Were samples enriched for pS and pT, or were they enriched for pY?"
-               >
-            <option value="ST" selected="true">ST</option>
-            <option value="Y">Y</option>
+        <!-- pst_not_py is true when chosing pS/pT, false when choosing pY -->
+        <param name="pst_not_py" type="boolean"
+            checked="true"
+            label="Phospho enrichment pS/pT (rather than pY)"
+            help="True when samples were enriched for pS and pT; false when enriched for pY"
+            >
         </param>
+        <!--
+        <conditional name="py_pst">
+            <param name="pst_not_py" type="select"
+                label="Phospho enrichment type"
+                help="[enriched] Were samples enriched for pS and pT, or were they enriched for pY?"
+                >
+                <option value="st" selected="true">pST</option>
+                <option value="y">pY</option>
+            </param>
+            <when value="st">
+                <param name="enriched" type="text" value="ST" />
+                <param name="phospho_type" type="text" value="sty" />
+            </when>
+            <when value="y">
+                <param name="enriched" type="text" value="Y" />
+                <param name="phospho_type" type="text" value="y" />
+            </when>
+        </conditional>
+        -->
         <param name="collapseFunc" type="select"
                label="Intensity merge function"
                help="[collapseFunc] When a peptide is multiply phosphorylated, how should intensities be merged? [default: sum]"
@@ -134,11 +138,6 @@
                label="Localization Probability Cutoff"
                help="[localProbCutoff] See help below for an explanation."
                />
-        <param name="phospho_type" type="select" label="phospho type"
-               help="[phospho_type] Phosphorylation type: only pY or any of pS/pT/pY.">
-            <option value="sty" selected="true">sty</option>
-            <option value="y">y</option>
-        </param>
         <param name="merge_function" type="select" label="intensity merge-function"
                help="[merge_function] Specifies how intensities for identical phosphosites should be merged">
             <option value="sum" selected="true">sum</option>
@@ -188,13 +187,12 @@
             <param name="p_sty_motifs" ftype="tabular" value="pSTY_motifs.tabular" />
             <param name="psp_kinase_substrate" ftype="tabular" value="test_kinase_substrate.tabular" />
             <param name="psp_regulatory_sites" ftype="tabular" value="test_regulatory_sites.tabular" />
-            <param name="phospho_type" value="sty"/>
+            <param name="pst_not_py" value="true"/>
             <param name="merge_function"  value="sum"/>
 
             <param name="phosphoCol" value="^Number of Phospho [(][STY][STY]*[)]$"/>
             <param name="startCol" value="^Intensity[^_]"/>
             <param name="intervalCol" value="1"/>
-            <param name="enriched" value="ST"/>
             <param name="collapseFunc" value="sum"/>
             <param name="localProbCutoff" value="0.75"/>
             <param name="species" value="human"/>
