@@ -1,5 +1,5 @@
 <macros>
-    <token name="@TOOL_VERSION@">0.1.1</token>
+    <token name="@TOOL_VERSION@">0.1.2</token>
     <token name="@VERSION_SUFFIX@">0</token>
     <xml name="requirements">
         <requirements>
@@ -21,7 +21,7 @@
             I specified the build as well as the version, i.e.
             texlive-core=20210325=h97429d4_0
             -->
-            <requirement type="package"                   >r-tinytex</requirement>
+            <requirement type="package" version="0.37"    >r-tinytex</requirement>
             <requirement type="package" version="3.3.5"   >r-ggplot2</requirement>
             <requirement type="package" version="3.9.10"  >python</requirement>
             <requirement type="package" version="5.26.2"  >perl</requirement>
