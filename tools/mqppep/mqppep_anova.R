@@ -39,7 +39,7 @@ option_list <- list(
   make_option(
     c("-m", "--imputationMethod"),
     action = "store",
-    default = "group-median",
+    default = "random",
     type = "character",
     help = paste0("Method for missing-value imputation,",
              " one of c('group-median','median','mean','random')")
@@ -83,6 +83,17 @@ option_list <- list(
     help = "Imputed Phosphopeptide Intensities output file path"
   ),
   make_option(
+    c("-n", "--imputedQNLTDataFile"),
+    action = "store",
+    default = "output_imp_qn_lt.tsv",
+    type = "character",
+    help =
+      paste(
+        "Imputed, Quantile-Normalized Log-Transformed Phosphopeptide",
+        "Intensities output file path"
+        )
+  ),
+  make_option(
     c("-r", "--reportFile"),
     action = "store",
     default = "QuantDataProcessingScript.html",
@@ -91,6 +102,8 @@ option_list <- list(
   )
 )
 args <- parse_args(OptionParser(option_list = option_list))
+print("args is:")
+cat(str(args))
 
 # Check parameter values
 
@@ -101,8 +114,33 @@ input_file <- args$inputFile
 alpha_file <- args$alphaFile
 first_data_column <- args$firstDataColumn
 imputation_method <- args$imputationMethod
+print(
+  grepl(
+    pattern = imputation_method,
+    x = c("group-median", "median", "mean", "random")
+    )
+  )
+
+if (
+  sum(
+    grepl(
+      pattern = imputation_method,
+      x = c("group-median", "median", "mean", "random")
+      )
+    ) < 1
+  ) {
+    print(sprintf("bad imputationMethod argument: %s", imputation_method))
+    return(-1)
+    }
+
 mean_percentile <- args$meanPercentile
+print("mean_percentile is:")
+cat(str(mean_percentile))
+
 sd_percentile <- args$sdPercentile
+print("sd_percentile is:")
+cat(str(mean_percentile))
+
 
 regex_sample_names    <- gsub("^[ \t\n]*", "",
                          readChar(args$regexSampleNames,  1000)
@@ -123,10 +161,8 @@ cat(regex_sample_grouping)
 cat("\n")
 
 imputed_data_file_name <- args$imputedDataFile
+imp_qn_lt_data_filenm <-  args$imputedQNLTDataFile
 report_file_name <- args$reportFile
-
-print("args is:")
-cat(str(args))
 
 print("regex_sample_names is:")
 cat(str(regex_sample_names))
@@ -180,28 +216,28 @@ rmarkdown_params <- list(
   , regexSampleNames = regex_sample_names
   , regexSampleGrouping = regex_sample_grouping
   , imputedDataFilename = imputed_data_file_name
+  , imputedQNLTDataFile = imp_qn_lt_data_filenm
   )
 
+print("rmarkdown_params")
 str(rmarkdown_params)
-
-# BUG
-# Must render as HTML for the time being until this issue is resolved:
-#   https://github.com/conda-forge/texlive-core-feedstock/issues/19
-# for reason:
-#   "The following dependencies are not available in conda"
-# reported here:
-#   https://github.com/ami-iit/bipedal-locomotion-framework/pull/457
 
 # freeze the random number generator so the same results will be produced
 #  from run to run
 set.seed(28571)
 
+# BUG (or "opportunity")
+# To render as PDF for the time being requires installing the conda
+# package `r-texlive` until this issue in `texlive-core` is resolved:
+#   https://github.com/conda-forge/texlive-core-feedstock/issues/19
+# This workaround is detailed in the fourth comment of:
+#   https://github.com/conda-forge/texlive-core-feedstock/issues/61
 
 library(tinytex)
 tinytex::install_tinytex()
 rmarkdown::render(
   input = paste(script_dir, "mqppep_anova_script.Rmd", sep = "/")
-, output_format = rmarkdown::pdf_document()
+, output_format = rmarkdown::pdf_document(toc = TRUE)
 , output_file = report_file_name
 , params = rmarkdown_params
 )

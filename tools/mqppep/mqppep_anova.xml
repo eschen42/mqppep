@@ -19,21 +19,24 @@
       cd \$TEMP;
       cp '$__tool_directory__/mqppep_anova_script.Rmd' . || exit 0;
       cp '$__tool_directory__/mqppep_anova.R' . || exit 0;
-      \${CONDA_PREFIX}/bin/Rscript \$TEMP/mqppep_anova.R 
-      --inputFile '$input_file' 
-      --alphaFile $alpha_file
-      --firstDataColumn $first_data_column
-      --imputationMethod $imputation.imputation_method
-      #if '$imputation_method' == 'random':
-        --meanPercentile '$meanPercentile'
-        --sdPercentile   '$sdPercentile'
-      #end if
-      --regexSampleNames $sample_names_regex_f
-      --regexSampleGrouping $sample_grouping_regex_f
-      --imputedDataFile $imputed_data_file
-      --reportFile $report_file;
+      \${CONDA_PREFIX}/bin/Rscript \$TEMP/mqppep_anova.R
+        --inputFile '$input_file'
+        --alphaFile '$alpha_file'
+        --firstDataColumn $first_data_column
+        --imputationMethod $imputation.imputation_method
+        #if $imputation.imputation_method == "random"
+          --meanPercentile '$imputation.meanPercentile'
+          --sdPercentile   '$imputation.sdPercentile'
+        #end if
+        --regexSampleNames $sample_names_regex_f
+        --regexSampleGrouping $sample_grouping_regex_f
+        --imputedDataFile $imputed_data_file
+        --imputedQNLTDataFile '$imp_qn_lt_file'
+        --reportFile '$report_file';
+      export RESULT=\$?;
       cd \${OLD_PWD};
-      rm -rf \$HOME
+      rm -rf \$HOME;
+      exit \${RESULT}
     ]]></command>
     <configfiles>
       <configfile name="sample_names_regex_f">
@@ -98,7 +101,8 @@
         </param>
     </inputs>
     <outputs>
-        <data name="imputed_data_file" format="tabular" label="${input_file.name}.${imputation.imputation_method}-imputed_QN_LT_intensities" ></data>
+        <data name="imputed_data_file" format="tabular" label="${input_file.name}.${imputation.imputation_method}-imputed_intensities" ></data>
+        <data name="imp_qn_lt_file" format="tabular" label="${input_file.name}.${imputation.imputation_method}-imputed_QN_LT_intensities" ></data>
         <!--
         <data name="report_file" format="html" label="${input_file.name}.${imputation.imputation_method}-imputed_report (download/unzip to view)" ></data>
         -->
@@ -112,7 +116,7 @@
             <param name="imputation_method" value="group-median"/>
             <param name="sample_names_regex" value="\.\d+[A-Z]$"/>
             <param name="sample_grouping_regex" value="\d+"/>
-            <output name="imputed_data_file">
+            <output name="imp_qn_lt_file">
                 <assert_contents>
                     <has_text text="Phosphopeptide" />
                     <has_text text="AAAITDMADLEELSRLpSPLPPGpSPGSAAR" />
@@ -130,11 +134,11 @@
             <param name="sdPercentile" value="0.2" />
             <param name="sample_names_regex" value="\.\d+[A-Z]$"/>
             <param name="sample_grouping_regex" value="\d+"/>
-            <output name="imputed_data_file">
+            <output name="imp_qn_lt_file">
                 <assert_contents>
                     <has_text text="Phosphopeptide" />
                     <has_text text="AAAITDMADLEELSRLpSPLPPGpSPGSAAR" />
-                    <has_text text="0.82258" />
+                    <has_text text="8.392287" />
                     <has_text text="pSQKQEEENPAEETGEEK" />
                 </assert_contents>
             </output>
@@ -192,11 +196,14 @@ Phopsphoproteomic Enrichment Pipeline ANOVA
 
 **Outputs**
 
-``intensities_*-imputed_QN_LT``
+``imputed_intensities``
+  Phosphopeptide MS intensities where missing values have been **imputed** by the chosen method, in tabular format.
+
+``imputed_QN_LT_intensities``
   Phosphopeptide MS intensities where missing values have been **imputed** by the chosen method, quantile-normalized (**QN**), and log10-transformed (**LT**), in tabular format.
 
 ``report_file``
-  Summary report for normalization, imputation, and ANOVA, in PDF format.
+  Summary report for normalization, imputation, and **ANOVA**, in PDF format.
 
 **Authors**
 

@@ -1,23 +1,49 @@
 ---
 title: "MaxQuant Phospho-Proteomic Enrichment Pipeline ANOVA"
 author: "Larry Cheng; Art Eschenlauer"
-date: "May 28, 2018; Nov 16, 2021"
+date: "May 28, 2018; Mar 16, 2022"
 output:
-  pdf_document: default
+  pdf_document:
+    toc: true
+  latex_document:
+    toc: true
 params:
   inputFile: "test-data/test_input_for_anova.tabular"
   alphaFile: "test-data/alpha_levels.tabular"
   firstDataColumn: "Intensity"
   imputationMethod: !r c("group-median", "median", "mean", "random")[1]
   meanPercentile: 1
-  sdPercentile: 0.2
+  sdPercentile: 1.0
   regexSampleNames: "\\.\\d+[A-Z]$"
   regexSampleGrouping: "\\d+"
-  imputedDataFilename: "Upstream_Map_pST_outputfile_STEP4_QN_LT.txt"
+  imputedDataFilename: "test-data/imputedDataFilename.txt"
+  imputedQNLTDataFile: "test-data/imputedQNLTDataFile.txt"
+  show_toc: true
 ---
+<!--
+  latex_document: default
+  inputFile: "test-data/test_input_for_anova.tabular"
+  inputFile: "test-data/density_failure.preproc_tab.tabular"
+  inputFile: "test-data/UT_Phospho_STY_Sites.preproc_tab"
+date: "May 28, 2018; Mar 16, 2022"
+-->
 ```{r setup, include = FALSE}
 # ref for parameterizing Rmd document: https://stackoverflow.com/a/37940285
 knitr::opts_chunk$set(echo = FALSE, fig.dim = c(9, 10))
+
+# freeze the random number generator so the same results will be produced
+#  from run to run
+set.seed(28571)
+
+### CONSTANTS
+
+const_parfin <- par("fin")
+const_boxplot_fill <- "grey94"
+const_stripchart_cex <- 0.5
+const_stripsmall_cex <-
+  sqrt(const_stripchart_cex * const_stripchart_cex / 2)
+const_stripchart_jitter <- 0.3
+const_write_debug_files <- FALSE
 
 ### FUNCTIONS
 
@@ -27,9 +53,155 @@ anova_func <- function(x, grouping_factor) {
   pvalue <- summary(x_aov)[[1]][["Pr(>F)"]][1]
   pvalue
 }
+
+write_debug_file <- function(s) {
+  if (const_write_debug_files) {
+    s_path <- sprintf("test-data/%s.txt", deparse(substitute(s)))
+    write.table(
+      s,
+      file = s_path,
+      sep = "\t",
+      col.names = TRUE,
+      row.names = TRUE,
+      quote = FALSE
+    )
+  }
+}
+
+latex_collapsed_vector <- function(collapse_string, v) {
+  cat(
+    paste0(
+      gsub("_", "\\\\_", v),
+      collapse = collapse_string
+      )
+    )
+}
+
+latex_itemized_collapsed <- function(collapse_string, v) {
+  cat("\\begin{itemize}\n\\item ")
+  latex_collapsed_vector(collapse_string, v)
+  cat("\n\\end{itemize}\n")
+}
+
+latex_itemized_list <- function(v) {
+  latex_itemized_collapsed("\n\\item ", v)
+}
+
+latex_enumerated_collapsed <- function(collapse_string, v) {
+  cat("\\begin{enumerate}\n\\item ")
+  latex_collapsed_vector(collapse_string, v)
+  cat("\n\\end{enumerate}\n")
+}
+
+latex_enumerated_list <- function(v) {
+  latex_enumerated_collapsed("\n\\item ", v)
+}
+
+latex_table_row <- function(v) {
+  latex_collapsed_vector(" & ", v)
+  cat(" \\\\\n")
+}
+
+# Use this like print.data.frame, from which it is adapted:
+print_data_frame_latex <-
+  function(
+    x,
+    ...,
+    # digits to pass to format.data.frame
+    digits = NULL,
+    # TRUE -> right-justify columns; FALSE -> left-justify
+    right = TRUE,
+    # maximumn number of rows to print
+    max = NULL,
+    # string with justification of each column
+    justification = NULL,
+    # TRUE to center on page
+    centered = FALSE,
+    # optional capttion
+    caption = NULL,
+    # h(inline); b(bottom); t (top) or p (separate page)
+    anchor = "h"
+  ) {
+    if (is.null(justification))
+      justification <-
+        Reduce(
+          f = paste,
+          x = rep_len(if (right) "r" else "l", length(colnames(x)))
+          )
+    n <- length(rownames(x))
+    if (length(x) == 0L) {
+      cat(
+        sprintf(
+          # if n is one, use singular 'row', else use plural 'rows'
+          ngettext(
+            n,
+            "data frame with 0 columns and %d row",
+            "data frame with 0 columns and %d rows"
+            ),
+          n
+          ),
+        "\n",
+        sep = ""
+        )
+    }
+    else if (n == 0L) {
+      cat("0 rows for:\n")
+      latex_itemized_list(names(x))
+    }
+    else {
+      if (is.null(max))
+        max <- getOption("max.print", 99999L)
+      if (!is.finite(max))
+        stop("invalid 'max' / getOption(\"max.print\"): ",
+          max)
+      omit <- (n0 <- max %/% length(x)) < n
+      m <- as.matrix(
+        format.data.frame(
+          if (omit) x[seq_len(n0), , drop = FALSE] else x,
+          digits = digits,
+          na.encode = FALSE
+          )
+        )
+      cat(
+        # h(inline); b(bottom); t (top) or p (separate page)
+        paste0("\\begin{table}[", anchor, "]\n")
+        )
+      if (!is.null(caption))
+        cat(paste0(" \\caption{", caption, "}"))
+      if (centered) cat("\\centering\n")
+      cat(
+        paste(
+          " \\begin{tabular}{",
+          justification,
+          "}\n",
+          sep = ""
+          )
+        )
+      if (!is.null(caption))
+        cat(" \\hline\\hline\n")
+      latex_table_row(colnames(m))
+      cat("\\hline\n")
+      for (i in seq_len(length(m[, 1]))) {
+        latex_table_row(m[i, ])
+      }
+      cat(
+        paste(
+          " \\end{tabular}",
+          "\\end{table}",
+          sep = "\n"
+          )
+        )
+      if (omit)
+        cat(" [ reached 'max' / getOption(\"max.print\") -- omitted",
+          n - n0, "rows ]\n")
+    }
+    invisible(x)
+  }
+
 ```
 
 ## Purpose:
+
 Perform imputation of missing values, quantile normalization, and ANOVA.
 
 <!--
@@ -58,6 +230,7 @@ val_fdr <-
 
 #Imputed Data filename
 imputed_data_filename <- params$imputedDataFilename
+imp_qn_lt_data_filenm <- params$imputedQNLTDataFile
 
 #ANOVA data filename
 ```
@@ -78,7 +251,7 @@ sd_percentile <- params$sdPercentile
 regex_sample_names <- params$regexSampleNames
 
 # Regular expression to extract Sample Grouping from Sample Name;
-#   if error occurs, compare sample_factor_levels and temp_matches
+#   if error occurs, compare sample_factor_levels and sample_name_matches
 #   to see if groupings/pairs line up
 #   e.g., "(\\d+)"
 regex_sample_grouping <- params$regexSampleGrouping
@@ -101,25 +274,32 @@ full_data <- read.table(
   )
 ```
 
-### Column names from input file
-
-```{r echo = FALSE, results = 'markup'}
-print(colnames(full_data))
-data_column_indices <- grep(first_data_column, names(full_data), perl = TRUE)
-cat(sprintf("First data column:  %d\n", min(data_column_indices)))
-cat(sprintf("Last data column:   %d\n", max(data_column_indices)))
-```
+### Parse column names, sample names, and factor levels from input file
 
 ```{r echo = FALSE, results = 'asis'}
-cat("\\newpage\n")
-```
+# Write column naames as an enumerated list.
+column_name_df <- data.frame(
+  column = seq_len(length(colnames(full_data))),
+  name = colnames(full_data)
+  )
+print_data_frame_latex(
+  x = column_name_df,
+  justification = "l l",
+  centered = TRUE,
+  caption = "Input data column name",
+  anchor = "h"
+  )
 
-### Checking that log-transformed sample distributions are similar:
-
-```{r echo = FALSE, fig.dim = c(9, 5.5), results = 'asis'}
+data_column_indices <- grep(first_data_column, names(full_data), perl = TRUE)
+cat(
+  sprintf(
+    "\n\nData columns: [%d,%d]\n\n",
+    min(data_column_indices),
+    max(data_column_indices)
+    )
+  )
 
 if (FALSE == fdc_is_integer) {
-
   if (length(data_column_indices) > 0) {
     first_data_column <- data_column_indices[1]
   } else {
@@ -127,45 +307,114 @@ if (FALSE == fdc_is_integer) {
   }
 }
 
-quant_data0 <- full_data[first_data_column:length(full_data)]
+```
+
+```{r echo = FALSE, results = 'asis'}
+#```{r echo = FALSE, results = 'asis'}
 quant_data <- full_data[first_data_column:length(full_data)]
+quant_data[quant_data == 0] <- NA
+rownames(quant_data) <- full_data$Phosphopeptide
+# Get factors -> group replicates (as indicated by terminal letter)
+#   by the preceding digits;
+# Assuming that regex_sample_names <- "\\.(\\d+)[A-Z]$"
+#   get factors ->
+#      group runs (samples) by ignoring terminal [A-Z] in sample names
+#   e.g.
+#     group .1A .1B .1C into group 1;
+#     group .2A .2B .2C, into group 2;
+#     etc.
+m <- regexpr(regex_sample_names, colnames(quant_data), perl = TRUE)
+sample_name_matches <- regmatches(names(quant_data), m)
+colnames(quant_data) <- sample_name_matches
+
+write_debug_file(quant_data)
+
+m2 <- regexpr(regex_sample_grouping, sample_name_matches, perl = TRUE)
+sample_factor_levels <- as.factor(regmatches(sample_name_matches, m2))
+number_of_samples <- length(sample_name_matches)
+sample_factor_df <- data.frame(
+  sample = sample_name_matches,
+  level = sample_factor_levels
+  )
+print_data_frame_latex(
+  x = sample_factor_df,
+  justification = "c c",
+  centered = TRUE,
+  caption = "Factor level",
+  anchor = "h"
+  )
+```
+```{r echo = FALSE, results = 'asis'}
+cat("\\newpage\n")
+```
+
+### Are the log-transformed sample distributions similar?
+
+```{r echo = FALSE, fig.dim = c(9, 5.5), results = 'asis'}
+
 quant_data[quant_data == 0] <- NA  #replace 0 with NA
 quant_data_log <- log10(quant_data)
 
-rownames(quant_data_log) <- full_data$Phosphopeptide
+rownames(quant_data_log) <- rownames(quant_data)
+colnames(quant_data_log) <- sample_name_matches
+
+write_debug_file(quant_data_log)
 
 # data visualization
 old_par <- par(
   mai = par("mai") + c(0.5, 0, 0, 0)
 )
+# ref: https://r-charts.com/distribution/add-points-boxplot/
+# Vertical plot
 boxplot(
   quant_data_log
-, las = 2
+, las = 1
+, col = const_boxplot_fill
 )
+# Points
+stripchart(
+  quant_data_log, # Data
+  method = "jitter",          # Random noise
+  jitter = const_stripchart_jitter,
+  pch = 19,                   # Pch symbols
+  cex = const_stripchart_cex, # Size of symbols reduced
+  col = "goldenrod",          # Color of the symbol
+  vertical = TRUE,            # Vertical mode
+  add = TRUE                  # Add it over
+  )
 par(old_par)
 
 
 
-cat("\\newline\n")
-cat("\\newline\n")
+cat("\n\n\n")
+cat("\n\n\n")
 
 ```
 
-```{r echo = FALSE, fig.align = "left", fig.dim = c(9, 4), warning = FALSE}
-quant_data_log_stack <- stack(quant_data_log)
+```{r echo = FALSE, fig.align = "left", fig.dim = c(9, 4), results = 'asis'}
 library(ggplot2)
-ggplot(
-  quant_data_log_stack,
-  aes(x = values)) + geom_density(aes(group = ind, colour = ind))
+if (nrow(quant_data_log) > 1) {
+  quant_data_log_stack <- stack(quant_data_log)
+  ggplot(
+    quant_data_log_stack,
+    aes(x = values)
+    ) +
+    geom_density(
+      aes(group = ind, colour = ind),
+      na.rm = TRUE
+    )
+} else {
+  cat("No density plot because there are too few peptides.\n\n")
+}
 ```
 
-### Globally, are phosphopeptide intensities are approximately unimodal?
+### Globally, are peptide intensities are approximately unimodal?
 
 <!--
 # ref for bquote below particularly and plotting math expressions generally:
 #   https://www.r-bloggers.com/2018/03/math-notation-for-r-plot-titles-expression-and-bquote/
 -->
-```{r echo = FALSE, fig.align = "left", fig.dim = c(9, 5)}
+```{r echo = FALSE, fig.align = "left", fig.dim = c(9, 5), results = 'asis'}
 
 # identify the location of missing values
 fin <- is.finite(as.numeric(as.matrix(quant_data_log)))
@@ -185,92 +434,63 @@ hist(
 )
 ```
 
-### Distribution of standard deviations of phosphopeptides, ignoring missing values:
+### Distribution of standard deviations of $log_{10}(\text{intensity})$, ignoring missing values:
 
-```{r echo = FALSE, fig.align = "left", fig.dim = c(9, 5)}
+```{r echo = FALSE, fig.align = "left", fig.dim = c(9, 5), results = 'asis'}
 # determine quantile
 q1 <- quantile(logvalues, probs = mean_percentile)[1]
 
 # determine standard deviation of quantile to impute
 sd_finite <- function(x) {
   ok <- is.finite(x)
-  sd(x[ok]) * sd_percentile
+  sd(x[ok])
 }
 # 1 = row of matrix (ie, phosphopeptide)
 sds <- apply(quant_data_log, 1, sd_finite)
-plot(
-  density(sds, na.rm = T)
-, main = "Smoothed estimated probability density vs. std. deviation"
-, sub = "(probability estimation made with Gaussian smoothing)"
-)
-
-m1 <- median(sds, na.rm = T) #sd to be used is the median sd
+if (sum(!is.na(sds)) > 2) {
+  plot(
+    density(sds, na.rm = T)
+  , main = "Smoothed estimated probability density vs. std. deviation"
+  , sub = "(probability estimation made with Gaussian smoothing)"
+  )
+} else {
+  cat(
+    "At least two non-missing values are required to plot",
+    "probability density.\n\n"
+    )
+}
 
 ```
 
-
-
-<!--
-The number of missing values are:
--->
 ```{r echo = FALSE}
-#Determine number of cells to impute
+# Determine number of cells to impute
 temp <- quant_data[is.na(quant_data)]
 
-#Determine number of values to impute
+# Determine number of values to impute
 number_to_impute <- length(temp)
+
+# Determine percent of missing values
+pct_missing_values <-
+  round(length(temp) / (length(logvalues) + length(temp)) * 100)
 ```
-
-<!--
-% of values that are missing:
--->
-```{r echo = FALSE}
-pct_missing_values <- length(temp) / (length(logvalues) + length(temp)) * 100
-```
-
-<!--
-First few rows of data before imputation:
--->
-```{r echo = FALSE, results = 'asis'}
-cat("\\newpage\n")
-```
-
-## Parse sample names
-
-Parse the names of the samples to deduce the factor level for each sample:
 
 ```{r echo = FALSE}
 
 # prep for trt-median based imputation
 
-# Assuming that regex_sample_names <- "\\.(\\d+)[A-Z]$"
-#   get factors ->
-#      group runs (samples) by ignoring terminal [A-Z] in sample names
-
-m <- regexpr(regex_sample_names, names(quant_data), perl = TRUE)
-temp_matches <- regmatches(names(quant_data), m)
-print("Extracted sample names")
-print(temp_matches)
-m2 <- regexpr(regex_sample_grouping, temp_matches, perl = TRUE)
-sample_factor_levels <- as.factor(regmatches(temp_matches, m2))
-print("Factor levels")
-print(sample_factor_levels)
-
 ```
-## Impute missing values
+## Impute Missing Values
 
 ```{r echo = FALSE}
 
+imp_smry_potential_before <- length(logvalues)
+imp_smry_missing_before   <- number_to_impute
+imp_smry_pct_missing      <- pct_missing_values
+
+```
+
+```{r echo = FALSE}
 #Determine number of cells to impute
-cat("Before imputation,",
-  sprintf(
-    "there are:\n  %d peptides\n  %d missing values (%2.0f%s)",
-    sum(rep.int(TRUE, nrow(quant_data))),
-    sum(is.na(quant_data)),
-    pct_missing_values,
-    "%"
-    )
-)
 
 ```
 ```{r echo = FALSE}
@@ -282,15 +502,16 @@ quant_data_imp <- quant_data
 ind <- which(is.na(quant_data_imp), arr.ind = TRUE)
 
 ```
-```{r echo = FALSE}
+```{r echo = FALSE, results = 'asis'}
 
 # Apply imputation
 switch(
   imputation_method
 , "group-median" = {
-    cat("Imputation method:\n   substitute missing value",
-      "with median peptide-intensity for sample-group\n")
-
+    imputation_method_description <-
+      paste("Substitute missing value with",
+        "median peptide intensity for sample group\n"
+        )
     sample_level_integers <- as.integer(sample_factor_levels)
     for (i in seq_len(length(levels(sample_factor_levels)))) {
       level_cols <- i == sample_level_integers
@@ -301,47 +522,90 @@ switch(
     good_rows <- !is.na(rowMeans(quant_data_imp))
   }
 , "median" = {
-    cat("Imputation method:\n   substitute missing value with",
-      "median peptide-intensity across all sample classes\n")
+    imputation_method_description <-
+      paste("Substitute missing value with",
+        "median peptide intensity across all sample classes\n"
+        )
     quant_data_imp[ind] <- apply(quant_data_imp, 1, median, na.rm = T)[ind[, 1]]
     good_rows <- !is.na(rowMeans(quant_data_imp))
   }
 , "mean" = {
-    cat("Imputation method:\n   substitute missing value with",
-      "mean peptide-intensity across all sample classes\n")
+    imputation_method_description <-
+      paste("Substitute missing value with",
+        "mean peptide intensity across all sample classes\n"
+        )
     quant_data_imp[ind] <- apply(quant_data_imp, 1, mean, na.rm = T)[ind[, 1]]
     good_rows <- !is.na(rowMeans(quant_data_imp))
   }
 , "random" = {
-    cat(
-      "Imputation method:\n   substitute missing value with\n  ",
-      sprintf(
-        "random intensity N ~ (%0.2f, %0.2f)\n"
-      , q1, m1
-      )
-    )
-    quant_data_imp[is.na(quant_data_imp)] <-
+    m1 <- median(sds, na.rm = T) * sd_percentile #sd to be used is the median sd
+    # If you want results to be reproducible, you will want to call
+    #   base::set.seed before calling stats::rnorm
+    imputation_method_description <-
+      paste("Substitute each missing value with random intensity",
+        sprintf(
+          "random intensity $N \\sim (%0.2f, %0.2f)$\n",
+          q1, m1
+          )
+        )
+    cat(sprintf("mean_percentile (from input parameter) is %2.0f\n\n",
+      100 * mean_percentile))
+    cat(sprintf("sd_percentile (from input parameter) is %0.2f\n\n",
+      sd_percentile))
+    #ACE cat(sprintf("sd for rnorm is %0.4f\n\n", m1))
+    quant_data_imp[ind] <-
       10 ^ rnorm(number_to_impute, mean = q1, sd = m1)
     good_rows <- !is.na(rowMeans(quant_data_imp))
   }
 )
 
+if (length(good_rows) < 1) {
+  print("ERROR: Cannot impute data; there are no good rows!")
+  return(-1)
+  }
 ```
+
+```{r echo = FALSE, results = 'asis'}
+cat("\\quad\n\nImputation method:\n\n\n", imputation_method_description)
+```
+
 ```{r echo = FALSE}
 
-#Determine number of cells to impute
-temp <- quant_data_imp[is.na(quant_data_imp)]
-cat("After imputation, there are:",
-  sprintf(
-    "\n  %d missing values\n  %d usable peptides analysis"
-  , sum(is.na(quant_data_imp[good_rows, ]))
-  , sum(good_rows)
-  ),
-  sprintf(
-    "\n  %d peptides with too many missing values for further analysis"
-  , sum(!good_rows)
+imp_smry_potential_after <- sum(good_rows)
+imp_smry_rejected_after  <- sum(!good_rows)
+imp_smry_missing_after   <- sum(is.na(quant_data_imp[good_rows, ]))
+```
+```{r echo = FALSE, results = 'asis'}
+# ref: http://www1.maths.leeds.ac.uk/latex/TableHelp1.pdf
+tabular_lines <- paste(
+  "\\begin{table}[hb]", # h(inline); b(bottom); t (top) or p (separate page)
+  " \\caption{Imputation Results}",
+  " \\centering", # \centering centers the table on the page
+  " \\begin{tabular}{l c c c}",
+  "  \\hline\\hline",
+  "  \\  & potential peptides   & missing values & rejected",
+  "    peptides \\\\ [0.5ex]",
+  "  \\hline",
+  "  before imputation & %d     & %d (%d\\%s)    &    \\\\",
+  "  after imputation  & %d     & %d             & %d \\\\ [1ex]",
+  "  \\hline",
+  " \\end{tabular}",
+  #" \\label{table:nonlin}", # may be used to refer this table in the text
+  "\\end{table}",
+  sep = "\n"
   )
-)
+tabular_lines <-
+  sprintf(
+    tabular_lines,
+    imp_smry_potential_before,
+    imp_smry_missing_before,
+    imp_smry_pct_missing,
+    "%",
+    imp_smry_potential_after,
+    imp_smry_missing_after,
+    imp_smry_rejected_after
+    )
+cat(tabular_lines)
 ```
 ```{r echo = FALSE}
 
@@ -349,27 +613,51 @@ cat("After imputation, there are:",
 # Zap rows where imputation was ineffective
 full_data         <- full_data        [good_rows, ]
 quant_data        <- quant_data       [good_rows, ]
+
+write_debug_file(quant_data_imp)
+
 quant_data_imp <- quant_data_imp[good_rows, ]
+quant_data_imp_good_rows <- quant_data_imp
 
+write_debug_file(quant_data_imp_good_rows)
 ```
-```{r echo = FALSE}
 
-d_combined <- (density(as.numeric(as.matrix(
-  log10(quant_data_imp)
-))))
+```{r echo = FALSE, results = 'asis'}
+
+can_plot_before_after_imp <- TRUE
+d_combined <-
+  as.numeric(
+    as.matrix(
+      log10(quant_data_imp)
+      )
+    )
 d_original <-
-  density(as.numeric(as.matrix(
-    log10(quant_data_imp[!is.na(quant_data)]))))
+  as.numeric(
+    as.matrix(
+      log10(quant_data_imp[!is.na(quant_data)])
+      )
+    )
 
-```
-```{r echo = FALSE}
+if (sum(!is.na(d_combined)) > 2 && sum(!is.na(d_original)) > 2) {
+  d_combined <- density(d_combined)
+  d_original <- density(d_original)
+} else {
+  can_plot_before_after_imp <- FALSE
+}
 
 if (sum(is.na(quant_data)) > 0) {
   # There ARE missing values
   d_imputed <-
-    (density(as.numeric(as.matrix(
-      log10(quant_data_imp[is.na(quant_data)])
-    ))))
+    as.numeric(
+      as.matrix(
+        log10(quant_data_imp[is.na(quant_data)])
+        )
+      )
+  if (sum(!is.na(d_combined)) > 2) {
+    d_imputed <- (density(d_imputed))
+  } else {
+    can_plot_before_after_imp <- FALSE
+  }
 } else {
   # There are NO missing values
   d_imputed <- d_combined
@@ -377,16 +665,92 @@ if (sum(is.na(quant_data)) > 0) {
 
 ```
 
-```{r echo = FALSE, fig.dim = c(9, 5)}
-ylim <- c(0, max(d_combined$y, d_original$y, d_imputed$y))
-plot(
-  d_combined,
-  ylim = ylim,
-  sub = "Blue = data before imputation; Red = imputed data",
-  main = "Density vs. log10(intensity) before and after imputation"
-)
-lines(d_original, col = "blue")
-lines(d_imputed, col = "red")
+```{r echo = FALSE, fig.dim = c(9, 5.5), results = 'asis'}
+if (sum(is.na(quant_data)) > 0) {
+  cat("\\leavevmode\\newpage\n")
+  # data visualization
+  old_par <- par(
+    mai = par("mai") + c(0.5, 0, 0, 0)
+  )
+  x <- quant_data
+  x <- blue_dots <- x / x
+  blue_dots <- log10(blue_dots * quant_data)
+  x[is.na(x)] <- 0
+  x[x == 1] <- NA
+  x[x == 0] <- 1
+  quant_data_imp_log10 <-
+    log10(quant_data_imp)
+
+  write_debug_file(quant_data_imp_log10)
+
+  red_dots <- quant_data_imp_log10 * x
+  ylim <- c(
+    min(red_dots, blue_dots, na.rm = TRUE),
+    max(red_dots, blue_dots, na.rm = TRUE)
+    )
+  # ref: https://r-charts.com/distribution/add-points-boxplot/
+  # Vertical plot
+  colnames(blue_dots) <- sample_name_matches
+  boxplot(
+      blue_dots
+    , las = 1 # "always horizontal"
+    , col = const_boxplot_fill
+    , ylim = ylim
+    , main = "Peptide intensities before and after imputation"
+    , sub = "Light blue = data before imputation; Red = imputed data"
+    , xlab = "Sample"
+    , ylab = "log10(peptide intensity)"
+    )
+  # Points
+  # NA values are not plotted
+  stripchart(
+    blue_dots,                 # Data
+    method = "jitter",          # Random noise
+    jitter = const_stripchart_jitter,
+    pch = 19,                   # Pch symbols
+    cex = const_stripsmall_cex, # Size of symbols reduced
+    col = "lightblue",          # Color of the symbol
+    vertical = TRUE,            # Vertical mode
+    add = TRUE                  # Add it over
+    )
+  stripchart(
+    red_dots,                   # Data
+    method = "jitter",          # Random noise
+    jitter = const_stripchart_jitter,
+    pch = 19,                   # Pch symbols
+    cex = const_stripsmall_cex, # Size of symbols reduced
+    col = "red",                # Color of the symbol
+    vertical = TRUE,            # Vertical mode
+    add = TRUE                  # Add it over
+    )
+  par(old_par)
+
+  # density plot
+  cat("\\leavevmode\n\n\n\n\n\n\n")
+  if (can_plot_before_after_imp) {
+    ylim <- c(0, max(d_combined$y, d_original$y, d_imputed$y))
+    plot(
+      d_combined,
+      ylim = ylim,
+      sub =
+        paste(
+          "Blue = data before imputation; Red = imputed data;",
+          "Black = combined"
+          ),
+      main = "Density of peptide intensity before and after imputation",
+      xlab = "log10(peptide intensity)",
+      ylab = "Probability density"
+    )
+    lines(d_original, col = "blue")
+    lines(d_imputed, col = "red")
+  } else {
+    cat(
+      "There are too few points to plot the density of peptide intensity",
+      "before and after imputation."
+      )
+  }
+  cat("\\leavevmode\\newpage\n")
+}
 ```
 
 ## Perform Quantile Normalization
@@ -448,10 +812,10 @@ lines(d_imputed, col = "red")
 #       http://bmbolstad.com/misc/normalize/normalize.html
 # ...
 -->
-```{r echo = FALSE}
+```{r echo = FALSE, results = 'asis'}
 library(preprocessCore)
 
-if (TRUE) {
+if (nrow(quant_data_imp) > 0) {
   quant_data_imp_qn <- normalize.quantiles(as.matrix(quant_data_imp))
 } else {
   quant_data_imp_qn <- as.matrix(quant_data_imp)
@@ -459,28 +823,39 @@ if (TRUE) {
 
 quant_data_imp_qn <- as.data.frame(quant_data_imp_qn)
 names(quant_data_imp_qn) <- names(quant_data_imp)
-quant_data_imp_qn_log <- log10(quant_data_imp_qn)
 
-rownames(quant_data_imp_qn_log) <- full_data[, 1]
+write_debug_file(quant_data_imp_qn)
+
+quant_data_imp_qn_log <- log10(quant_data_imp_qn)
+rownames(quant_data_imp_qn_log) <- rownames(quant_data_imp)
+
+write_debug_file(quant_data_imp_qn_log)
 
 quant_data_imp_qn_ls <- t(scale(t(log10(quant_data_imp_qn))))
+
 any_nan <- function(x) {
   !any(x == "NaN")
 }
 sel <- apply(quant_data_imp_qn_ls, 1, any_nan)
 quant_data_imp_qn_ls2 <- quant_data_imp_qn_ls[which(sel), ]
 quant_data_imp_qn_ls2 <- as.data.frame(quant_data_imp_qn_ls2)
+rownames(quant_data_imp_qn_ls2) <- rownames(quant_data_imp)[sel]
+
+quant_data_imp_qn_ls <- as.data.frame(quant_data_imp_qn_ls)
+rownames(quant_data_imp_qn_ls) <- rownames(quant_data_imp)
+
+write_debug_file(quant_data_imp_qn_ls)
+write_debug_file(quant_data_imp_qn_ls2)
 
 #output quantile normalized data
 data_table_imp_qn_lt <- cbind(full_data[1:9], quant_data_imp_qn_log)
 write.table(
   data_table_imp_qn_lt,
-  file = paste(paste(
-    strsplit(imputed_data_filename, ".txt"), "QN_LT", sep = "_"
-  ), ".txt", sep = ""),
+  file = imp_qn_lt_data_filenm,
   sep = "\t",
   col.names = TRUE,
-  row.names = FALSE
+  row.names = FALSE,
+  quote = FALSE
 )
 
 ```
@@ -490,7 +865,6 @@ write.table(
 
 ```{r echo = FALSE, fig.dim = c(9, 5.5), results = 'asis'}
 
-
 # Save unimputed quant_data_log for plotting below
 unimputed_quant_data_log <- quant_data_log
 
@@ -499,10 +873,9 @@ unimputed_quant_data_log <- quant_data_log
 quant_data_imp_qn[quant_data_imp_qn == 0] <- .000000001
 quant_data_log <- log10(quant_data_imp_qn)
 
-# Output quantile-normalized log-transformed dataset
-#   with imputed, normalized data
+# Output with imputed, un-normalized data
 
-data_table_imputed <- cbind(full_data[1:9], quant_data_log)
+data_table_imputed <- cbind(full_data[1:9], quant_data_imp)
 write.table(
     data_table_imputed
   , file = imputed_data_filename
@@ -512,37 +885,71 @@ write.table(
   , quote = FALSE
   )
 
+how_many_peptides <- nrow(quant_data_log)
+
+if ((how_many_peptides) > 0) {
+  cat(
+    sprintf(
+      "Intensities for %d peptides:\n\n\n",
+      how_many_peptides
+      )
+    )
+  cat("\n\n\n")
 
 
-# data visualization
-old_par <- par(
-  mai = par("mai") + c(0.5, 0, 0, 0)
-, oma = par("oma") + c(0.5, 0, 0, 0)
-)
-boxplot(
-  quant_data_log
-, las = 2
-)
-par(old_par)
+  # data visualization
+  old_par <- par(
+    mai = par("mai") + c(0.5, 0, 0, 0)
+  , oma = par("oma") + c(0.5, 0, 0, 0)
+  )
+  # ref: https://r-charts.com/distribution/add-points-boxplot/
+  # Vertical plot
+  colnames(quant_data_log) <- sample_name_matches
+  boxplot(
+    quant_data_log
+  , las = 1
+  , col = const_boxplot_fill
+  )
+  # Points
+  stripchart(
+    quant_data_log, # Data
+    method = "jitter",          # Random noise
+    jitter = const_stripchart_jitter,
+    pch = 19,                   # Pch symbols
+    cex = const_stripchart_cex, # Size of symbols reduced
+    col = "goldenrod",          # Color of the symbol
+    vertical = TRUE,            # Vertical mode
+    add = TRUE                  # Add it over
+    )
+  par(old_par)
+} else {
+  cat("There are no peptides to plot\n")
+}
 
-
-
-cat("\\newline\n")
-cat("\\newline\n")
+cat("\n\n\n")
 
 ```
 
-```{r echo = FALSE, fig.align = "left", fig.dim = c(9, 4)}
-quant_data_log_stack <- stack(quant_data_log)
-ggplot(
-  quant_data_log_stack,
-  aes(x = values)
-  ) + geom_density(aes(group = ind, colour = ind))
+```{r echo = FALSE, fig.align = "left", fig.dim = c(9, 4), results = 'asis'}
+if (nrow(quant_data_log) > 1) {
+  quant_data_log_stack <- stack(quant_data_log)
+  ggplot(
+    quant_data_log_stack,
+    aes(x = values)
+    ) +
+    geom_density(
+      aes(group = ind, colour = ind),
+      na.rm = TRUE
+      )
+} else {
+  cat("No density plot because there are fewer than two peptides to plot.\n\n")
+}
+```
+```{r echo = FALSE, results = 'asis'}
+cat("\\leavevmode\\newpage\n")
 ```
 
 ## Perform ANOVA filters
-
-(see following pages)
 
 ```{r, echo = FALSE}
 # Make new data frame containing only Phosphopeptides
@@ -555,22 +962,8 @@ colnames(connect_df) <- c("Phosphopeptide", "Intensity")
 ```
 
 ```{r echo = FALSE, fig.dim = c(9, 10), results = 'asis'}
-# Get factors -> group replicates (as indicated by terminal letter)
-#   by the preceding digits;
-#   e.g., group .1A .1B .1C into group 1; .2A .2B .2C, into group 2; etc..
-m <-
-  regexpr(regex_sample_names, names(quant_data_imp_qn_log), perl = TRUE)
-
-temp_matches <- regmatches(names(quant_data_imp_qn_log), m)
-
-number_of_samples <- length(temp_matches)
-
-m2 <- regexpr(regex_sample_grouping, temp_matches, perl = TRUE)
-
-
-sample_factor_levels <- as.factor(regmatches(temp_matches, m2))
-
-if (length(levels(sample_factor_levels)) < 2) {
+count_of_factor_levels <- length(levels(sample_factor_levels))
+if (count_of_factor_levels < 2) {
   nuke_control_sequences <-
     function(s) {
       s <- gsub("[\\]", "xyzzy_plugh", s)
@@ -584,46 +977,46 @@ if (length(levels(sample_factor_levels)) < 2) {
   )
   cat(
     "ERROR: ANOVA analysis",
-    "requires two or more factor levels!\\newline\n"
+    "requires two or more factor levels!\n\n\n"
   )
 
-  cat("\\newline\\newline\n")
-  cat("Unparsed sample names are:\\newline\n",
+  cat("\n\n\n\n\n")
+  cat("Unparsed sample names are:\n\n\n",
     "\\begin{quote}\n",
-    paste(names(quant_data_imp_qn_log), collapse = "\\newline\n"),
+    paste(names(quant_data_imp_qn_log), collapse = "\n\n\n"),
     "\n\\end{quote}\n\n")
 
   regex_sample_names <- nuke_control_sequences(regex_sample_names)
 
-  cat("\\leavevmode\\newline\n")
+  cat("\\leavevmode\n\n\n")
   cat("Parsing rule for SampleNames is",
-    "\\newline\n",
+    "\n\n\n",
     "\\text{'",
     regex_sample_names,
-    "'}\\newline\n",
+    "'}\n\n\n",
     sep = ""
     )
 
   cat("\nParsed sample names are:\n",
     "\\begin{quote}\n",
-    paste(temp_matches, collapse = "\\newline\n"),
+    paste(sample_name_matches, collapse = "\n\n\n"),
     "\n\\end{quote}\n\n")
 
   regex_sample_grouping <- nuke_control_sequences(regex_sample_grouping)
 
-  cat("\\leavevmode\\newline\n")
+  cat("\\leavevmode\n\n\n")
   cat("Parsing rule for SampleGrouping is",
-    "\\newline\n",
+    "\n\n\n",
     "\\text{'",
     regex_sample_grouping,
-    "'}\\newline\n",
+    "'}\n\n\n",
     sep = ""
     )
 
-  cat("\\newline\n")
+  cat("\n\n\n")
   cat("Sample group assignments are:\n",
     "\\begin{quote}\n",
-    paste(regmatches(temp_matches, m2), collapse = "\\newline\n"),
+    paste(regmatches(sample_name_matches, m2), collapse = "\n\n\n"),
     "\n\\end{quote}\n\n")
 
 } else {
@@ -649,14 +1042,19 @@ if (length(levels(sample_factor_levels)) < 2) {
   #   e.g.    "Outputfile_pST_ANOVA_STEP5.txt"
   #   becomes "Outpufile_pST_ANOVA_STEP5_FDR0.05.txt"
 
-  # Re-output quantile-normalized log-transformed dataset
-  #   with imputed, normalized data to include p-values
-
-  data_table_imputed <-
-    cbind(full_data[1:9], p_value_data[, 2:3], quant_data_log)
+  # Re-output datasets to include p-values
   write.table(
-    data_table_imputed,
+    cbind(full_data[1:9], p_value_data[, 2:3], quant_data_imp),
     file = imputed_data_filename,
+    sep = "\t",
+    col.names = TRUE,
+    row.names = FALSE,
+    quote = FALSE
+    )
+
+  write.table(
+    cbind(full_data[1:9], p_value_data[, 2:3], quant_data_imp_qn_log),
+    file = imp_qn_lt_data_filenm,
     sep = "\t",
     col.names = TRUE,
     row.names = FALSE,
@@ -667,70 +1065,94 @@ if (length(levels(sample_factor_levels)) < 2) {
   p_value_data <-
     p_value_data[order(p_value_data$fdr_adjusted_anova_p), ]
 
+  first_page_suppress <- 1
+  number_of_peptides_found <- 0
   cutoff <- val_fdr[1]
   for (cutoff in val_fdr) {
+    if (number_of_peptides_found > 49) {
+      cat("\\leavevmode\n\n\n")
+      break
+      }
+
     #loop through FDR cutoffs
 
     filtered_p <-
       p_value_data[
         which(p_value_data$fdr_adjusted_anova_p < cutoff),
-        ,
-        drop = FALSE
+        , drop = FALSE
         ]
     filtered_data_filtered <-
       quant_data_imp_qn_log[
         rownames(filtered_p),
-        ,
-        drop = FALSE
+        , drop = FALSE
         ]
     filtered_data_filtered <-
       filtered_data_filtered[
         order(filtered_p$fdr_adjusted_anova_p),
-        ,
-        drop = FALSE
+        , drop = FALSE
         ]
 
     # <!-- ACE insertion start -->
-    old_oma <- par("oma")
-    old_par <- par(
-      mai = (par("mai") + c(0.7, 0, 0, 0)) * c(1, 1, 0.3, 1),
-      oma = old_oma * c(1, 1, 0.3, 1),
-      cex.main = 0.9,
-      cex.axis = 0.7
-      )
 
-    cat("\\newpage\n")
-    if (nrow(filtered_data_filtered) > 0) {
+    if (nrow(filtered_p) && nrow(filtered_data_filtered) > 0) {
+      if (first_page_suppress == 1) {
+        first_page_suppress <- 0
+        }
+        else {
+          cat("\\newpage\n")
+        }
       cat(sprintf(
-        "Intensities for peptides whose adjusted p-value < %0.2f\n",
+        "Intensities for %d peptides whose adjusted p-value < %0.2f:\n",
+        nrow(filtered_data_filtered),
         cutoff
       ))
-      cat("\\newline\n")
-      cat("\\newline\n")
+      cat("\n\n\n")
+      cat("\n\n\n")
 
+      old_oma <- par("oma")
+      old_par <- par(
+        mai = (par("mai") + c(0.7, 0, 0, 0)) * c(1, 1, 0.3, 1),
+        oma = old_oma * c(1, 1, 0.3, 1),
+        cex.main = 0.9,
+        cex.axis = 0.7,
+        fin = c(9, 7.25)
+        )
+      # ref: https://r-charts.com/distribution/add-points-boxplot/
+      # Vertical plot
+      colnames(filtered_data_filtered) <- sample_name_matches
       boxplot(
         filtered_data_filtered,
         main = "Imputed, normalized intensities", # no line plot
-        las = 2,
+        las = 1,
+        col = const_boxplot_fill,
         ylab = expression(log[10](intensity))
       )
+      # Points
+      stripchart(
+        filtered_data_filtered,     # Data
+        method = "jitter",          # Random noise
+        jitter = const_stripchart_jitter,
+        pch = 19,                   # Pch symbols
+        cex = const_stripchart_cex, # Size of symbols reduced
+        col = "goldenrod",          # Color of the symbol
+        vertical = TRUE,            # Vertical mode
+        add = TRUE                  # Add it over
+        )
+      par(old_par)
     } else {
       cat(sprintf(
-        "No peptides were found to have cutoff adjusted p-value < %0.2f\n",
+        "%s < %0.2f\n\n\n\n\n",
+        "No peptides were found to have cutoff adjusted p-value <",
         cutoff
       ))
     }
-    par(old_par)
 
     if (nrow(filtered_data_filtered) > 0) {
       #Add Phosphopeptide column to anova_filtered table
       anova_filtered_merge <- merge(
-        x = connect_df
-        ,
-        y = filtered_data_filtered
-        ,
-        by.x = "Intensity"
-        ,
+        x = connect_df,
+        y = filtered_data_filtered,
+        by.x = "Intensity",
         by.y = 1
       )
       anova_filtered_merge_order <- rownames(filtered_p)
@@ -759,12 +1181,9 @@ if (length(levels(sample_factor_levels)) < 2) {
       # Merge qualitative columns into the ANOVA data
       output_table <- data.frame(anova_filtered$Phosphopeptide)
       output_table <- merge(
-        x = output_table
-        ,
-        y = data_table_imp_qn_lt
-        ,
-        by.x = "anova_filtered.Phosphopeptide"
-        ,
+        x = output_table,
+        y = data_table_imp_qn_lt,
+        by.x = "anova_filtered.Phosphopeptide",
         by.y = "Phosphopeptide"
       )
 
@@ -777,7 +1196,7 @@ if (length(levels(sample_factor_levels)) < 2) {
           nrow = nrow(m)
           )
         )
-      m <- m[!m_nan_rows, ]
+      m <- m[!m_nan_rows, , drop = FALSE]
       if (nrow(m) > 0) {
         rownames_m <- rownames(m)
         rownames(m) <- sapply(
@@ -791,11 +1210,15 @@ if (length(levels(sample_factor_levels)) < 2) {
             )
           }
         )
-        margins <-
-          c(max(nchar(colnames(m))) * 10 / 16 # col
-            , max(nchar(rownames(m))) * 5 / 16 # row
-            )
         how_many_peptides <- min(50, nrow(m))
+        number_of_peptides_found <- how_many_peptides
+        if (nrow(m) > 1) {
+          m_margin <- m[how_many_peptides:1, ]
+          margins <-
+            c(max(nchar(colnames(m_margin))) * 10 / 16 # col
+              , max(nchar(rownames(m_margin))) * 5 / 16 # row
+              )
+          }
 
         cat("\\newpage\n")
         if (nrow(m) > 50) {
@@ -805,16 +1228,19 @@ if (length(levels(sample_factor_levels)) < 2) {
               cutoff)
           )
         } else {
-          cat("Heatmap for peptides whose",
-            sprintf("adjusted p-value < %0.2f\n",
-            cutoff)
-          )
+          if (nrow(m) == 1) {
+            cat(
+              sprintf("Heatmap for %d usable peptides whose", nrow(m)),
+              sprintf("adjusted p-value < %0.2f\n", cutoff)
+            )
+            next
+          }
         }
-        cat("\\newline\n")
-        cat("\\newline\n")
-        op <- par("cex.main")
+        cat("\n\n\n")
+        cat("\n\n\n")
         try(
           if (nrow(m) > 1) {
+            old_oma <- par("oma")
             par(cex.main = 0.6)
             heatmap(
               m[how_many_peptides:1, ],
@@ -823,19 +1249,19 @@ if (length(levels(sample_factor_levels)) < 2) {
               cexRow = 0.7,
               cexCol = 0.8,
               scale = "row",
-              #ACE scale = "none",
               margins = margins,
               main =
-                "Heatmap of unimputed, unnormalized intensities",
-              xlab = ""
+                "Unimputed, unnormalized intensities",
+              xlab = "",
+              las = 1 #, fin = c(9, 5.5)
               )
           }
         )
-        par(op)
       }
     }
   }
 }
+cat("\\leavevmode\n\n\n")
 ```
 
 <!--
