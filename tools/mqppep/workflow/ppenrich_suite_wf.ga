@@ -428,7 +428,13 @@
                 }
             },
             "tool_id": "mqppep_preproc",
-            "tool_state": "{\"collapseFunc\": \"sum\", \"intervalCol\": \"1\", \"localProbCutoff\": \"0.75\", \"merge_function\": \"sum\", \"networkin\": {\"__class__\": \"ConnectedValue\"}, \"p_sty_motifs\": {\"__class__\": \"ConnectedValue\"}, \"phosphoCol\": \"^Number of Phospho [(]STY[)]$\", \"phosphoSites\": {\"__class__\": \"ConnectedValue\"}, \"protein_fasta\": {\"__class__\": \"ConnectedValue\"}, \"psp_kinase_substrate\": {\"__class__\": \"ConnectedValue\"}, \"psp_regulatory_sites\": {\"__class__\": \"ConnectedValue\"}, \"pst_not_py\": \"true\", \"species\": \"human\", \"startCol\": \"^Intensity[^_]\", \"__page__\": null, \"__rerun_remap_job_id__\": null}",
+
+
+
+
+
+
+            "tool_state": "{\"collapseFunc\": \"sum\", \"intervalCol\": \"1\", \"localProbCutoff\": \"0.75\", \"merge_function\": \"sum\", \"networkin\": {\"__class__\": \"ConnectedValue\"}, \"p_sty_motifs\": {\"__class__\": \"ConnectedValue\"}, \"phosphoCol\": \"^Number of Phospho [(]STY[)]$\", \"phosphoSites\": {\"__class__\": \"ConnectedValue\"}, \"protein_fasta\": {\"__class__\": \"ConnectedValue\"}, \"psp_kinase_substrate\": {\"__class__\": \"ConnectedValue\"}, \"psp_regulatory_sites\": {\"__class__\": \"ConnectedValue\"}, \"pst_not_py\": \"true\", \"pst_py_selector\": \"st\", \"species\": \"human\", \"startCol\": \"^Intensity[^_]\", \"__page__\": null, \"__rerun_remap_job_id__\": null}",
             "tool_version": null,
             "type": "tool",
             "uuid": "1e983dba-edca-4aed-a589-49b1651b4a85",
@@ -524,6 +530,10 @@
                     "type": "tabular"
                 },
                 {
+                    "name": "imp_qn_lt_file",
+                    "type": "tabular"
+                },
+                {
                     "name": "report_file",
                     "type": "pdf"
                 }
@@ -544,6 +554,13 @@
                         "newname": "#{input_file}.intensities_group-mean-imputed_QN_LT"
                     },
                     "action_type": "RenameDatasetAction",
+                    "output_name": "imp_qn_lt_file"
+                },
+                "RenameDatasetActionimputed_data_file": {
+                    "action_arguments": {
+                        "newname": "#{input_file}.intensities_group-mean-imputed"
+                    },
+                    "action_type": "RenameDatasetAction",
                     "output_name": "imputed_data_file"
                 },
                 "RenameDatasetActionreport_file": {
@@ -562,6 +579,11 @@
             "workflow_outputs": [
                 {
                     "label": "intensities_group-mean-imputed_QN_LT",
+                    "output_name": "imp_qn_lt_file",
+                    "uuid": "0e77a2e0-bd7a-4487-aaa6-ead2469509a2"
+                },
+                {
+                    "label": "intensities_group-mean-imputed",
                     "output_name": "imputed_data_file",
                     "uuid": "169d677f-0acb-4c56-b057-21f4aaf2b920"
                 },
@@ -596,6 +618,10 @@
                     "type": "tabular"
                 },
                 {
+                    "name": "imp_qn_lt_file",
+                    "type": "tabular"
+                },
+                {
                     "name": "report_file",
                     "type": "pdf"
                 }
@@ -614,6 +640,13 @@
                 "RenameDatasetActionimputed_data_file": {
                     "action_arguments": {
                         "newname": "#{input_file}.intensities_randomly-imputed_QN_LT"
+                    },
+                    "action_type": "RenameDatasetAction",
+                    "output_name": "imp_qn_lt_file"
+                },
+                "RenameDatasetActionimputed_data_file": {
+                    "action_arguments": {
+                        "newname": "#{input_file}.intensities_randomly-imputed"
                     },
                     "action_type": "RenameDatasetAction",
                     "output_name": "imputed_data_file"
@@ -640,6 +673,11 @@
                     "label": "intensities_randomly-imputed_report",
                     "output_name": "report_file",
                     "uuid": "d6701a61-357b-4a27-8154-ca41eb16d8a6"
+                },
+                {
+                    "label": "intensities_randomly-imputed_QN_LT",
+                    "output_name": "imp_qn_lt_file",
+                    "uuid": "637faf12-0d52-45b3-a318-40bfc7fcd4cb"
                 }
             ]
         }

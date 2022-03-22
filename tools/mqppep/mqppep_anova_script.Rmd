@@ -11,7 +11,7 @@ params:
   inputFile: "test-data/test_input_for_anova.tabular"
   alphaFile: "test-data/alpha_levels.tabular"
   firstDataColumn: "Intensity"
-  imputationMethod: !r c("group-median", "median", "mean", "random")[1]
+  imputationMethod: !r c("group-median", "median", "mean", "random")[4]
   meanPercentile: 1
   sdPercentile: 1.0
   regexSampleNames: "\\.\\d+[A-Z]$"
