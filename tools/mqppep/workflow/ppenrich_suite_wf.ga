@@ -238,7 +238,7 @@
         },
         "7": {
             "annotation": "",
-            "content_id": "testtoolshed.g2.bx.psu.edu/repos/eschen42/mqppep_preproc/mqppep_preproc/0.1.3+galaxy0",
+            "content_id": "mqppep_preproc",
             "errors": null,
             "id": 7,
             "input_connections": {
@@ -427,15 +427,9 @@
                     "output_name": "quantData_tabular"
                 }
             },
-            "tool_id": "testtoolshed.g2.bx.psu.edu/repos/eschen42/mqppep_preproc/mqppep_preproc/0.1.3+galaxy0",
-            "tool_shed_repository": {
-                "changeset_revision": "ae1044bcf13d",
-                "name": "mqppep_preproc",
-                "owner": "eschen42",
-                "tool_shed": "testtoolshed.g2.bx.psu.edu"
-            },
+            "tool_id": "mqppep_preproc",
             "tool_state": "{\"collapseFunc\": \"sum\", \"intervalCol\": \"1\", \"localProbCutoff\": \"0.75\", \"merge_function\": \"sum\", \"networkin\": {\"__class__\": \"ConnectedValue\"}, \"p_sty_motifs\": {\"__class__\": \"ConnectedValue\"}, \"phosphoCol\": \"^Number of Phospho [(]STY[)]$\", \"phosphoSites\": {\"__class__\": \"ConnectedValue\"}, \"protein_fasta\": {\"__class__\": \"ConnectedValue\"}, \"psp_kinase_substrate\": {\"__class__\": \"ConnectedValue\"}, \"psp_regulatory_sites\": {\"__class__\": \"ConnectedValue\"}, \"pst_not_py\": \"true\", \"species\": \"human\", \"startCol\": \"^Intensity[^_]\", \"__page__\": null, \"__rerun_remap_job_id__\": null}",
-            "tool_version": "0.1.3+galaxy0",
+            "tool_version": null,
             "type": "tool",
             "uuid": "1e983dba-edca-4aed-a589-49b1651b4a85",
             "workflow_outputs": [
@@ -508,7 +502,7 @@
         },
         "8": {
             "annotation": "Perform ANOVA. For imputing missing values, use median of non-missing values from the same treatment group.",
-            "content_id": "testtoolshed.g2.bx.psu.edu/repos/eschen42/mqppep_anova/mqppep_anova/0.1.3+galaxy0",
+            "content_id": "mqppep_anova",
             "errors": null,
             "id": 8,
             "input_connections": {
@@ -560,15 +554,9 @@
                     "output_name": "report_file"
                 }
             },
-            "tool_id": "testtoolshed.g2.bx.psu.edu/repos/eschen42/mqppep_anova/mqppep_anova/0.1.3+galaxy0",
-            "tool_shed_repository": {
-                "changeset_revision": "4deacfee76ef",
-                "name": "mqppep_anova",
-                "owner": "eschen42",
-                "tool_shed": "testtoolshed.g2.bx.psu.edu"
-            },
+            "tool_id": "mqppep_anova",
             "tool_state": "{\"alpha_file\": {\"__class__\": \"ConnectedValue\"}, \"first_data_column\": \"Intensity\", \"imputation\": {\"imputation_method\": \"group-median\", \"__current_case__\": 0}, \"input_file\": {\"__class__\": \"ConnectedValue\"}, \"sample_grouping_regex\": \"(\\\\d+)\", \"sample_names_regex\": \"\\\\.(\\\\d+)[A-Z]$\", \"__page__\": null, \"__rerun_remap_job_id__\": null}",
-            "tool_version": "0.1.3+galaxy0",
+            "tool_version": null,
             "type": "tool",
             "uuid": "ffa771c3-c52d-42a4-b78f-a60a39678792",
             "workflow_outputs": [
@@ -586,7 +574,7 @@
         },
         "9": {
             "annotation": "Perform ANOVA. For imputing missing values, create random values.",
-            "content_id": "testtoolshed.g2.bx.psu.edu/repos/eschen42/mqppep_anova/mqppep_anova/0.1.3+galaxy0",
+            "content_id": "mqppep_anova",
             "errors": null,
             "id": 9,
             "input_connections": {
@@ -638,15 +626,8 @@
                     "output_name": "report_file"
                 }
             },
-            "tool_id": "testtoolshed.g2.bx.psu.edu/repos/eschen42/mqppep_anova/mqppep_anova/0.1.3+galaxy0",
-            "tool_shed_repository": {
-                "changeset_revision": "4deacfee76ef",
-                "name": "mqppep_anova",
-                "owner": "eschen42",
-                "tool_shed": "testtoolshed.g2.bx.psu.edu"
-            },
+            "tool_id": "mqppep_anova",
             "tool_state": "{\"alpha_file\": {\"__class__\": \"ConnectedValue\"}, \"first_data_column\": \"Intensity\", \"imputation\": {\"imputation_method\": \"random\", \"__current_case__\": 3, \"meanPercentile\": \"1\", \"sdPercentile\": \"0.2\"}, \"input_file\": {\"__class__\": \"ConnectedValue\"}, \"sample_grouping_regex\": \"(\\\\d+)\", \"sample_names_regex\": \"\\\\.(\\\\d+)[A-Z]$\", \"__page__\": null, \"__rerun_remap_job_id__\": null}",
-            "tool_version": "0.1.3+galaxy0",
             "type": "tool",
             "uuid": "f1f2bdf9-fbc0-4205-b834-9a8af5814dc9",
             "workflow_outputs": [

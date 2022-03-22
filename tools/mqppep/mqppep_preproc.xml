@@ -12,10 +12,10 @@
       ) && (
         \$CONDA_PREFIX/bin/Rscript '$__tool_directory__/MaxQuantProcessingScript.R'
         -i '$phosphoSites'
-        #if $pst_not_py:
-            --enriched ST
-        #else
+        #if $pst_py_selector == "y"
             --enriched Y
+        #else
+            --enriched ST
         #end if
         --phosphoCol '$phosphocol_script'
         --startCol '$startcol_script'
@@ -41,10 +41,10 @@
         -m '$p_sty_motifs'
         -p '$psp_kinase_substrate'
         -r '$psp_regulatory_sites'
-        #if $pst_not_py:
-            -P sty
-        #else
+        #if $pst_py_selector == "y"
             -P y
+        #else
+            -P sty
         #end if
         -F $merge_function
         -o '$mapped_phophopeptides'
@@ -101,32 +101,13 @@
         <param name="intervalCol" type="integer" value="1" min="1"
                label="Interval between the intensity column of samples"
                help="[intervalCol] E.g., 1 if subsequent column is next sample; 2 if next sample is two columns away, etc."/>
-        <!-- pst_not_py is true when chosing pS/pT, false when choosing pY -->
-        <param name="pst_not_py" type="boolean"
-            checked="true"
-            label="Phospho enrichment pS/pT (rather than pY)"
-            help="True when samples were enriched for pS and pT; false when enriched for pY"
+        <param name="pst_py_selector" type="select"
+            label="Phosphopeptide enrichment type"
+            help="[enrichment] Were samples enriched for pS and pT, or were they enriched for pY instead?"
             >
+            <option value="st" selected="true">pST</option>
+            <option value="y">pY</option>
         </param>
-        <!--
-        <conditional name="py_pst">
-            <param name="pst_not_py" type="select"
-                label="Phospho enrichment type"
-                help="[enriched] Were samples enriched for pS and pT, or were they enriched for pY?"
-                >
-                <option value="st" selected="true">pST</option>
-                <option value="y">pY</option>
-            </param>
-            <when value="st">
-                <param name="enriched" type="text" value="ST" />
-                <param name="phospho_type" type="text" value="sty" />
-            </when>
-            <when value="y">
-                <param name="enriched" type="text" value="Y" />
-                <param name="phospho_type" type="text" value="y" />
-            </when>
-        </conditional>
-        -->
         <param name="collapseFunc" type="select"
                label="Intensity merge function"
                help="[collapseFunc] When a peptide is multiply phosphorylated, how should intensities be merged? [default: sum]"
@@ -187,7 +168,7 @@
             <param name="p_sty_motifs" ftype="tabular" value="pSTY_motifs.tabular" />
             <param name="psp_kinase_substrate" ftype="tabular" value="test_kinase_substrate.tabular" />
             <param name="psp_regulatory_sites" ftype="tabular" value="test_regulatory_sites.tabular" />
-            <param name="pst_not_py" value="true"/>
+            <param name="pst_py_selector" value="st"/>
             <param name="merge_function"  value="sum"/>
 
             <param name="phosphoCol" value="^Number of Phospho [(][STY][STY]*[)]$"/>
@@ -246,10 +227,57 @@
                 </assert_contents>
             </output>
         </test>
+        <test>
+            <param name="phosphoSites" ftype="tabular" value="test_input_for_preproc.tabular" />
+            <param name="protein_fasta" ftype="fasta" value="test_swissprot.fasta" />
+            <param name="networkin" ftype="tabular" value="test_networkin.tabular" />
+            <param name="p_sty_motifs" ftype="tabular" value="pSTY_motifs.tabular" />
+            <param name="psp_kinase_substrate" ftype="tabular" value="test_kinase_substrate.tabular" />
+            <param name="psp_regulatory_sites" ftype="tabular" value="test_regulatory_sites.tabular" />
+            <param name="pst_py_selector" value="y"/>
+            <param name="merge_function"  value="sum"/>
+
+            <param name="phosphoCol" value="^Number of Phospho [(][STY][STY]*[)]$"/>
+            <param name="startCol" value="^Intensity[^_]"/>
+            <param name="intervalCol" value="1"/>
+            <param name="collapseFunc" value="sum"/>
+            <param name="localProbCutoff" value="0.75"/>
+            <param name="species" value="human"/>
+
+            <output name="phosphoPepIntensities">
+                <assert_contents>
+                    <has_text text="Phosphopeptide" />
+                    <has_text text="pTYVDPFTpYEDPNQAVR" />
+                </assert_contents>
+            </output>
+
+            <output name="preproc_tab">
+                <assert_contents>
+                    <has_text text="pTYVDPFTpYEDPNQAVR" />
+                    <has_text text="EEKHLNQGVRpTYVDPFTYEDP" />
+                    <has_text text="GVRTYVDPFTpYEDPNQAVREF" />
+                    <has_text text="HLNQGVRtYVDPFTY" />
+                    <has_text text="TYVDPFTyEDPNQAV" />
+                    <has_text text="EPHA4" />
+                    <has_text text="pT595, pY602" />
+                    <has_text text="pT544, pY551" />
+                    <has_text text="P54764;" />
+                    <has_text text="P54764-2" />
+                </assert_contents>
+            </output>
+
+            <output name="melted_phophopeptide_map">
+                <assert_contents>
+                    <has_text text="Casein Kinase II substrate motif (HPRD)" />
+                    <has_text text="EPHA4_PhosphoSite" />
+                    <has_text text="EphA4_NetworKIN" />
+                </assert_contents>
+            </output>
+        </test>
     </tests>
     <help><![CDATA[
 =========================================================
-Phopsphoproteomic Enrichment Pipeline Preprocessing Steps 
+Phopsphoproteomic Enrichment Pipeline Preprocessing Steps
 =========================================================
 
 **Overview**
@@ -326,7 +354,7 @@ so it is omitted here even though it was included in Larry Cheng's original scri
 
 ``Arthur C. Eschenlauer``
   (`ORCiD 0000-0002-2882-0508 <https://orcid.org/0000-0002-2882-0508>`_) adapted the script to run in Galaxy.
-      
+
 =============================================================
 Phopsphoproteomic Enrichment Pipeline Upstream Kinase Mapping
 =============================================================

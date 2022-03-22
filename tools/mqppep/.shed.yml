@@ -38,6 +38,7 @@ repositories:
       - test-data/test_networkin.tabular
       - test-data/test_regulatory_sites.tabular
       - test-data/test_input_for_preproc.tabular
+      - workflow/ppenrich_suite_wf.ga
   mqppep_anova:
     description: "Perform ANOVA on merged and filtered data from phospho-peptide enrichment/MaxQuant pipeline."
     include:
@@ -47,3 +48,4 @@ repositories:
       - mqppep_anova_script.Rmd
       - test-data/alpha_levels.tabular
       - test-data/test_input_for_anova.tabular
+      - workflow/ppenrich_suite_wf.ga
