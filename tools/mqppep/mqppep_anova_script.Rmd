@@ -8,24 +8,24 @@ output:
   latex_document:
     toc: true
 params:
-  inputFile: "test-data/test_input_for_anova.tabular"
   alphaFile: "test-data/alpha_levels.tabular"
-  firstDataColumn: "Intensity"
+  inputFile: "test-data/UT_Phospho_ST_Sites.preproc.tabular"
+  firstDataColumn: "^Intensity[^_]"
   imputationMethod: !r c("group-median", "median", "mean", "random")[4]
   meanPercentile: 1
   sdPercentile: 1.0
   regexSampleNames: "\\.\\d+[A-Z]$"
   regexSampleGrouping: "\\d+"
-  imputedDataFilename: "test-data/imputedDataFilename.txt"
-  imputedQNLTDataFile: "test-data/imputedQNLTDataFile.txt"
+  imputedDataFilename: "test-data/limbo/imputedDataFilename.txt"
+  imputedQNLTDataFile: "test-data/limbo/imputedQNLTDataFile.txt"
   show_toc: true
 ---
 <!--
-  latex_document: default
+  alphaFile: "test-data/alpha_levels.tabular"
   inputFile: "test-data/test_input_for_anova.tabular"
+  inputFile: "test-data/UT_Phospho_ST_Sites.preproc.tabular"
   inputFile: "test-data/density_failure.preproc_tab.tabular"
-  inputFile: "test-data/UT_Phospho_STY_Sites.preproc_tab"
-date: "May 28, 2018; Mar 16, 2022"
+  latex_document: default
 -->
 ```{r setup, include = FALSE}
 # ref for parameterizing Rmd document: https://stackoverflow.com/a/37940285
@@ -44,6 +44,7 @@ const_stripsmall_cex <-
   sqrt(const_stripchart_cex * const_stripchart_cex / 2)
 const_stripchart_jitter <- 0.3
 const_write_debug_files <- FALSE
+const_table_anchor <- "tbp"
 
 ### FUNCTIONS
 
@@ -103,7 +104,7 @@ latex_table_row <- function(v) {
 }
 
 # Use this like print.data.frame, from which it is adapted:
-print_data_frame_latex <-
+data_frame_latex <-
   function(
     x,
     ...,
@@ -116,7 +117,7 @@ print_data_frame_latex <-
     # string with justification of each column
     justification = NULL,
     # TRUE to center on page
-    centered = FALSE,
+    centered = TRUE,
     # optional capttion
     caption = NULL,
     # h(inline); b(bottom); t (top) or p (separate page)
@@ -200,13 +201,10 @@ print_data_frame_latex <-
 
 ```
 
-## Purpose:
+## Purpose
 
 Perform imputation of missing values, quantile normalization, and ANOVA.
 
-<!--
-## Variables to change for each input file
--->
 ```{r include = FALSE}
 # Input Filename
 input_file <- params$inputFile
@@ -214,19 +212,25 @@ input_file <- params$inputFile
 # First data column - ideally, this could be detected via regexSampleNames,
 #   but for now leave it as is.
 first_data_column <- params$firstDataColumn
-fdc_is_integer <- TRUE
-first_data_column <- withCallingHandlers(
-    as.integer(first_data_column)
-  , warning = function(w) fdc_is_integer <<- FALSE
-  )
-if (FALSE == fdc_is_integer) {
-  first_data_column <- params$firstDataColumn
+fdc_is_integer <- is.integer(first_data_column)
+if (fdc_is_integer) {
+  first_data_column <- as.integer(params$firstDataColumn)
 }
 
 # False discovery rate adjustment for ANOVA
 #  Since pY abundance is low, set to 0.10 and 0.20 in addition to 0.05
 val_fdr <-
-  read.table(file = params$alphaFile, sep = "\t", header = F, quote = "")[, 1]
+  read.table(file = params$alphaFile, sep = "\t", header = F, quote = "")
+
+if (
+  ncol(val_fdr) != 1 ||
+  sum(!is.numeric(val_fdr[, 1])) ||
+  sum(val_fdr[, 1] < 0) ||
+  sum(val_fdr[, 1] > 1)
+) {
+  stop("alphaFile should be one column of numbers within the range [0.0,1.0]")
+}
+val_fdr <- val_fdr[, 1]
 
 #Imputed Data filename
 imputed_data_filename <- params$imputedDataFilename
@@ -274,38 +278,45 @@ full_data <- read.table(
   )
 ```
 
-### Parse column names, sample names, and factor levels from input file
+## Extract Sample Names and Factor Levels
+
+Column names parsed from input file are shown in Table 1; sample names and factor levels, in Table 2.
 
 ```{r echo = FALSE, results = 'asis'}
-# Write column naames as an enumerated list.
-column_name_df <- data.frame(
-  column = seq_len(length(colnames(full_data))),
-  name = colnames(full_data)
-  )
-print_data_frame_latex(
-  x = column_name_df,
-  justification = "l l",
-  centered = TRUE,
-  caption = "Input data column name",
-  anchor = "h"
-  )
 
 data_column_indices <- grep(first_data_column, names(full_data), perl = TRUE)
-cat(
-  sprintf(
-    "\n\nData columns: [%d,%d]\n\n",
-    min(data_column_indices),
-    max(data_column_indices)
-    )
-  )
 
-if (FALSE == fdc_is_integer) {
+if (!fdc_is_integer) {
   if (length(data_column_indices) > 0) {
     first_data_column <- data_column_indices[1]
   } else {
     stop(paste("failed to convert firstDataColumn:", first_data_column))
   }
 }
+
+cat(
+  sprintf(
+    paste(
+      "\n\nPeptide-intensity data for each sample is",
+      "in one of columns %d through %d.\n\n"
+      ),
+    min(data_column_indices),
+    max(data_column_indices)
+    )
+  )
+
+# Write column names as a LaTeX enumerated list.
+column_name_df <- data.frame(
+  column = seq_len(length(colnames(full_data))),
+  name = colnames(full_data)
+  )
+data_frame_latex(
+  x = column_name_df,
+  justification = "l l",
+  centered = TRUE,
+  caption = "Input data column name",
+  anchor = const_table_anchor
+  )
 
 ```
 
@@ -336,12 +347,12 @@ sample_factor_df <- data.frame(
   sample = sample_name_matches,
   level = sample_factor_levels
   )
-print_data_frame_latex(
+data_frame_latex(
   x = sample_factor_df,
   justification = "c c",
   centered = TRUE,
   caption = "Factor level",
-  anchor = "h"
+  anchor = const_table_anchor
   )
 ```
 ```{r echo = FALSE, results = 'asis'}
@@ -370,18 +381,9 @@ boxplot(
   quant_data_log
 , las = 1
 , col = const_boxplot_fill
+, ylab = latex2exp::TeX("$log_{10}$(peptide intensity)")
+, xlab = "Sample"
 )
-# Points
-stripchart(
-  quant_data_log, # Data
-  method = "jitter",          # Random noise
-  jitter = const_stripchart_jitter,
-  pch = 19,                   # Pch symbols
-  cex = const_stripchart_cex, # Size of symbols reduced
-  col = "goldenrod",          # Color of the symbol
-  vertical = TRUE,            # Vertical mode
-  add = TRUE                  # Add it over
-  )
 par(old_par)
 
 
@@ -398,7 +400,8 @@ if (nrow(quant_data_log) > 1) {
   ggplot(
     quant_data_log_stack,
     aes(x = values)
-    ) +
+    ) + xlab(latex2exp::TeX("$log_{10}$(peptide intensity)")) +
+    ylab("Probability density") +
     geom_density(
       aes(group = ind, colour = ind),
       na.rm = TRUE
@@ -411,7 +414,10 @@ if (nrow(quant_data_log) > 1) {
 ### Globally, are peptide intensities are approximately unimodal?
 
 <!--
-# ref for bquote below particularly and plotting math expressions generally:
+# bquote could be used as an alternative to latex2exp::TeX below particularly
+#   and when plotting math expressions generally, at the expense of mastering
+#   another syntax, which hardly seems worthwhile when I need to use TeX
+#   elsewhere; here's an introduction to bquote:
 #   https://www.r-bloggers.com/2018/03/math-notation-for-r-plot-titles-expression-and-bquote/
 -->
 ```{r echo = FALSE, fig.align = "left", fig.dim = c(9, 5), results = 'asis'}
@@ -420,17 +426,21 @@ if (nrow(quant_data_log) > 1) {
 fin <- is.finite(as.numeric(as.matrix(quant_data_log)))
 
 logvalues <- as.numeric(as.matrix(quant_data_log))[fin]
+logvalues_density <- density(logvalues)
 plot(
-  density(logvalues),
-  main = bquote(
-    "Smoothed estimated probability density vs." ~ log[10](intensity)),
-  xlab = bquote(log[10](intensity))
+  x = logvalues_density,
+  main = latex2exp::TeX(
+    "Smoothed estimated probability density vs. $log_{10}$(peptide intensity)"
+    ),
+  xlab = latex2exp::TeX("$log_{10}$(peptide intensity)"),
+  ylab = "Probability density"
   )
 hist(
-  x = as.numeric(as.matrix(quant_data_log))
-, breaks = 100
-, main = bquote("Frequency vs." ~ log[10](intensity))
-, xlab = bquote(log[10](intensity))
+  x = as.numeric(as.matrix(quant_data_log)),
+  xlim = c(min(logvalues_density$x), max(logvalues_density$x)),
+  breaks = 100,
+  main = latex2exp::TeX("Frequency vs. $log_{10}$(peptide intensity)"),
+  xlab = latex2exp::TeX("$log_{10}$(peptide intensity)")
 )
 ```
 
@@ -452,6 +462,7 @@ if (sum(!is.na(sds)) > 2) {
     density(sds, na.rm = T)
   , main = "Smoothed estimated probability density vs. std. deviation"
   , sub = "(probability estimation made with Gaussian smoothing)"
+  , ylab = "Probability density"
   )
 } else {
   cat(
@@ -510,7 +521,7 @@ switch(
 , "group-median" = {
     imputation_method_description <-
       paste("Substitute missing value with",
-        "median peptide intensity for sample group\n"
+        "median peptide intensity for sample group.\n"
         )
     sample_level_integers <- as.integer(sample_factor_levels)
     for (i in seq_len(length(levels(sample_factor_levels)))) {
@@ -524,7 +535,7 @@ switch(
 , "median" = {
     imputation_method_description <-
       paste("Substitute missing value with",
-        "median peptide intensity across all sample classes\n"
+        "median peptide intensity across all sample classes.\n"
         )
     quant_data_imp[ind] <- apply(quant_data_imp, 1, median, na.rm = T)[ind[, 1]]
     good_rows <- !is.na(rowMeans(quant_data_imp))
@@ -532,7 +543,7 @@ switch(
 , "mean" = {
     imputation_method_description <-
       paste("Substitute missing value with",
-        "mean peptide intensity across all sample classes\n"
+        "mean peptide intensity across all sample classes.\n"
         )
     quant_data_imp[ind] <- apply(quant_data_imp, 1, mean, na.rm = T)[ind[, 1]]
     good_rows <- !is.na(rowMeans(quant_data_imp))
@@ -544,7 +555,7 @@ switch(
     imputation_method_description <-
       paste("Substitute each missing value with random intensity",
         sprintf(
-          "random intensity $N \\sim (%0.2f, %0.2f)$\n",
+          "random intensity $N \\sim (%0.2f, %0.2f)$.\n",
           q1, m1
           )
         )
@@ -552,7 +563,6 @@ switch(
       100 * mean_percentile))
     cat(sprintf("sd_percentile (from input parameter) is %0.2f\n\n",
       sd_percentile))
-    #ACE cat(sprintf("sd for rnorm is %0.4f\n\n", m1))
     quant_data_imp[ind] <-
       10 ^ rnorm(number_to_impute, mean = q1, sd = m1)
     good_rows <- !is.na(rowMeans(quant_data_imp))
@@ -684,11 +694,20 @@ if (sum(is.na(quant_data)) > 0) {
   write_debug_file(quant_data_imp_log10)
 
   red_dots <- quant_data_imp_log10 * x
-  ylim <- c(
+  count_red <- sum(!is.na(red_dots))
+  count_blue <- sum(!is.na(blue_dots))
+  ylim_save <- ylim <- c(
     min(red_dots, blue_dots, na.rm = TRUE),
     max(red_dots, blue_dots, na.rm = TRUE)
     )
-  # ref: https://r-charts.com/distribution/add-points-boxplot/
+  show_stripchart <-
+    50 > (count_red + count_blue) / length(sample_name_matches)
+  if (show_stripchart) {
+    boxplot_sub <- "Light blue = data before imputation; Red = imputed data"
+  } else {
+    boxplot_sub <- ""
+  }
+
   # Vertical plot
   colnames(blue_dots) <- sample_name_matches
   boxplot(
@@ -697,32 +716,59 @@ if (sum(is.na(quant_data)) > 0) {
     , col = const_boxplot_fill
     , ylim = ylim
     , main = "Peptide intensities before and after imputation"
-    , sub = "Light blue = data before imputation; Red = imputed data"
+    , sub = boxplot_sub
     , xlab = "Sample"
-    , ylab = "log10(peptide intensity)"
+    , ylab = latex2exp::TeX("$log_{10}$(peptide intensity)")
     )
-  # Points
-  # NA values are not plotted
-  stripchart(
-    blue_dots,                 # Data
-    method = "jitter",          # Random noise
-    jitter = const_stripchart_jitter,
-    pch = 19,                   # Pch symbols
-    cex = const_stripsmall_cex, # Size of symbols reduced
-    col = "lightblue",          # Color of the symbol
-    vertical = TRUE,            # Vertical mode
-    add = TRUE                  # Add it over
-    )
-  stripchart(
-    red_dots,                   # Data
-    method = "jitter",          # Random noise
-    jitter = const_stripchart_jitter,
-    pch = 19,                   # Pch symbols
-    cex = const_stripsmall_cex, # Size of symbols reduced
-    col = "red",                # Color of the symbol
-    vertical = TRUE,            # Vertical mode
-    add = TRUE                  # Add it over
-    )
+
+  if (show_stripchart) {
+    # Points
+    # ref: https://r-charts.com/distribution/add-points-boxplot/
+    # NA values are not plotted
+    stripchart(
+      blue_dots,                 # Data
+      method = "jitter",          # Random noise
+      jitter = const_stripchart_jitter,
+      pch = 19,                   # Pch symbols
+      cex = const_stripsmall_cex, # Size of symbols reduced
+      col = "lightblue",          # Color of the symbol
+      vertical = TRUE,            # Vertical mode
+      add = TRUE                  # Add it over
+      )
+    stripchart(
+      red_dots,                   # Data
+      method = "jitter",          # Random noise
+      jitter = const_stripchart_jitter,
+      pch = 19,                   # Pch symbols
+      cex = const_stripsmall_cex, # Size of symbols reduced
+      col = "red",                # Color of the symbol
+      vertical = TRUE,            # Vertical mode
+      add = TRUE                  # Add it over
+      )
+
+  } else {
+    # violin plot
+    cat("\\leavevmode\n\\quad\n\n\\quad\n\n")
+    vioplot::vioplot(
+      x = lapply(blue_dots, function(x) x[!is.na(x)]),
+      col = "lightblue1",
+      side = "left",
+      plotCentre = "line",
+      ylim = ylim_save,
+      main = "Distributions of observed and imputed data",
+      sub = "Light blue = observed data; Pink = imputed data",
+      xlab = "Sample",
+      ylab = latex2exp::TeX("$log_{10}$(peptide intensity)")
+      )
+    vioplot::vioplot(
+      x = lapply(red_dots, function(x) x[!is.na(x)]),
+      col = "lightpink1",
+      side = "right",
+      plotCentre = "line",
+      add = T
+      )
+  }
+
   par(old_par)
 
   # density plot
@@ -738,7 +784,7 @@ if (sum(is.na(quant_data)) > 0) {
           "Black = combined"
           ),
       main = "Density of peptide intensity before and after imputation",
-      xlab = "log10(peptide intensity)",
+      xlab = latex2exp::TeX("$log_{10}$(peptide intensity)"),
       ylab = "Probability density"
     )
     lines(d_original, col = "blue")
@@ -909,18 +955,9 @@ if ((how_many_peptides) > 0) {
     quant_data_log
   , las = 1
   , col = const_boxplot_fill
+  , ylab = latex2exp::TeX("$log_{10}$(peptide intensity)")
+  , xlab = "Sample"
   )
-  # Points
-  stripchart(
-    quant_data_log, # Data
-    method = "jitter",          # Random noise
-    jitter = const_stripchart_jitter,
-    pch = 19,                   # Pch symbols
-    cex = const_stripchart_cex, # Size of symbols reduced
-    col = "goldenrod",          # Color of the symbol
-    vertical = TRUE,            # Vertical mode
-    add = TRUE                  # Add it over
-    )
   par(old_par)
 } else {
   cat("There are no peptides to plot\n")
@@ -936,7 +973,8 @@ if (nrow(quant_data_log) > 1) {
   ggplot(
     quant_data_log_stack,
     aes(x = values)
-    ) +
+    ) + xlab(latex2exp::TeX("$log_{10}$(peptide intensity)")) +
+    ylab("Probability density") +
     geom_density(
       aes(group = ind, colour = ind),
       na.rm = TRUE
@@ -949,7 +987,7 @@ if (nrow(quant_data_log) > 1) {
 cat("\\leavevmode\\newpage\n")
 ```
 
-## Perform ANOVA filters
+## Perform ANOVA Filters
 
 ```{r, echo = FALSE}
 # Make new data frame containing only Phosphopeptides
@@ -1125,24 +1163,13 @@ if (count_of_factor_levels < 2) {
         main = "Imputed, normalized intensities", # no line plot
         las = 1,
         col = const_boxplot_fill,
-        ylab = expression(log[10](intensity))
+        ylab = latex2exp::TeX("$log_{10}$(peptide intensity)")
       )
-      # Points
-      stripchart(
-        filtered_data_filtered,     # Data
-        method = "jitter",          # Random noise
-        jitter = const_stripchart_jitter,
-        pch = 19,                   # Pch symbols
-        cex = const_stripchart_cex, # Size of symbols reduced
-        col = "goldenrod",          # Color of the symbol
-        vertical = TRUE,            # Vertical mode
-        add = TRUE                  # Add it over
-        )
       par(old_par)
     } else {
       cat(sprintf(
         "%s < %0.2f\n\n\n\n\n",
-        "No peptides were found to have cutoff adjusted p-value <",
+        "No peptides were found to have cutoff adjusted p-value",
         cutoff
       ))
     }
@@ -1229,11 +1256,12 @@ if (count_of_factor_levels < 2) {
           )
         } else {
           if (nrow(m) == 1) {
+            next
+          } else {
             cat(
               sprintf("Heatmap for %d usable peptides whose", nrow(m)),
               sprintf("adjusted p-value < %0.2f\n", cutoff)
             )
-            next
           }
         }
         cat("\n\n\n")
@@ -1263,9 +1291,3 @@ if (count_of_factor_levels < 2) {
 }
 cat("\\leavevmode\n\n\n")
 ```
-
-<!--
-## Peptide IDs, etc.
-
-See output files.
--->

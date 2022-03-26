@@ -32,7 +32,7 @@ option_list <- list(
   make_option(
     c("-f", "--firstDataColumn"),
     action = "store",
-    default = "10",
+    default = "^Intensity[^_]",
     type = "character",
     help = "First column of intensity values"
   ),
@@ -110,9 +110,12 @@ cat(str(args))
 if (! file.exists(args$inputFile)) {
   stop((paste("Input file", args$inputFile, "does not exist")))
 }
-input_file <- args$inputFile
-alpha_file <- args$alphaFile
-first_data_column <- args$firstDataColumn
+input_file             <- args$inputFile
+alpha_file             <- args$alphaFile
+imputed_data_file_name <- args$imputedDataFile
+imp_qn_lt_data_filenm  <- args$imputedQNLTDataFile
+report_file_name       <- args$reportFile
+
 imputation_method <- args$imputationMethod
 print(
   grepl(
@@ -133,42 +136,49 @@ if (
     return(-1)
     }
 
+# read with default values, when applicable
 mean_percentile <- args$meanPercentile
-print("mean_percentile is:")
-cat(str(mean_percentile))
+sd_percentile   <- args$sdPercentile
+# in the case of 'random" these values are ignored by the client script
+if (imputation_method == "random") {
+  print("mean_percentile is:")
+  cat(str(mean_percentile))
 
-sd_percentile <- args$sdPercentile
-print("sd_percentile is:")
-cat(str(mean_percentile))
+  print("sd_percentile is:")
+  cat(str(mean_percentile))
+}
 
-
-regex_sample_names    <- gsub("^[ \t\n]*", "",
-                         readChar(args$regexSampleNames,  1000)
-                       )
-regex_sample_names    <- gsub("[ \t\n]*$", "",
-                         regex_sample_names
-                       )
-cat(regex_sample_names)
-cat("\n")
-
-regex_sample_grouping <- gsub("^[ \t\n]*", "",
-                           readChar(args$regexSampleGrouping, 1000)
-                         )
-regex_sample_grouping <- gsub("[ \t\n]*$", "",
-                           regex_sample_grouping
-                         )
-cat(regex_sample_grouping)
-cat("\n")
-
-imputed_data_file_name <- args$imputedDataFile
-imp_qn_lt_data_filenm <-  args$imputedQNLTDataFile
-report_file_name <- args$reportFile
-
-print("regex_sample_names is:")
-cat(str(regex_sample_names))
-
-print("regex_sample_grouping is:")
-cat(str(regex_sample_grouping))
+# convert string parameters that are passed in via config files:
+#  - firstDataColumn
+#  - regexSampleNames
+#  - regexSampleGrouping
+read_config_file_string <- function(fname, limit) {
+  # eliminate any leading whitespace
+  result    <- gsub("^[ \t\n]*", "", readChar(fname, limit))
+  # eliminate any trailing whitespace
+  result    <- gsub("[ \t\n]*$", "", result)
+  # substitute characters escaped by Galaxy sanitizer
+  result <- gsub("__lt__", "<",  result)
+  result <- gsub("__le__", "<=", result)
+  result <- gsub("__eq__", "==", result)
+  result <- gsub("__ne__", "!=", result)
+  result <- gsub("__gt__", ">",  result)
+  result <- gsub("__ge__", ">=", result)
+  result <- gsub("__sq__", "'",  result)
+  result <- gsub("__dq__", '"',  result)
+  result <- gsub("__ob__", "[",  result)
+  result <- gsub("__cb__", "]",  result)
+}
+cat(paste0("first_data_column file: ", args$firstDataColumn, "\n"))
+cat(paste0("regex_sample_names file: ", args$regexSampleNames, "\n"))
+cat(paste0("regex_sample_grouping file: ", args$regexSampleGrouping, "\n"))
+nc <- 1000
+regex_sample_names <- read_config_file_string(args$regexSampleNames, nc)
+regex_sample_grouping <- read_config_file_string(args$regexSampleGrouping, nc)
+first_data_column <- read_config_file_string(args$firstDataColumn,  nc)
+cat(paste0("first_data_column: ",     first_data_column,     "\n"))
+cat(paste0("regex_sample_names: ",    regex_sample_names,    "\n"))
+cat(paste0("regex_sample_grouping: ", regex_sample_grouping, "\n"))
 
 # from: https://github.com/molgenis/molgenis-pipelines/wiki/
 #   How-to-source-another_file.R-from-within-your-R-script

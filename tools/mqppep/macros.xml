@@ -1,5 +1,5 @@
 <macros>
-    <token name="@TOOL_VERSION@">0.1.5</token>
+    <token name="@TOOL_VERSION@">0.1.6</token>
     <token name="@VERSION_SUFFIX@">0</token>
     <xml name="requirements">
         <requirements>
@@ -16,15 +16,18 @@
             <requirement type="package" version="1.7.1"   >r-optparse</requirement>
             <requirement type="package" version="2.11"    >r-rmarkdown</requirement>
             <!--
-            It would be nice to use conda-forge/texlive-core, but issue 23 blocked PDF-creation.
-            Also, I got pango font errors (output had missing symbols replaced with boxes) unless
-            I specified the build as well as the version, i.e.
-            texlive-core=20210325=h97429d4_0
+            It would be nice to use conda-forge/texlive-core rather than r-tinytex because the
+            former installs texlive when the package is built, but issue 23 blocked PDF-creation.
+            Also, texlive-core also gave pango font errors (output had missing symbols replaced
+            with boxes) unless I specified the build as well as the version when building a
+            conda environment, e.g.:  texlive-core=20210325=h97429d4_0
             -->
             <requirement type="package" version="0.37"    >r-tinytex</requirement>
             <requirement type="package" version="3.3.5"   >r-ggplot2</requirement>
             <requirement type="package" version="3.9.10"  >python</requirement>
             <requirement type="package" version="5.26.2"  >perl</requirement>
+            <requirement type="package" version="0.9.4"   >r-latex2exp</requirement>
+            <requirement type="package" version="0.3.7"   >r-vioplot</requirement>
         </requirements>
     </xml>
 </macros>
