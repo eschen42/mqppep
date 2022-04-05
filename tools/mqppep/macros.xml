@@ -13,7 +13,6 @@
             <requirement type="package" version="1.56.0"  >bioconductor-preprocesscore</requirement>
             <requirement type="package" version="1.64"    >perl-dbd-sqlite</requirement>
             <requirement type="package" version="1.7.1"   >r-optparse</requirement>
-            <requirement type="package" version="1.7.1"   >r-optparse</requirement>
             <requirement type="package" version="2.11"    >r-rmarkdown</requirement>
             <!--
             It would be nice to use conda-forge/texlive-core rather than r-tinytex because the
