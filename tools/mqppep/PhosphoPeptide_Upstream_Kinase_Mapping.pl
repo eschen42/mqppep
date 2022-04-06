@@ -188,7 +188,7 @@ sub pseudo_sed
       && !($s =~ m/ SV=/s)
     ) {
       # OS= is used elsewhere, but it's not helpful without OX and GN
-      $s =~ s/OS=/OS /g;
+      $s =~ s/OS=/Species /g;
       # supply sensible default values
       $s .= "\tN/A\t-1\tN/A\tN/A\tN/A";
     } else {
