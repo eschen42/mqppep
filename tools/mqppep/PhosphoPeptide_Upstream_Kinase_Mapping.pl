@@ -431,12 +431,6 @@ if ($use_sqlite == 0) {
     # begin FIX >gi|114939|sp|P00722.2|BGAL_ECOLI Beta-galactosidase (Lactase) cRAP
     if (@x > 3) {
       @x = (">".$x[$#x - 2], $x[$#x - 1], $x[$#x]);
-      if ($_ =~ m/DHE3_BOVIN/) {
-        print "\$_ = $_\n";
-        for my $i (0 .. $#x) {
-          print "\$x[$i] = $x[$i]\n";
-        };
-      }
     }
     # end FIX >gi|114939|sp|P00722.2|BGAL_ECOLI Beta-galactosidase (Lactase) cRAP
     for my $i (0 .. $#x) {
