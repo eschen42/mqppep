@@ -182,12 +182,14 @@ sub pseudo_sed
     $s =~ s :^...::s;
     # s/[|]/\t/g;
     $s =~ s :[|]:\t:sg;
-    if ( !($s =~ m/ OS=/s)
-      && !($s =~ m/ OX=/s)
+    if ( !($s =~ m/ OX=/s)
       && !($s =~ m/ GN=/s)
       && !($s =~ m/ PE=/s)
       && !($s =~ m/ SV=/s)
     ) {
+      # OS= is used elsewhere, but it's not helpful without OX and GN
+      $s =~ s/OS=/OS /g;
+      # supply sensible default values
       $s .= "\tN/A\t-1\tN/A\tN/A\tN/A";
     } else {
       # s/ OS=/\t/;
@@ -529,13 +531,16 @@ if ($use_sqlite == 0) {
   my $wrd;
   while ( scalar @parsed_fasta > 0 ) {
       $database = $databases[$#parsed_fasta];
-      #### print "parsed_fasta[-1]: " . $parsed_fasta[$#parsed_fasta] . "\n";
       # row_string gets "UniProt_ID\tDescription\tOS\tOX\tGN\tPE\tSV\t"
       #                  1           2            3   4   5   6   7   sequence database
       $row_string = pop(@parsed_fasta);
       @row = (split /\t/, $row_string);
       if ((not exists($row[4])) || ($row[4] eq "")) {
         die("invalid fasta line\n$row_string\n");
+      };
+      if ($row[4] eq "N/A") {
+        print "Organism_ID is 'N/A' for row $row_count:\n'$row_string'\n";
+        $row[4] = -1;
       };
       for $i (1..3,5..8) {
           #BIND print "bind_param $i, $row[$i]\n";
