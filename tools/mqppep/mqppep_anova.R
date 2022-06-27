@@ -30,6 +30,26 @@ option_list <- list(
              " path to text file having one column and no header")
   ),
   make_option(
+    c("-k", "--run_ksea"),
+    action = "store_true",
+    type = "logical",
+    help = "Should kinome-set enrichment analysis be performed?"
+  ),
+  make_option(
+    c("-S", "--preproc_sqlite"),
+    action = "store",
+    default = NA,
+    type = "character",
+    help = "Path to 'preproc_sqlite' produced by `mqppep_mrgfltr.py`"
+  ),
+  make_option(
+    c("-K", "--ksea_sqlite"),
+    action = "store",
+    default = NA,
+    type = "character",
+    help = "Path to 'ksea_sqlite' output produced by this tool"
+  ),
+  make_option(
     c("-f", "--firstDataColumn"),
     action = "store",
     default = "^Intensity[^_]",
@@ -112,6 +132,9 @@ if (! file.exists(args$inputFile)) {
 }
 input_file             <- args$inputFile
 alpha_file             <- args$alphaFile
+run_ksea               <- args$run_ksea
+preproc_sqlite         <- args$preproc_sqlite
+ksea_sqlite            <- args$ksea_sqlite
 imputed_data_file_name <- args$imputedDataFile
 imp_qn_lt_data_filenm  <- args$imputedQNLTDataFile
 report_file_name       <- args$reportFile
@@ -219,6 +242,9 @@ script_dir <-  location_of_this_script()
 rmarkdown_params <- list(
     inputFile = input_file
   , alphaFile = alpha_file
+  , run_ksea = run_ksea
+  , preprocDb = preproc_sqlite
+  , kseaAppPrepDb = ksea_sqlite
   , firstDataColumn = first_data_column
   , imputationMethod = imputation_method
   , meanPercentile = mean_percentile

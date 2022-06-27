@@ -589,7 +589,7 @@ def __main__():
         # Read in Upstream tabular file
         # We are discarding the intensity data; so read it as text
         upstream_data = pandas.read_table(
-            upstream_map_filename_tab, dtype="str", index_col=0
+            upstream_map_filename_tab, dtype="str" , index_col=0
         )
 
         end_time = time.process_time()  # timer
@@ -598,6 +598,9 @@ def __main__():
             % (end_time - start_time,),
             file=sys.stderr,
         )  # timer
+
+        #ACE print("upstream_data.loc[:,'p-peptide']")
+        #ACE print(upstream_data.loc[:,'p-peptide'])
 
         upstream_data.index = upstream_map_p_peptide_list
 
@@ -608,6 +611,33 @@ def __main__():
             file=sys.stderr,
         )  # timer
 
+        # ########################################################################
+        # # trim upstream_data to include only the upstream map columns
+        # old_cols = upstream_data.columns.tolist()
+        # i = 0
+        # first_intensity = -1
+        # last_intensity = -1
+        # intensity_re = re.compile("Intensity.*")
+        # for col_name in old_cols:
+        #     m = intensity_re.match(col_name)
+        #     if m:
+        #         last_intensity = i
+        #         if first_intensity == -1:
+        #             first_intensity = i
+        #     i += 1
+        # # print('last intensity = %d' % last_intensity)
+        # col_PKCalpha = last_intensity + 2
+        #
+        # data_in_cols = [old_cols[0]] + old_cols[
+        #     first_intensity: last_intensity + 1
+        # ]
+        #
+        # if upstream_data.empty:
+        #     print("upstream_data is empty")
+        #     exit(0)
+        #
+        # data_in = upstream_data.copy(deep=True)[data_in_cols]
+        ########################################################################
         # trim upstream_data to include only the upstream map columns
         old_cols = upstream_data.columns.tolist()
         i = 0
@@ -623,16 +653,23 @@ def __main__():
             i += 1
         # print('last intensity = %d' % last_intensity)
         col_PKCalpha = last_intensity + 2
-
+        
         data_in_cols = [old_cols[0]] + old_cols[
+            first_intensity - 1: last_intensity
+        ]
+        data_col_names = [old_cols[0]] + old_cols[
             first_intensity: last_intensity + 1
         ]
-
+        
         if upstream_data.empty:
             print("upstream_data is empty")
             exit(0)
-
+        
         data_in = upstream_data.copy(deep=True)[data_in_cols]
+        data_in.columns = data_col_names
+        print("data_in")
+        print(data_in)
+        ########################################################################
 
         # Convert floating-point integers to int64 integers
         #   ref: https://stackoverflow.com/a/68497603/15509512
@@ -1181,8 +1218,12 @@ def __main__():
             file=sys.stderr,
         )  # timer
 
+        print("old_cols[:col_PKCalpha]")
+        print(old_cols[:col_PKCalpha])
         cols = [old_cols[0]] + old_cols[col_PKCalpha - 1:]
         upstream_data = upstream_data[cols]
+        print("upstream_data.columns")
+        print(upstream_data.columns)
 
         end_time = time.process_time()  # timer
         print(

@@ -2,13 +2,25 @@
   id="mqppep_anova"
   name="MaxQuant Phosphopeptide ANOVA"
   version="@TOOL_VERSION@+galaxy@VERSION_SUFFIX@"
-  python_template_version="3.5"
   profile="21.05"
   >
     <description>Perform ANOVA on merged and filtered data from phospho-peptide enrichment/MaxQuant pipeline</description>
     <macros>
         <import>macros.xml</import>
     </macros>
+    <edam_topics>
+        <edam_topic>topic_0121</edam_topic><!-- proteomics -->
+        <edam_topic>topic_3520</edam_topic><!-- proteomics experiment-->
+    </edam_topics>
+    <edam_operations>
+        <edam_operation>operation_0276</edam_operation><!-- Analyse a network of protein interactions. -->
+        <edam_operation>operation_0531</edam_operation><!-- Heat map generation -->
+        <edam_operation>operation_2938</edam_operation><!-- Dendrogram generation -->
+        <edam_operation>operation_2938</edam_operation><!-- Imputation -->
+        <edam_operation>operation_3435</edam_operation><!-- Standardisation and normalisation -->
+        <edam_operation>operation_3501</edam_operation><!-- Enrichment analysis -->
+        <edam_operation>operation_3658</edam_operation><!-- Statistical inference -->
+    </edam_operations>
     <expand macro="requirements"/>
     <!--
       The weird invocation used here is because knitr and install_tinytex
@@ -16,11 +28,16 @@
       biocontainer are read-only, so this builds a pseudo-home under /tmp
     -->
     <command detect_errors="exit_code"><![CDATA[
-      cp '$__tool_directory__/mqppep_anova_script.Rmd' . || exit 0;
-      cp '$__tool_directory__/mqppep_anova.R'          . || exit 0;
+      cp '$__tool_directory__/mqppep_anova_script.Rmd' . &&
+      cp '$__tool_directory__/mqppep_anova.R'          . &&
       Rscript mqppep_anova.R
         --inputFile '$input_file'
         --alphaFile '$alpha_file'
+        #if $ksea_conditional.run_ksea == "Yes"
+          --run_ksea
+          --preproc_sqlite '$ksea_conditional.preproc_sqlite'
+          --ksea_sqlite '$ksea_sqlite'
+        #end if
         --firstDataColumn $intensity_column_regex_f
         --imputationMethod $imputation.imputation_method
         #if $imputation.imputation_method == "random"
@@ -31,9 +48,7 @@
         --regexSampleGrouping $sample_grouping_regex_f
         --imputedDataFile $imputed_data_file
         --imputedQNLTDataFile '$imp_qn_lt_file'
-        --reportFile '$report_file';
-      export RESULT=\$?;
-      exit \${RESULT}
+        --reportFile '$report_file'
     ]]></command>
     <configfiles>
       <configfile name="sample_names_regex_f">
@@ -48,14 +63,24 @@
     </configfiles>
     <inputs>
         <param name="input_file" type="data" format="tabular" label="Filtered Phosphopeptide Intensities"
-               help="[input_file] Phosphopeptide intensities filtered for minimal quality.  First column label 'Phosphopeptide'; sample-intensities must begin in column 10 and must have column labels to match argument [sample_names_regex]"
+               help="Phosphopeptide intensities filtered for minimal quality.  First column label 'Phosphopeptide'; sample-intensities must begin in column 10 and must have column labels to match argument [sample_names_regex]"
         />
         <param name="alpha_file" type="data" format="tabular" label="alpha cutoff level"
-               help="[alpha_file] List of alpha cutoff values for significance testing; text file having one column and no header"
+               help="List of alpha cutoff values for significance testing; text file having one column and no header"
         />
+        <conditional name="ksea_conditional">
+            <param name="run_ksea" type="boolean" label="Perform KSEA?"
+                   truevalue="Yes" falsevalue="No" checked="true"
+                   help="Should kinome-set enrichment analysis be performed?" />
+            <when value="Yes">
+                <param name="preproc_sqlite" type="data" format="sqlite" label="preproc_sqlite dataset from mqppep_preproc"
+                       help="'preproc_sqlite' dataset produced by 'MaxQuant Phosphopeptide Preprocessing' tool"
+                />
+            </when>
+        </conditional>
         <param name="intensity_column_regex" type="text" value="^Intensity[^_]"
                label="Intensity-column pattern"
-               help="[intensity_column_regex] Pattern matching columns that have peptide intensity data (PERL-compatible regular expression matching column label)"
+               help="Pattern matching columns that have peptide intensity data (PERL-compatible regular expression matching column label)"
         />
         <!-- imputation_method <- c("group-median","median","mean","random")[1] -->
         <conditional name="imputation">
@@ -73,16 +98,16 @@
             <when value="random">
                 <param name="meanPercentile" type="integer" value="1" min="1" max="99"
                        label="Mean percentile for random values"
-                       help="[meanPercentile] Percentile center of random values; range [1,99]"
+                       help="Percentile center of random values; range [1,99]"
                 />
                 <param name="sdPercentile" type="float" value="1.0"
                        label="Percentile std. dev. for random values"
-                       help="[sdPercentile] Standard deviation adjustment-factor for random values; real number.  (1.0 means SD equal to the SD for the entire data set.)"
+                       help="Standard deviation adjustment-factor for random values; real number.  (1.0 means SD equal to the SD for the entire data set.)"
                 />
             </when>
         </conditional>
         <param name="sample_names_regex" type="text" value="\.\d+[A-Z]$"
-               help="[sample_names_regex] Pattern extracting sample-names from names of columns that have peptide intensity data (PERL-compatible regular expression)"
+               help="Pattern extracting sample-names from names of columns that have peptide intensity data (PERL-compatible regular expression)"
                label="Sample-extraction pattern">
           <sanitizer>
             <valid initial="string.printable">
@@ -91,7 +116,7 @@
           </sanitizer>
         </param>
         <param name="sample_grouping_regex" type="text" value="\d+"
-               help="[sample_grouping_regex] Pattern extracting sample-group from the sample-names that are extracted by 'Sample-extraction pattern' (PERL-compatible regular expression)"
+               help="Pattern extracting sample-group from the sample-names that are extracted by 'Sample-extraction pattern' (PERL-compatible regular expression)"
                label="Group-extraction pattern">
           <sanitizer>
             <valid initial="string.printable">
@@ -107,6 +132,11 @@
         <data name="report_file" format="html" label="${input_file.name}.${imputation.imputation_method}-imputed_report (download/unzip to view)" ></data>
         -->
         <data name="report_file" format="pdf" label="${input_file.name}.${imputation.imputation_method}-imputed_report" ></data>
+        <data name="ksea_sqlite" format="sqlite" label="${input_file.name}.ksea_sqlite">
+            <filter>ksea_conditional['run_ksea']</filter>
+            <!--
+            -->
+        </data>
     </outputs>
     <tests>
         <test>
