@@ -589,7 +589,7 @@ def __main__():
         # Read in Upstream tabular file
         # We are discarding the intensity data; so read it as text
         upstream_data = pandas.read_table(
-            upstream_map_filename_tab, dtype="str" , index_col=0
+            upstream_map_filename_tab, dtype="str", index_col=0
         )
 
         end_time = time.process_time()  # timer
@@ -598,7 +598,6 @@ def __main__():
             % (end_time - start_time,),
             file=sys.stderr,
         )  # timer
-
 
         upstream_data.index = upstream_map_p_peptide_list
 
@@ -651,18 +650,18 @@ def __main__():
             i += 1
         # print('last intensity = %d' % last_intensity)
         col_PKCalpha = last_intensity + 2
-        
+
         data_in_cols = [old_cols[0]] + old_cols[
             first_intensity - 1: last_intensity
         ]
         data_col_names = [old_cols[0]] + old_cols[
             first_intensity: last_intensity + 1
         ]
-        
+
         if upstream_data.empty:
             print("upstream_data is empty")
             exit(0)
-        
+
         data_in = upstream_data.copy(deep=True)[data_in_cols]
         data_in.columns = data_col_names
         print("data_in")

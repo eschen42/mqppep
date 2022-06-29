@@ -4,7 +4,7 @@
   version="@TOOL_VERSION@+galaxy@VERSION_SUFFIX@"
   profile="21.05"
   >
-    <description>Perform ANOVA on merged and filtered data from phospho-peptide enrichment/MaxQuant pipeline</description>
+    <description>Runs ANOVA and KSEA for phosphopeptides.</description>
     <macros>
         <import>macros.xml</import>
     </macros>

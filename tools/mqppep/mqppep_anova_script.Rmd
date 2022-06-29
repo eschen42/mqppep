@@ -341,7 +341,7 @@ hypersub <-
     hyper <- gsub("[-]+",       "-", hyper)
     hyper <- sub("^[-]",        "",  hyper)
     hyper <- sub("[-]$",        "",  hyper)
-    return (hyper)
+    return(hyper)
   }
 
 subsection_header <-
@@ -494,11 +494,11 @@ ksea_scores <- function(
     # Here is the set of split rows
     px_single <- data.frame(
       Protein      = rep(px_double$Protein, x),
-      Gene         = rep(px_double$Gene   , x),
+      Gene         = rep(px_double$Gene,    x),
       Peptide      = rep(px_double$Peptide, x),
       Residue.Both = unlist(split),
-      p            = rep(px_double$p      , x),
-      FC           = rep(px_double$FC     , x)
+      p            = rep(px_double$p,       x),
+      FC           = rep(px_double$FC,      x)
       )
     # new first gets the split rows
     new <- px[-grep(";", px$Residue.Both), ]
@@ -951,7 +951,7 @@ draw_kseaapp_summary_heatmap <- function(
       notecol      = "white",
       cexCol       = 0.9,
       # Heuristically assign size of row labels
-      cexRow       = min(1.0,((3 * my_cex_row)^1.7)/2.25),
+      cexRow       = min(1.0, ((3 * my_cex_row) ^ 1.7) / 2.25),
       srtCol       = 45,
       srtRow       = 45,
       notecex      = 3 * my_cex_row,
@@ -1091,7 +1091,7 @@ ksea_heatmap <- function(
   if (export == "TRUE") {
     dev.off()
   }
-  return (my_row_names)
+  return(my_row_names)
 }
 
 # helper for heatmaps of phosphopeptide intensities
@@ -1121,8 +1121,8 @@ draw_intensity_heatmap <-
         }
       try(
         if (nrow(m) > 1) {
-          #char_contractor = 0.7 * 50 / max(100, nchar(rownames(m_margin)))
-          char_contractor =
+          # Heuresticly determined character size adjustment formula
+          char_contractor <-
             250000 / (
               max(4500, (nchar(rownames(m_margin)))^2) * intensity_hm_rows
               )
@@ -1146,7 +1146,7 @@ draw_intensity_heatmap <-
         }
       )
     }
-    return (peptide_count)
+    return(peptide_count)
   }
 ```
 
@@ -1561,8 +1561,8 @@ switch(
           apply(lvlsbst, 1, median, na.rm = T)
         for (j in seq_len(nrow(lvlsbst))) {
           for (k in seq_len(ncol(lvlsbst))) {
-            if (is.na(lvlsbst[j,k])) {
-              lvlsbst[j,k] <- the_centers[j]
+            if (is.na(lvlsbst[j, k])) {
+              lvlsbst[j, k] <- the_centers[j]
             }
           }
         }
@@ -1745,16 +1745,18 @@ zero_sd_rownames <-
 if (length(zero_sd_rownames) >= nrow(quant_data_imp)) {
   stop("All peptides have zero standard deviation.  Cannot continue.")
 }
-if (length(zero_sd_rownames) > 0 ) {
+if (length(zero_sd_rownames) > 0) {
   cat(
     sprintf("%d peptides with zero variance were removed from statistical consideration",
       length(zero_sd_rownames)
     )
   )
-  zap_named_rows <- function(df, nms) { return (df[!(row.names(df) %in% nms),]) }
+  zap_named_rows <- function(df, nms) {
+    return(df[!(row.names(df) %in% nms), ])
+  }
   quant_data_imp <- zap_named_rows(quant_data_imp, zero_sd_rownames)
-  quant_data     <- zap_named_rows(quant_data    , zero_sd_rownames)
-  full_data      <- zap_named_rows(full_data     , zero_sd_rownames)
+  quant_data     <- zap_named_rows(quant_data,     zero_sd_rownames)
+  full_data      <- zap_named_rows(full_data,      zero_sd_rownames)
 }
 
 if (sum(is.na(quant_data)) > 0) {
@@ -1882,9 +1884,9 @@ if (sum(is.na(quant_data)) > 0) {
     ylim <- c(
       0,
       max(
-        if(is.list(d_combined)) d_combined$y else d_combined,
-        if(is.list(d_original)) d_original$y else d_original,
-        if(is.list(d_imputed)) d_imputed$y else d_imputed,
+        if (is.list(d_combined)) d_combined$y else d_combined,
+        if (is.list(d_original)) d_original$y else d_original,
+        if (is.list(d_imputed)) d_imputed$y else d_imputed,
         na.rm = TRUE
       )
     )
@@ -2001,8 +2003,6 @@ if (nrow(quant_data_imp) > 0) {
 } else {
   quant_data_imp_qn <- as.matrix(quant_data_imp)
 }
-
-#  nrow(quant_data_imp_qn_log[is.na((apply(quant_data_imp_qn_log, 1, sd, na.rm = TRUE)) == 0),])
 
 quant_data_imp_qn <- as.data.frame(quant_data_imp_qn)
 
@@ -2370,7 +2370,7 @@ if (count_of_treatment_levels < 2) {
           )
         } else {
           if (nrow(m) == 1) {
-            return (FALSE)
+            return(FALSE)
           } else {
             subsection_header(
               paste(
@@ -2382,7 +2382,7 @@ if (count_of_treatment_levels < 2) {
         }
         cat("\n\n\n")
         cat("\n\n\n")
-        return (TRUE)
+        return(TRUE)
       }
 
       # construct matrix with appropriate rownames
@@ -3191,24 +3191,24 @@ if (run_ksea) {
         paste(
           sprintf("The %d enriched kinase-substrates with the lowest p-values,",
             intensity_hm_rows),
-          sprintf( " KSEA %s < %0.2f\n", cutoff$statistic, cutoff$threshold)
+          sprintf(" KSEA %s < %0.2f\n", cutoff$statistic, cutoff$threshold)
         )
       )
     } else {
       if (nrow(m) == 1) {
-        return (FALSE)
+        return(FALSE)
       } else {
         subsection_header(
           paste(
             sprintf("%d enriched kinase-substrates,", nrow(m)),
-            sprintf( " KSEA %s < %0.2f\n", cutoff$statistic, cutoff$threshold)
+            sprintf(" KSEA %s < %0.2f\n", cutoff$statistic, cutoff$threshold)
           )
         )
       }
     }
     cat("\n\n\n")
     cat("\n\n\n")
-    return (TRUE)
+    return(TRUE)
   }
 
   plotted_kinases <- NULL
@@ -3329,12 +3329,12 @@ if (run_ksea) {
     ")
   # Get the intensity values for the heatmap
   enriched_intensities <-
-    as.matrix(unimputed_quant_data_log[enriched_substrates$ppep,, drop = FALSE])
+    as.matrix(unimputed_quant_data_log[enriched_substrates$ppep, , drop = FALSE])
   # Remove rows having too many NA values to be relevant
   na_counter <- is.na(enriched_intensities)
   na_counts <- apply(na_counter, 1, sum)
   enriched_intensities <-
-    enriched_intensities[na_counts < ncol(enriched_intensities) / 2,, drop = FALSE]
+    enriched_intensities[na_counts < ncol(enriched_intensities) / 2, , drop = FALSE]
   # Rename the rows with the display-name for the heatmap
   rownames(enriched_intensities) <-
     sapply(
