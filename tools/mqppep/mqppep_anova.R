@@ -3,12 +3,6 @@
 library(optparse)
 library(data.table)
 library(stringr)
-# bioconductor-preprocesscore
-#  - libopenblas
-#  - r-data.table
-#  - r-rmarkdown
-#  - r-ggplot2
-#  - texlive-core
 
 # ref for parameterizing Rmd document: https://stackoverflow.com/a/37940285
 
@@ -28,12 +22,6 @@ option_list <- list(
     type = "character",
     help = paste0("List of alpha cutoff values for significance testing;",
              " path to text file having one column and no header")
-  ),
-  make_option(
-    c("-k", "--run_ksea"),
-    action = "store_true",
-    type = "logical",
-    help = "Should kinome-set enrichment analysis be performed?"
   ),
   make_option(
     c("-S", "--preproc_sqlite"),
@@ -132,7 +120,6 @@ if (! file.exists(args$inputFile)) {
 }
 input_file             <- args$inputFile
 alpha_file             <- args$alphaFile
-run_ksea               <- args$run_ksea
 preproc_sqlite         <- args$preproc_sqlite
 ksea_sqlite            <- args$ksea_sqlite
 imputed_data_file_name <- args$imputedDataFile
@@ -242,7 +229,6 @@ script_dir <-  location_of_this_script()
 rmarkdown_params <- list(
     inputFile = input_file
   , alphaFile = alpha_file
-  , run_ksea = run_ksea
   , preprocDb = preproc_sqlite
   , kseaAppPrepDb = ksea_sqlite
   , firstDataColumn = first_data_column

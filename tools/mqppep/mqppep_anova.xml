@@ -33,11 +33,8 @@
       Rscript mqppep_anova.R
         --inputFile '$input_file'
         --alphaFile '$alpha_file'
-        #if $ksea_conditional.run_ksea == "Yes"
-          --run_ksea
-          --preproc_sqlite '$ksea_conditional.preproc_sqlite'
-          --ksea_sqlite '$ksea_sqlite'
-        #end if
+        --preproc_sqlite '$preproc_sqlite'
+        --ksea_sqlite '$ksea_sqlite'
         --firstDataColumn $intensity_column_regex_f
         --imputationMethod $imputation.imputation_method
         #if $imputation.imputation_method == "random"
@@ -68,16 +65,9 @@
         <param name="alpha_file" type="data" format="tabular" label="alpha cutoff level"
                help="List of alpha cutoff values for significance testing; text file having one column and no header"
         />
-        <conditional name="ksea_conditional">
-            <param name="run_ksea" type="boolean" label="Perform KSEA?"
-                   truevalue="Yes" falsevalue="No" checked="true"
-                   help="Should kinome-set enrichment analysis be performed?" />
-            <when value="Yes">
-                <param name="preproc_sqlite" type="data" format="sqlite" label="preproc_sqlite dataset from mqppep_preproc"
-                       help="'preproc_sqlite' dataset produced by 'MaxQuant Phosphopeptide Preprocessing' tool"
+        <param name="preproc_sqlite" type="data" format="sqlite" label="preproc_sqlite dataset from mqppep_preproc"
+               help="'preproc_sqlite' dataset produced by 'MaxQuant Phosphopeptide Preprocessing' tool"
                 />
-            </when>
-        </conditional>
         <param name="intensity_column_regex" type="text" value="^Intensity[^_]"
                label="Intensity-column pattern"
                help="Pattern matching columns that have peptide intensity data (PERL-compatible regular expression matching column label)"
@@ -132,31 +122,93 @@
         <data name="report_file" format="html" label="${input_file.name}.${imputation.imputation_method}-imputed_report (download/unzip to view)" ></data>
         -->
         <data name="report_file" format="pdf" label="${input_file.name}.${imputation.imputation_method}-imputed_report" ></data>
-        <data name="ksea_sqlite" format="sqlite" label="${input_file.name}.ksea_sqlite">
-            <filter>ksea_conditional['run_ksea']</filter>
-            <!--
-            -->
+        <data name="ksea_sqlite" format="sqlite" label="${input_file.name}..${imputation.imputation_method}-imputed_ksea_sqlite">
         </data>
     </outputs>
     <tests>
         <test>
             <param name="input_file" ftype="tabular" value="test_input_for_anova.tabular"/>
+            <param name="preproc_sqlite" ftype="sqlite" value="test_input_for_anova.sqlite"/>
             <param name="alpha_file" ftype="tabular" value="alpha_levels.tabular"/>
             <param name="intensity_column_regex" value="^Intensity[^_]"/>
-            <param name="imputation_method" value="group-median"/>
+            <param name="imputation_method" value="median"/>
             <param name="sample_names_regex" value="\.\d+[A-Z]$"/>
             <param name="sample_grouping_regex" value="\d+"/>
+            <output name="imputed_data_file">
+                <assert_contents>
+                    <has_text text="Phosphopeptide" />
+                    <has_text text="AAAITDMADLEELSRLpSPLPPGpSPGSAAR" />
+                    <!--                                               missing missing observd missing observd observd  -->
+                    <has_text_matching expression="pSQKQEEENPAEETGEEK.*8765300.8765300.8765300.8765300.2355900.14706000" />
+
+                </assert_contents>
+            </output>
             <output name="imp_qn_lt_file">
                 <assert_contents>
                     <has_text text="Phosphopeptide" />
                     <has_text text="AAAITDMADLEELSRLpSPLPPGpSPGSAAR" />
-                    <has_text text="7.935878" />
+                    <!--                                               missing   missing   observed  missing   observed  observed  -->
+                    <has_text_matching expression="pSQKQEEENPAEETGEEK.*6.962256.*6.908828.*6.814580.*6.865411.*6.908828.*7.088909" />
+
                     <has_text text="pSQKQEEENPAEETGEEK" />
                 </assert_contents>
             </output>
         </test>
         <test>
             <param name="input_file" ftype="tabular" value="test_input_for_anova.tabular"/>
+            <param name="preproc_sqlite" ftype="sqlite" value="test_input_for_anova.sqlite"/>
+            <param name="alpha_file" ftype="tabular" value="alpha_levels.tabular"/>
+            <param name="intensity_column_regex" value="^Intensity[^_]"/>
+            <param name="imputation_method" value="mean"/>
+            <param name="sample_names_regex" value="\.\d+[A-Z]$"/>
+            <param name="sample_grouping_regex" value="\d+"/>
+            <output name="imputed_data_file">
+                <assert_contents>
+                    <has_text text="Phosphopeptide" />
+                    <has_text text="AAAITDMADLEELSRLpSPLPPGpSPGSAAR" />
+                    <!--                                               missing missing observd missing observd observd  -->
+                    <has_text_matching expression="pSQKQEEENPAEETGEEK.*6721601.6721601.8765300.6721601.2355900.14706000" />
+
+                </assert_contents>
+            </output>
+            <output name="imp_qn_lt_file">
+                <assert_contents>
+                    <has_text text="Phosphopeptide" />
+                    <has_text text="AAAITDMADLEELSRLpSPLPPGpSPGSAAR" />
+                    <!--                                               missing   missing   observed  missing   observed  observed  -->
+                    <has_text_matching expression="pSQKQEEENPAEETGEEK.*6.839850.*6.797424.*6.797424.*6.797424.*6.896609.*7.092451" />
+                </assert_contents>
+            </output>
+        </test>
+        <test>
+            <param name="input_file" ftype="tabular" value="test_input_for_anova.tabular"/>
+            <param name="preproc_sqlite" ftype="sqlite" value="test_input_for_anova.sqlite"/>
+            <param name="alpha_file" ftype="tabular" value="alpha_levels.tabular"/>
+            <param name="intensity_column_regex" value="^Intensity[^_]"/>
+            <param name="imputation_method" value="group-median"/>
+            <param name="sample_names_regex" value="\.\d+[A-Z]$"/>
+            <param name="sample_grouping_regex" value="\d+"/>
+            <output name="imputed_data_file">
+                <assert_contents>
+                    <has_text text="Phosphopeptide" />
+                    <has_text text="AAAITDMADLEELSRLpSPLPPGpSPGSAAR" />
+                    <!--                                               missing missing observd missing observd observd  -->
+                    <has_text_matching expression="pSQKQEEENPAEETGEEK.*8765300.8765300.8765300.5886074.2355900.14706000" />
+
+                </assert_contents>
+            </output>
+            <output name="imp_qn_lt_file">
+                <assert_contents>
+                    <has_text text="Phosphopeptide" />
+                    <has_text text="AAAITDMADLEELSRLpSPLPPGpSPGSAAR" />
+                    <!--                                               missing   missing   observed  missing   observed  observed  -->
+                    <has_text_matching expression="pSQKQEEENPAEETGEEK.*6.946112.*6.888985.*6.792137.*6.792137.*6.888985.*7.089555" />
+                </assert_contents>
+            </output>
+        </test>
+        <test>
+            <param name="input_file" ftype="tabular" value="test_input_for_anova.tabular"/>
+            <param name="preproc_sqlite" ftype="sqlite" value="test_input_for_anova.sqlite"/>
             <param name="alpha_file" ftype="tabular" value="alpha_levels.tabular"/>
             <param name="intensity_column_regex" value="^Intensity[^_]"/>
             <param name="imputation_method" value="random"/>
@@ -164,12 +216,21 @@
             <param name="sdPercentile" value="1.0" />
             <param name="sample_names_regex" value="\.\d+[A-Z]$"/>
             <param name="sample_grouping_regex" value="\d+"/>
+            <output name="imputed_data_file">
+                <assert_contents>
+                    <has_text text="Phosphopeptide" />
+                    <has_text text="AAAITDMADLEELSRLpSPLPPGpSPGSAAR" />
+                    <!--                           observd  observd  observd  -->
+                    <has_text_matching expression="pSQKQEEENPAEETGEEK.*8765300.*2355900.*4706000" />
+
+                </assert_contents>
+            </output>
             <output name="imp_qn_lt_file">
                 <assert_contents>
                     <has_text text="Phosphopeptide" />
                     <has_text text="AAAITDMADLEELSRLpSPLPPGpSPGSAAR" />
-                    <has_text text="8.392287" />
-                    <has_text text="pSQKQEEENPAEETGEEK" />
+                    <has_text text="5.409549" /> <!-- log-transformed value for pTYVDPFTpYEDPNQAVR .1B -->
+                    <has_text text="6.464714" /> <!-- log-transformed value for pSQKQEEENPAEETGEEK .2A -->
                 </assert_contents>
             </output>
         </test>
@@ -209,7 +270,7 @@ Phopsphoproteomic Enrichment Pipeline ANOVA
     4. using randomly generated values where:
 
       - ``meanPercentile`` specifies the percentile among non-missing values to be used as mean of random values, and
-      - ``sdPercentile`` specifies the factor to be mulitplied by the standard deviation among the non-missing values (across all samples) to determine the standard deviation of random values.
+      - ``sdPercentile`` specifies the factor to be multiplied by the standard deviation among the non-missing values (across all samples) to determine the standard deviation of random values.
 
 ``sample_names_regex``
   PERL-compatible regular expression extracting the sample-name from the the name of a column of instensities (from ``input_file``) for one sample.

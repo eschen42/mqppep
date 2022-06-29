@@ -599,8 +599,6 @@ def __main__():
             file=sys.stderr,
         )  # timer
 
-        #ACE print("upstream_data.loc[:,'p-peptide']")
-        #ACE print(upstream_data.loc[:,'p-peptide'])
 
         upstream_data.index = upstream_map_p_peptide_list
 

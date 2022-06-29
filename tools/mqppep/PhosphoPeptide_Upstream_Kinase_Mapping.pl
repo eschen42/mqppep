@@ -68,7 +68,6 @@ my ($p_sequence_kinase_PhosphoSite, $p_sequence_PhosphoSite, $kinase_PhosphoSite
 my (%regulatory_sites_PhosphoSite_hash);
 my (%domain, %ON_FUNCTION, %ON_PROCESS, %ON_PROT_INTERACT, %ON_OTHER_INTERACT, %notes, %organism);
 my (%unique_motifs);
-#ACE my ($kinase_substrate_NetworKIN_matches, $kinase_motif_matches, $kinase_substrate_PhosphoSite_matches);
 my ($kinase_substrate_NetworKIN_matches, $kinase_substrate_PhosphoSite_matches);
 my %psp_regsite_protein_2;
 my (%domain_2, %ON_FUNCTION_2, %ON_PROCESS_2, %ON_PROT_INTERACT_2, %N_PROT_INTERACT, %ON_OTHER_INTERACT_2, %notes_2, %organism_2);
@@ -1020,8 +1019,6 @@ print "Reading the Motifs file:  $motifs_in\n";
 while (<IN2>) {
     chomp;
     my (@x) = split(/\t/);
-    #ACE print( "\@x is $#x items long\n");
-    #ACE print( "x[6] is $x[6]\n");
     my $tmp_motif_description;
     if ($#x == 6) { # weirdly, a @list of length seven has $#list == 6
         # remove double-quotes which are helpful or necessary for Excel
@@ -1037,20 +1034,10 @@ while (<IN2>) {
         # remove double-quotes which are helpful or necessary for Excel
         $x[$i]  =~ s/\"//g;
         }
-    #ACE if (exists ($motif_type{$x[1]})) {
-    #ACE     #ACE-2022.06.20 $motif_type{$x[1]} = $motif_type{$x[1]}." & ".$x[2];
-    #ACE     $motif_type{$x[1]} = $motif_type{$x[1]}."|".$x[2];
-    #ACE } else {
-    #ACE     $motif_type{$x[1]} = $x[2];
-    #ACE     $motif_count{$x[1]} = 0;
-    #ACE     push (@motif_sequence, $x[1]);
-    #ACE     push (@motif_description, $tmp_motif_description);
-    #ACE }
     if (exists ($motif_type{$x[2]})) {
         #ACE-2022.06.20 $motif_type{$x[1]} = $motif_type{$x[1]}." & ".$x[2];
         $motif_type{$x[2]} = $motif_type{$x[2]}."|".$x[2];
     } else {
-        #ACE print("add motif_type{$x[2]} ($tmp_motif_description)\n");  #ACE
         $motif_type{$x[2]} = $x[2];
         $motif_count{$x[1]} = 0;
         push (@motif_sequence, $x[1]);
@@ -1146,7 +1133,6 @@ close IN3;
 #
 #  Columns:
 #    (0)  GENE
-#    (1)  PROTEIN           --> #ACE %psp_regsite_protein
 #    (2)  PROT_TYPE
 #    (3)  ACC_ID
 #    (4)  GENE_ID
@@ -1540,7 +1526,6 @@ foreach my $peptide (keys %data) {
             for my $i (0 .. $#motif_sequence) {
                 print "matching $motif_sequence[$i]" if ($verbose);
                 if ($peptide =~ /$motif_sequence[$i]/) {
-                    #ACE $kinase_motif_matches{$peptide}{$motif_sequence[$i]} = "X";
                     $kinase_motif_matches{$peptide}{$motif_type{$motif_type_key_ary[$i]}} = "X";
                 }
             }
@@ -1615,7 +1600,6 @@ foreach my $peptide (keys %data) {
                 $pSTY_sequence = $formatted_sequences[$k];
                 for my $i (0 .. $#motif_sequence) {
                     if ($pSTY_sequence =~ /$motif_sequence[$i]/) {
-                        #ACE $kinase_motif_matches{$peptide}{$motif_sequence[$i]} = "X";
                         $kinase_motif_matches{$peptide}{$motif_type{$motif_type_key_ary[$i]}} = "X";
                     }
                 }
@@ -1780,14 +1764,6 @@ print "... Finished find sequences that match the NetworKIN predictions and find
 #
 ###############################################################################################################################
 
-#ACE # find unique values in @motif_description
-#ACE my %seen = ();
-#ACE my @uniq = ();
-#ACE my $item;
-#ACE foreach $item (@motif_description) {
-#ACE     push(@uniq, $item) unless $seen{$item}++;
-#ACE }
-#ACE @motif_description = @uniq;
 
 open (OUT, ">$file_out") || die "could not open the fileout: $file_out";
 open (MELT, ">$file_melt") || die "could not open the fileout: $file_melt";
@@ -1808,13 +1784,8 @@ for my $i (0 .. $#kinases_observed) {
     print OUT "$temp\t";
     push(@kinases_observed_lbl, $temp);
 }
-#ACE for my $i (0 .. $#motif_sequence) {
-#ACE     #ACE print OUT "$motif_type{$motif_sequence[$i]} ($motif_sequence[$i])\t";
-#ACE     print OUT "$motif_type{$motif_sequence[$i]}\t";
-#ACE }
 my @motif_type_keys = keys %motif_type;
 for my $i (1 .. $#motif_type_keys) {
-    #ACE print("get motif_type for motif_type_keys[$i] = $motif_type{$motif_type_keys[$i]}\n");  #ACE
     print OUT "$motif_type{$motif_type_keys[$i]}\t";
 }
 for my $i (0 .. $#kinases_PhosphoSite) {
@@ -2146,9 +2117,7 @@ foreach my $peptide (sort(keys %data)) {
     my @motif_split;
     my $one_motif;
     
-    #ACE for my $i (0 .. $#motif_sequence) {
     for my $i (0 .. $#motif_type_keys) {
-        #ACE if (exists($kinase_motif_matches{$peptide}{$motif_sequence[$i]})) {
         if (exists($kinase_motif_matches{$peptide}{$motif_type_keys[$i]})) {
             print OUT "X\t";
             #ACE-2022.06.20 $motif_parts_0 = $motif_type{$motif_sequence[$i]}." ".$motif_sequence[$i];
@@ -2161,7 +2130,6 @@ foreach my $peptide (sort(keys %data)) {
                 my $key = "$peptide\t$gene_names\t$one_motif";
                 if (!exists($wrote_motif{$key})) {
                     $wrote_motif{$key} = $key;
-                    #ACE print MELT "$peptide\t$gene_names\t$site_description{$SITE_MOTIF}\t$one_motif\n";
                     print MELT "$peptide\t$gene_names\t$motif_description[$i]\t$one_motif\n";
                     # print "Line 657: i is $i\t$kinase_motif_matches{$peptide}{$motif_sequence[$i]}\n";            #debug
                     # begin store-to-SQLite "ppep_gene_site" table
@@ -2169,9 +2137,7 @@ foreach my $peptide (sort(keys %data)) {
                     $ppep_gene_site_stmth->bind_param(1, $ppep_id);        # ppep_gene_site.ppep_id
                     $ppep_gene_site_stmth->bind_param(2, $gene_names);     # ppep_gene_site.gene_names
                     $ppep_gene_site_stmth->bind_param(3, $one_motif);  # ppep_gene_site.kinase_map
-                    #ACE $ppep_gene_site_stmth->bind_param(4, $SITE_MOTIF);     # ppep_gene_site.site_type_id
                     $ppep_gene_site_stmth->bind_param(4, $site_id{$motif_description[$i]});     # ppep_gene_site.site_type_id
-                    #ACE print ("Writing tuple ($peptide,$gene_names,$one_motif,$motif_description[$i])\n");
                     if (not $ppep_gene_site_stmth->execute()) {
                         print "Error writing tuple ($peptide,$gene_names,$one_motif): $ppep_gene_site_stmth->errstr\n";
                     }

@@ -17,12 +17,12 @@ header-includes:
   - \newcommand\T{\rule{0pt}{2.6ex}}       % Top strut
   - \newcommand\B{\rule[-1.2ex]{0pt}{0pt}} % Bottom strut
 params:
-  inputFile:            "test-data/pST_Sites_NancyDu.txt.preproc.tabular"
-  preprocDb:            "test-data/pST_Sites_NancyDu.txt.preproc.sqlite"
-  kseaAppPrepDb:        !r c(":memory:", "pST_Sites_NancyDu.ksea.sqlite")[2]
+  alphaFile:            "test-data/alpha_levels.tabular"
+  inputFile:            "test-data/test_input_for_anova.tabular"
+  preprocDb:            "test-data/test_input_for_anova.sqlite"
+  kseaAppPrepDb:        !r c(":memory:", "test-data/mqppep.sqlite")[2]
   run_ksea:             !r c(FALSE, TRUE)[2]
   show_toc:             true
-  alphaFile:            "test-data/alpha_levels.tabular"
   firstDataColumn:      "^Intensity[^_]"
   imputationMethod:     !r c("group-median", "median", "mean", "random")[1]
   meanPercentile:       1
@@ -47,6 +47,10 @@ params:
   kseaAppPrepDb:        !r c(":memory:", "test-data/UT_phospho_ST_sites.ksea.sqlite")[2]
   run_ksea:             !r c(FALSE, TRUE)[1]
 
+  inputFile:            "test-data/pY_Sites_NancyDu.txt.ppep_intensities.ppep_map.preproc.tabular"
+  preprocDb:            "test-data/pY_Sites_NancyDu.txt.ppep_intensities.ppep_map.preproc.sqlite"
+  inputFile:            "test-data/pST_Sites_NancyDu.txt.preproc.tabular"
+  preprocDb:            "test-data/pST_Sites_NancyDu.txt.preproc.sqlite"
   inputFile:            "test-data/pST_Sites_NancyDu.txt.preproc.tabular"
   preprocDb:            "test-data/pST_Sites_NancyDu.txt.preproc.sqlite"
   kseaAppPrepDb:        !r c(":memory:", "pST_Sites_NancyDu.ksea.sqlite")[2]
@@ -57,6 +61,9 @@ params:
   latex_document: default
 -->
 ```{r setup, include = FALSE}
+#ref for debugging: https://yihui.org/tinytex/r/#debugging
+options(tinytex.verbose = TRUE)
+
 # ref for parameterizing Rmd document: https://stackoverflow.com/a/37940285
 # ref for top and bottom struts: https://tex.stackexchange.com/a/50355
 knitr::opts_chunk$set(echo = FALSE, fig.dim = c(9, 10))
@@ -101,6 +108,7 @@ const_ksea_astrsk_kinases    <- 1
 const_ksea_nonastrsk_kinases <- 2
 const_ksea_all_kinases       <- 3
 
+const_log10_e <- log10(exp(1))
 
 ### FUNCTIONS
 
@@ -718,7 +726,7 @@ low_fdr_barplot <- function(
           )
         )
       )
-      
+
     k <- k[selector < ksea_cutoff_threshold, ]
 
     if (nrow(k) > 1) {
@@ -726,7 +734,7 @@ low_fdr_barplot <- function(
       numeric_z_score <- as.numeric(k$z_score)
       z_score_order <- order(numeric_z_score)
       kinase_name <- k$kinase_gene
-      long_caption <- 
+      long_caption <-
         sprintf(
           "Kinase z-score, %s < %s, %s",
           ksea_cutoff_statistic,
@@ -740,7 +748,7 @@ low_fdr_barplot <- function(
         border = NA,
         xpd = F,
         cex.names = 1.0,
-        cex.axis = 1.0, 
+        cex.axis = 1.0,
         main = long_caption,
         cex.main = my_cex_caption,
         names.arg = kinase_name[z_score_order],
@@ -794,7 +802,7 @@ low_fdr_print <- function(
           )
         )
       )
-      
+
     k <- k[selector < ksea_cutoff_threshold, ]
     # save kinase names to ksea_asterisk_hash
     for (kinase_name in k$kinase_gene) {
@@ -942,7 +950,8 @@ draw_kseaapp_summary_heatmap <- function(
       cellnote     = merged_asterisk,
       notecol      = "white",
       cexCol       = 0.9,
-      cexRow       = ((3 * my_cex_row)^1.7)/2.0,
+      # Heuristically assign size of row labels
+      cexRow       = min(1.0,((3 * my_cex_row)^1.7)/2.25),
       srtCol       = 45,
       srtRow       = 45,
       notecex      = 3 * my_cex_row,
@@ -1051,7 +1060,7 @@ ksea_heatmap <- function(
   row_list[[const_ksea_astrsk_kinases]] <- asterisk_rows
   row_list[[const_ksea_all_kinases]] <- all_rows
   row_list[[const_ksea_nonastrsk_kinases]] <- non_asterisk_rows
-  
+
   i <- which_kinases
   my_row_names <- row_list[[i]]
   scrs <- merged_scores[my_row_names, ]
@@ -1104,16 +1113,7 @@ draw_intensity_heatmap <-
       peptide_count <- min(max_peptide_count, nrow(m))
       if (nrow(m) > 1) {
         m_margin <- m[peptide_count:1, ]
-        #ACE margins <-
-        #ACE   c(max(nchar(colnames(m_margin))) * 10 / 16, # col
-        #ACE     max(nchar(rownames(m_margin))) *  7 / 16  # row
-        #ACE   )
-        #ACE margins <-
-        #ACE   c(max(60, sqrt(nchar(colnames(m_margin)))) * 1 / 16, # col
-        #ACE     max(60, sqrt(nchar(rownames(m_margin)))) * 7 / 16  # row
-        #ACE   )
-        #ACE }
-        #ACE    max(80, sqrt(nchar(rownames(m_margin)))) * 7 / 16  # row
+        # Margin setting was heuristically derived
         margins <-
           c(0.5, # col
             max(80, sqrt(nchar(rownames(m_margin)))) * 5 / 16  # row
@@ -1171,6 +1171,8 @@ To perform for phosphopeptides:
 ### GLOBAL VARIABLES
 
 # parameters for KSEA
+run_ksea <- params$run_ksea
+
 ksea_cutoff_statistic <- params$kseaCutoffStatistic
 ksea_cutoff_threshold <- params$kseaCutoffThreshold
 ksea_min_kinase_count <- params$kseaMinKinaseCount
@@ -1178,7 +1180,7 @@ ksea_min_kinase_count <- params$kseaMinKinaseCount
 ksea_heatmap_titles <- list()
 ksea_heatmap_titles[[const_ksea_astrsk_kinases]] <-
   sprintf(
-    "Summary figure for all contrasts and kinases with one or more %s < %s",
+    "Summary for all kinases enriched in one or more contrasts at %s < %s",
     ksea_cutoff_statistic,
     ksea_cutoff_threshold
     )
@@ -1186,11 +1188,11 @@ ksea_heatmap_titles[[const_ksea_all_kinases]] <-
   "Summary figure for all contrasts and all kinases"
 ksea_heatmap_titles[[const_ksea_nonastrsk_kinases]] <-
   sprintf(
-    "Summary figure for all contrasts and kinases with no %s < %s",
+    "Summary for all kinases not enriched at %s < %s in any contrast",
     ksea_cutoff_statistic,
     ksea_cutoff_threshold
     )
-# hash to hold names of significantly enriched kinases  
+# hash to hold names of significantly enriched kinases
 ksea_asterisk_hash <- new_env()
 
 # READ PARAMETERS (mostly)
@@ -1273,7 +1275,7 @@ one_way_two_categories <- one_way_two_categories$value
 
 preproc_db       <- params$preprocDb
 ksea_app_prep_db <- params$kseaAppPrepDb
-if (params$run_ksea) {
+if (run_ksea) {
   result <- file.copy(
     from      = preproc_db,
     to        = ksea_app_prep_db,
@@ -1526,11 +1528,8 @@ imp_smry_pct_missing      <- pct_missing_values
 ```
 ```{r echo = FALSE}
 
-#Impute data
-quant_data_imp <- quant_data
-
 # Identify which values are missing and need to be imputed
-ind <- which(is.na(quant_data_imp), arr.ind = TRUE)
+ind <- which(is.na(quant_data), arr.ind = TRUE)
 
 ```
 ```{r echo = FALSE, results = 'asis'}
@@ -1539,39 +1538,73 @@ ind <- which(is.na(quant_data_imp), arr.ind = TRUE)
 switch(
   imputation_method
 , "group-median" = {
+    quant_data_imp <- quant_data
     imputation_method_description <-
       paste("Substitute missing value with",
-        "median peptide intensity for sample group.\n"
+        "median peptide-intensity for sample group.\n"
         )
     sample_level_integers <- as.integer(sample_treatment_levels)
+    # Take the accurate ln(x+1) because the data are log-normally distributed
+    #   and because median can involve an average of two measurements.
+    quant_data_imp <- log1p(quant_data_imp)
     for (i in seq_len(length(levels(sample_treatment_levels)))) {
+      # Determine the columns for this factor-level
       level_cols <- i == sample_level_integers
-      ind <- which(is.na(quant_data_imp[, level_cols]), arr.ind = TRUE)
+      # Extract those columns
       lvlsbst <- quant_data_imp[, level_cols, drop = FALSE]
+      # assign to ind the row-column pairs corresponding to each NA
+      ind <- which(is.na(lvlsbst), arr.ind = TRUE)
+      # No group-median exists if there is only one sample
+      #   a given ppep has no measurement; otherwise, proceed.
       if (ncol(lvlsbst) > 1) {
-        quant_data_imp[ind, level_cols] <-
-          apply(lvlsbst, 1, median, na.rm = T)[ind[, 1]]
+        the_centers <-
+          apply(lvlsbst, 1, median, na.rm = T)
+        for (j in seq_len(nrow(lvlsbst))) {
+          for (k in seq_len(ncol(lvlsbst))) {
+            if (is.na(lvlsbst[j,k])) {
+              lvlsbst[j,k] <- the_centers[j]
+            }
+          }
+        }
+        quant_data_imp[, level_cols] <- lvlsbst
       }
     }
+    # Take the accurate e^x - 1 to match scaling of original input.
+    quant_data_imp <- round(expm1(quant_data_imp_ln <- quant_data_imp))
     good_rows <- !is.na(rowMeans(quant_data_imp))
   }
 , "median" = {
+    quant_data_imp <- quant_data
     imputation_method_description <-
       paste("Substitute missing value with",
-        "median peptide intensity across all sample classes.\n"
+        "median peptide-intensity across all sample classes.\n"
         )
+    # Take the accurate ln(x+1) because the data are log-normally distributed
+    #   and because median can involve an average of two measurements.
+    quant_data_imp <- log1p(quant_data_imp)
     quant_data_imp[ind] <- apply(quant_data_imp, 1, median, na.rm = T)[ind[, 1]]
+    # Take the accurate e^x - 1 to match scaling of original input.
+    quant_data_imp <- round(expm1(quant_data_imp_ln <- quant_data_imp))
     good_rows <- !is.nan(rowMeans(quant_data_imp))
   }
 , "mean" = {
+    quant_data_imp <- quant_data
     imputation_method_description <-
       paste("Substitute missing value with",
-        "mean peptide intensity across all sample classes.\n"
+        "geometric-mean peptide intensity across all sample classes.\n"
         )
+    # Take the accurate ln(x+1) because the data are log-normally distributed,
+    #   so arguments to mean should be previously transformed.
+    #   this will have to be
+    quant_data_imp <- log1p(quant_data_imp)
+    # Assign to NA cells the mean for the row
     quant_data_imp[ind] <- apply(quant_data_imp, 1, mean, na.rm = T)[ind[, 1]]
+    # Take the accurate e^x - 1 to match scaling of original input.
+    quant_data_imp <- round(expm1(quant_data_imp_ln <- quant_data_imp))
     good_rows <- !is.nan(rowMeans(quant_data_imp))
   }
 , "random" = {
+    quant_data_imp <- quant_data
     m1 <- median(sds, na.rm = T) * sd_percentile #sd to be used is the median sd
     # If you want results to be reproducible, you will want to call
     #   base::set.seed before calling stats::rnorm
@@ -1588,9 +1621,11 @@ switch(
       sd_percentile))
     quant_data_imp[ind] <-
       10 ^ rnorm(number_to_impute, mean = q1, sd = m1)
+    quant_data_imp_ln <- log1p(quant_data_imp)
     good_rows <- !is.nan(rowMeans(quant_data_imp))
   }
 )
+quant_data_imp_log10 <- quant_data_imp_ln * const_log10_e
 
 if (length(good_rows) < 1) {
   print("ERROR: Cannot impute data; there are no good rows!")
@@ -1706,7 +1741,7 @@ zero_sd_rownames <-
   rownames(quant_data_imp)[
     is.na((apply(quant_data_imp, 1, sd, na.rm = TRUE)) == 0)
   ]
-#ACE quant_data_imp <- quant_data_imp[zero_sd_rownames,]
+
 if (length(zero_sd_rownames) >= nrow(quant_data_imp)) {
   stop("All peptides have zero standard deviation.  Cannot continue.")
 }
@@ -1728,18 +1763,29 @@ if (sum(is.na(quant_data)) > 0) {
   old_par <- par(
     mai = par("mai") + c(0.5, 0, 0, 0)
   )
+  # Copy quant data to x
   x <- quant_data
-  x <- blue_dots <- x / x
-  blue_dots <- log10(blue_dots * quant_data)
+  # x gets to have values of:
+  #  - NA for observed values
+  #  - 1 for missing values
   x[is.na(x)] <- 0
-  x[x == 1] <- NA
+  x[x > 1] <- NA
   x[x == 0] <- 1
-  quant_data_imp_log10 <-
-    log10(quant_data_imp)
+  # Log-transform imputed data
+  # ACE temp
+  old <- quant_data_imp_log10
+  # ACE is this obsolete?
+  quant_data_imp_log10 <- log10(quant_data_imp)
+  # ACE temp
+  delta <- sum(old[!is.na(old)] - quant_data_imp_log10[!is.na(quant_data_imp_log10)])
 
   write_debug_file(quant_data_imp_log10)
 
+  # Set blue_dots to log of quant data or NA for NA quant data
+  blue_dots <- log10(quant_data)
+  # Set red_dots to log of imputed data or NA for observed quant data
   red_dots <- quant_data_imp_log10 * x
+
   count_red <- sum(!is.na(red_dots))
   count_blue <- sum(!is.na(blue_dots))
   ylim_save <- ylim <- c(
@@ -1761,7 +1807,7 @@ if (sum(is.na(quant_data)) > 0) {
     , las = 1 # "always horizontal"
     , col = const_boxplot_fill
     , ylim = ylim
-    , main = "Peptide intensities before and after imputation"
+    , main = "Peptide intensities after eliminating unusable peptides"
     , sub = boxplot_sub
     , xlab = "Sample"
     , ylab = latex2exp::TeX("$log_{10}$(peptide intensity)")
@@ -1792,7 +1838,8 @@ if (sum(is.na(quant_data)) > 0) {
       add = TRUE                  # Add it over
       )
 
-  } else {
+  }
+  if (TRUE) {
     # show measured values in blue on left half-violin plot
     cat("\\leavevmode\n\\quad\n\n\\quad\n\n")
     vioplot::vioplot(
@@ -1958,12 +2005,10 @@ if (nrow(quant_data_imp) > 0) {
 #  nrow(quant_data_imp_qn_log[is.na((apply(quant_data_imp_qn_log, 1, sd, na.rm = TRUE)) == 0),])
 
 quant_data_imp_qn <- as.data.frame(quant_data_imp_qn)
-#ACE not needed because of keep.names = TRUE above # names(quant_data_imp_qn) <- names(quant_data_imp)
 
 write_debug_file(quant_data_imp_qn)
 
 quant_data_imp_qn_log <- log10(quant_data_imp_qn)
-#ACE not needed because of keep.names = TRUE above # rownames(quant_data_imp_qn_log) <- rownames(quant_data_imp)
 
 write_debug_file(quant_data_imp_qn_log)
 
@@ -1971,13 +2016,11 @@ quant_data_imp_qn_ls <- t(scale(t(log10(quant_data_imp_qn))))
 
 sel <- apply(quant_data_imp_qn_ls, 1, any_nan)
 quant_data_imp_qn_ls2 <- quant_data_imp_qn_ls
-#ACE not needed because of keep.names = TRUE above # rownames(quant_data_imp_qn_ls2) <- rownames(quant_data_imp)
 
 quant_data_imp_qn_ls2 <- quant_data_imp_qn_ls2[which(sel), ]
 quant_data_imp_qn_ls2 <- as.data.frame(quant_data_imp_qn_ls2)
 
 quant_data_imp_qn_ls <- as.data.frame(quant_data_imp_qn_ls)
-#ACE not needed because of keep.names = TRUE above # rownames(quant_data_imp_qn_ls) <- rownames(quant_data_imp)
 
 write_debug_file(quant_data_imp_qn_ls)
 write_debug_file(quant_data_imp_qn_ls2)
@@ -2378,7 +2421,7 @@ cat("\\leavevmode\n\n\n")
 
 ```{r sqlite, echo = FALSE, fig.dim = c(9, 10), results = 'asis'}
 
-if (params$run_ksea && count_of_treatment_levels > 1) {
+if (run_ksea && count_of_treatment_levels > 1) {
   # Prepare two-way contrasts with adjusted p-values
   # Strategy:
   # - use imputed, log-transformed data:
@@ -2988,11 +3031,11 @@ Asterisks in heatmaps reflect enrichments that are significant at `r ksea_cutoff
 
 - Kinase names are generally as presented at Phospho.ELM [http://phospho.elm.eu.org/kinases.html](http://phospho.elm.eu.org/kinases.html) (when available), although Phospho.ELM data are not yet incorporated into this analysis.
 - Kinase names having the suffix '(HPRD)' are as presented at [http://hprd.org/serine_motifs](http://hprd.org/serine_motifs) and [http://hprd.org/tyrosine_motifs](http://hprd.org/tyrosine_motifs) and are as originally reported in the Amanchy et al., 2007 (doi: [10.1038/nbt0307-285](https://doi.org/10.1038/nbt0307-285)).
-- Kinase-strate deata were also taken from [http://networkin.science/download.shtml](http://networkin.science/download.shtml) and from PhosphoSitePlus [https://www.phosphosite.org/staticDownloads](https://www.phosphosite.org/staticDownloads). 
+- Kinase-strate deata were also taken from [http://networkin.science/download.shtml](http://networkin.science/download.shtml) and from PhosphoSitePlus [https://www.phosphosite.org/staticDownloads](https://www.phosphosite.org/staticDownloads).
 
 ```{r ksea, echo = FALSE, fig.dim = c(9, 10), results = 'asis'}
 
-if (params$run_ksea) {
+if (run_ksea) {
   db <- RSQLite::dbConnect(RSQLite::SQLite(), ksea_app_prep_db)
 
   # -- eliminate the table that's about to be defined
@@ -3286,12 +3329,12 @@ if (params$run_ksea) {
     ")
   # Get the intensity values for the heatmap
   enriched_intensities <-
-    as.matrix(unimputed_quant_data_log[enriched_substrates$ppep,])
+    as.matrix(unimputed_quant_data_log[enriched_substrates$ppep,, drop = FALSE])
   # Remove rows having too many NA values to be relevant
   na_counter <- is.na(enriched_intensities)
   na_counts <- apply(na_counter, 1, sum)
   enriched_intensities <-
-    enriched_intensities[na_counts < ncol(enriched_intensities) / 2,]
+    enriched_intensities[na_counts < ncol(enriched_intensities) / 2,, drop = FALSE]
   # Rename the rows with the display-name for the heatmap
   rownames(enriched_intensities) <-
     sapply(
@@ -3314,7 +3357,7 @@ if (params$run_ksea) {
         m                       = m,
         cutoff                  = cut_args,
         hm_heading_function     = cat_enriched_heading,
-        hm_main_title     
+        hm_main_title
           = "Unnormalized (zero-imputed) intensities of enriched kinase-substrates",
         suppress_row_dendrogram = FALSE
       )

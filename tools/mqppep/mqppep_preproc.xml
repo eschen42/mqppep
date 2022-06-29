@@ -207,36 +207,35 @@
                     <has_text text="cell cycle regulation" />
                     <has_text text="PPP2CA(INDUCES)" />
                     <has_text text="SNCA(DISRUPTS)" />
-                    <has_text text="Casein Kinase II substrate" />
-                    <has_text text="PKC kinase substrate" />
-                    <has_text text="PKCiota" />
-                    <has_text text="Csnk2a1" />
                     <has_text text="CDK7" />
                     <has_text text="CK1alpha" />
-                    <has_text text="CK2a2" />
                     <has_text text="CK2alpha" />
                     <has_text text="DNAPK" />
                     <has_text text="HIPK2" />
                     <has_text text="IKKalpha" />
                     <has_text text="PKCalpha" />
                     <has_text text="PKCbeta" />
+                    <has_text text="PKC" />
+                    <has_text text="CK2a2" />
+                    <has_text text="CK2alpha" />
+                    <has_text text="Csnk2a1" />
                 </assert_contents>
             </output>
 
             <output name="melted_phophopeptide_map">
                 <assert_contents>
-                    <has_text text="CDK7_NetworKIN" />
-                    <has_text text="CK1alpha_NetworKIN" />
-                    <has_text text="CK2a2_NetworKIN" />
-                    <has_text text="CK2alpha_NetworKIN" />
-                    <has_text text="DNAPK_NetworKIN" />
-                    <has_text text="HIPK2_NetworKIN" />
-                    <has_text text="IKKalpha_NetworKIN" />
-                    <has_text text="PKCalpha_NetworKIN" />
-                    <has_text text="PKCbeta_NetworKIN" />
-                    <has_text text="PKC kinase substrate motif" />
-                    <has_text text="Casein Kinase II substrate motif" />
-                    <has_text text="Csnk2a1_PhosphoSite" />
+                    <has_text text="CDK7" />
+                    <has_text text="CK1alpha" />
+                    <has_text text="CK2alpha" />
+                    <has_text text="DNAPK" />
+                    <has_text text="HIPK2" />
+                    <has_text text="IKKalpha" />
+                    <has_text text="PKCalpha" />
+                    <has_text text="PKCbeta" />
+                    <has_text text="PKC" />
+                    <has_text text="CK2a2" />
+                    <has_text text="CK2alpha" />
+                    <has_text text="Csnk2a1" />
                 </assert_contents>
             </output>
         </test>
@@ -281,9 +280,9 @@
 
             <output name="melted_phophopeptide_map">
                 <assert_contents>
-                    <has_text text="Casein Kinase II substrate motif (HPRD)" />
-                    <has_text text="EPHA4_PhosphoSite" />
-                    <has_text text="EphA4_NetworKIN" />
+                    <has_text text="EphA6" />
+                    <has_text text="EPHA4" />
+                    <has_text text="EphA4" />
                 </assert_contents>
             </output>
         </test>
