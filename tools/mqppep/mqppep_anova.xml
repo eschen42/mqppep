@@ -34,7 +34,6 @@
         --inputFile '$input_file'
         --alphaFile '$alpha_file'
         --preproc_sqlite '$preproc_sqlite'
-        --ksea_sqlite '$ksea_sqlite'
         --firstDataColumn $intensity_column_regex_f
         --imputationMethod $imputation.imputation_method
         #if $imputation.imputation_method == "random"
@@ -45,6 +44,9 @@
         --regexSampleGrouping $sample_grouping_regex_f
         --imputedDataFile $imputed_data_file
         --imputedQNLTDataFile '$imp_qn_lt_file'
+        --ksea_sqlite '$ksea_sqlite'
+        --ksea_cutoff_threshold '$ksea_cutoff_threshold'
+        --ksea_cutoff_statistic 'FDR'
         --reportFile '$report_file'
     ]]></command>
     <configfiles>
@@ -62,8 +64,8 @@
         <param name="input_file" type="data" format="tabular" label="Filtered Phosphopeptide Intensities"
                help="Phosphopeptide intensities filtered for minimal quality.  First column label 'Phosphopeptide'; sample-intensities must begin in column 10 and must have column labels to match argument [sample_names_regex]"
         />
-        <param name="alpha_file" type="data" format="tabular" label="alpha cutoff level"
-               help="List of alpha cutoff values for significance testing; text file having one column and no header"
+        <param name="alpha_file" type="data" format="tabular" label="ANOVA alpha cutoff level"
+               help="ANOVA alpha cutoff values for significance testing: tabular data having one column and no header"
         />
         <param name="preproc_sqlite" type="data" format="sqlite" label="preproc_sqlite dataset from mqppep_preproc"
                help="'preproc_sqlite' dataset produced by 'MaxQuant Phosphopeptide Preprocessing' tool"
@@ -75,7 +77,7 @@
         <!-- imputation_method <- c("group-median","median","mean","random")[1] -->
         <conditional name="imputation">
             <param name="imputation_method" type="select" label="Imputation Method"
-                   help="[imputation_method] Impute missing values by (1) using median for each sample-group; (2) using median across all samples; (3) using mean across all samples; or (4) using randomly generated values having same std. dev. as across all samples (with mean specified by [meanPercentile])"
+                   help="Impute missing values by (1) using median for each sample-group; (2) using median across all samples; (3) using mean across all samples; or (4) using randomly generated values having same std. dev. as across all samples (with mean specified by [meanPercentile])"
             >
                 <option value="random" selected="true">random</option>
                 <option value="group-median">group-median</option>
@@ -114,6 +116,10 @@
             </valid>
           </sanitizer>
         </param>
+        <param name="ksea_cutoff_threshold" type="float" value="0.05"
+               label="KSEA threshold level"
+               help="Maximum FDR to be used to score a kinase enrichment as significant"
+        />
     </inputs>
     <outputs>
         <data name="imputed_data_file" format="tabular" label="${input_file.name}.${imputation.imputation_method}-imputed_intensities" ></data>

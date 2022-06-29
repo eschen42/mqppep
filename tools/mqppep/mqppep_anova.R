@@ -107,6 +107,21 @@ option_list <- list(
     default = "QuantDataProcessingScript.html",
     type = "character",
     help = "HTML report file path"
+  ),
+  make_option(
+    c("-k", "--ksea_cutoff_statistic"),
+    action = "store",
+    default = "FDR",
+    type = "character",
+    help = paste0("Method for missing-value imputation,",
+             " one of c('FDR','p.value'), but don't expect 'p.value' to work well.")
+  ),
+  make_option(
+    c("-t", "--ksea_cutoff_threshold"),
+    action = "store",
+    default = 0.05,
+    type = "double",
+    help = paste0("Maximum score to be used to score a kinase enrichment as significant")
   )
 )
 args <- parse_args(OptionParser(option_list = option_list))
@@ -121,19 +136,25 @@ if (! file.exists(args$inputFile)) {
 input_file             <- args$inputFile
 alpha_file             <- args$alphaFile
 preproc_sqlite         <- args$preproc_sqlite
-ksea_sqlite            <- args$ksea_sqlite
 imputed_data_file_name <- args$imputedDataFile
 imp_qn_lt_data_filenm  <- args$imputedQNLTDataFile
 report_file_name       <- args$reportFile
+ksea_sqlite            <- args$ksea_sqlite
+ksea_cutoff_statistic  <- args$ksea_cutoff_statistic
+ksea_cutoff_threshold  <- args$ksea_cutoff_threshold
+if (
+  sum(
+    grepl(
+      pattern = ksea_cutoff_statistic,
+      x = c("FDR", "p.value")
+      )
+    ) < 1
+  ) {
+    print(sprintf("bad ksea_cutoff_statistic argument: %s", ksea_cutoff_statistic))
+    return(-1)
+    }
 
 imputation_method <- args$imputationMethod
-print(
-  grepl(
-    pattern = imputation_method,
-    x = c("group-median", "median", "mean", "random")
-    )
-  )
-
 if (
   sum(
     grepl(
@@ -230,7 +251,6 @@ rmarkdown_params <- list(
     inputFile = input_file
   , alphaFile = alpha_file
   , preprocDb = preproc_sqlite
-  , kseaAppPrepDb = ksea_sqlite
   , firstDataColumn = first_data_column
   , imputationMethod = imputation_method
   , meanPercentile = mean_percentile
@@ -239,6 +259,9 @@ rmarkdown_params <- list(
   , regexSampleGrouping = regex_sample_grouping
   , imputedDataFilename = imputed_data_file_name
   , imputedQNLTDataFile = imp_qn_lt_data_filenm
+  , kseaAppPrepDb = ksea_sqlite
+  , kseaCutoffThreshold = ksea_cutoff_threshold
+  , kseaCutoffStatistic = ksea_cutoff_statistic
   )
 
 print("rmarkdown_params")

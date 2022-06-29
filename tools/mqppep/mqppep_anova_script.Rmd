@@ -18,10 +18,9 @@ header-includes:
   - \newcommand\B{\rule[-1.2ex]{0pt}{0pt}} % Bottom strut
 params:
   alphaFile:            "test-data/alpha_levels.tabular"
-  inputFile:            "test-data/test_input_for_anova.tabular"
-  preprocDb:            "test-data/test_input_for_anova.sqlite"
-  kseaAppPrepDb:        !r c(":memory:", "test-data/mqppep.sqlite")[2]
-  run_ksea:             !r c(FALSE, TRUE)[2]
+  inputFile:            "test-data/UT_phospho_ST_sites.preproc.tabular"
+  preprocDb:            "test-data/UT_phospho_ST_sites.preproc.sqlite"
+  kseaAppPrepDb:        !r c(":memory:", "test-data/UT_phospho_ST_sites.ksea.sqlite")[2]
   show_toc:             true
   firstDataColumn:      "^Intensity[^_]"
   imputationMethod:     !r c("group-median", "median", "mean", "random")[1]
@@ -34,27 +33,33 @@ params:
   oneWayManyCategories: !r c("aov", "kruskal.test", "oneway.test")[1]
   oneWayTwoCategories:  !r c("aov", "kruskal.test", "oneway.test")[3]
   kseaCutoffStatistic:  !r c("p.value", "FDR")[2]
-  kseaCutoffThreshold:  0.05
+  kseaCutoffThreshold:  !r c( 0.1, 0.05)[2]
   kseaMinKinaseCount:   1
   intensityHeatmapRows: 75
 ---
 <!--
+  kseaCutoffStatistic:  !r c("p.value", "FDR")[2]
+  kseaCutoffThreshold:  !r c(0.05, 0.1)[1]
+
   alphaFile:            "test-data/alpha_levels.tabular"
   inputFile:            "test-data/test_input_for_anova.tabular"
+  preprocDb:            "test-data/test_input_for_anova.sqlite"
+  kseaAppPrepDb:        !r c(":memory:", "test-data/mqppep.sqlite")[2]
 
+  alphaFile:            "test-data/alpha_levels.tabular"
   inputFile:            "test-data/UT_phospho_ST_sites.preproc.tabular"
   preprocDb:            "test-data/UT_phospho_ST_sites.preproc.sqlite"
   kseaAppPrepDb:        !r c(":memory:", "test-data/UT_phospho_ST_sites.ksea.sqlite")[2]
-  run_ksea:             !r c(FALSE, TRUE)[1]
 
+  alphaFile:            "test-data/alpha_levels.tabular"
   inputFile:            "test-data/pY_Sites_NancyDu.txt.ppep_intensities.ppep_map.preproc.tabular"
   preprocDb:            "test-data/pY_Sites_NancyDu.txt.ppep_intensities.ppep_map.preproc.sqlite"
+  kseaAppPrepDb:        !r c(":memory:", "test-data/pST_Sites_NancyDu.ksea.sqlite")[2]
+
+  alphaFile:            "test-data/alpha_levels.tabular"
   inputFile:            "test-data/pST_Sites_NancyDu.txt.preproc.tabular"
   preprocDb:            "test-data/pST_Sites_NancyDu.txt.preproc.sqlite"
-  inputFile:            "test-data/pST_Sites_NancyDu.txt.preproc.tabular"
-  preprocDb:            "test-data/pST_Sites_NancyDu.txt.preproc.sqlite"
-  kseaAppPrepDb:        !r c(":memory:", "pST_Sites_NancyDu.ksea.sqlite")[2]
-  run_ksea:             !r c(FALSE, TRUE)[2]
+  kseaAppPrepDb:        !r c(":memory:", "test-data/pST_Sites_NancyDu.ksea.sqlite")[2]
 
   inputFile:            "test-data/density_failure.preproc_tab.tabular"
   kseaAppPrepDb:        !r c(":memory:", "mqppep.sqlite")[2]
@@ -201,9 +206,10 @@ anova_func <- function(x, grouping_factor, one_way_f) {
 ### LaTeX functions
 
 latex_collapsed_vector <- function(collapse_string, v) {
+  v_sub <- if (TRUE) gsub("_", "\\\\_", v) else v
   cat(
     paste0(
-      v,
+      v_sub,
       collapse = collapse_string
       )
     )
@@ -401,47 +407,6 @@ dml_no_rows_exec <- function(db, sql) {
 }
 
 ### KSEA functions and helpers
-
-# Helper for ksea_scores
-create_breaks <- function(merged_scores) {
-  if (min(merged_scores, na.rm = TRUE) < -1.6) {
-    breaks_neg <- seq(-1.6, 0, length.out = 30)
-    breaks_neg <-
-      append(
-        seq(min(merged_scores, na.rm = TRUE), -1.6, length.out = 10),
-        breaks_neg
-        )
-    breaks_neg <- sort(unique(breaks_neg))
-  }
-  else {
-    breaks_neg <- seq(-1.6, 0, length.out = 30)
-  }
-  if (max(merged_scores, na.rm = TRUE) > 1.6) {
-    breaks_pos <- seq(0, 1.6, length.out = 30)
-    breaks_pos <-
-      append(
-        breaks_pos,
-        seq(1.6, max(merged_scores, na.rm = TRUE),
-        length.out = 10)
-        )
-    breaks_pos <- sort(unique(breaks_pos))
-  }
-  else {
-    breaks_pos <- seq(0, 1.6, length.out = 30)
-  }
-  breaks_all <- unique(append(breaks_neg, breaks_pos))
-  mycol_neg <-
-    gplots::colorpanel(n = length(breaks_neg),
-               low = "blue",
-               high = "white")
-  mycol_pos <-
-    gplots::colorpanel(n = length(breaks_pos) - 1,
-               low = "white",
-               high = "red")
-  mycol <- unique(append(mycol_neg, mycol_pos))
-  color_breaks <- list(breaks_all, mycol)
-  return(color_breaks)
-}
 
 # Adapted from KSEAapp::KSEA.Scores to allow retrieval of:
 # - maximum log2(FC)
@@ -859,7 +824,7 @@ low_fdr_print <- function(
     colnames(output_df) <-
       c(
         "Kinase",
-        "\\(\\overline{\\log_2 (\\text{fold-change})}\\)",
+        "\\(\\overline{\\log_2 (|\\text{fold-change}|)}\\)",
         "Enrichment",
         "Substrates",
         "z-score",
@@ -886,7 +851,7 @@ low_fdr_print <- function(
       math_caption <- gsub("}", "\\}", math_caption, fixed = TRUE)
       data_frame_latex(
         x = output_df,
-        justification = "c c c c c c c",
+        justification = "l c c c c c c",
         centered = TRUE,
         caption = sprintf(
           "\\text{%s}, %s < %s",
@@ -912,8 +877,48 @@ low_fdr_print <- function(
   }
 }
 
+# create_breaks is a helper for ksea_heatmap
+create_breaks <- function(merged_scores) {
+  if (min(merged_scores, na.rm = TRUE) < -1.6) {
+    breaks_neg <- seq(-1.6, 0, length.out = 30)
+    breaks_neg <-
+      append(
+        seq(min(merged_scores, na.rm = TRUE), -1.6, length.out = 10),
+        breaks_neg
+        )
+    breaks_neg <- sort(unique(breaks_neg))
+  }
+  else {
+    breaks_neg <- seq(-1.6, 0, length.out = 30)
+  }
+  if (max(merged_scores, na.rm = TRUE) > 1.6) {
+    breaks_pos <- seq(0, 1.6, length.out = 30)
+    breaks_pos <-
+      append(
+        breaks_pos,
+        seq(1.6, max(merged_scores, na.rm = TRUE),
+        length.out = 10)
+        )
+    breaks_pos <- sort(unique(breaks_pos))
+  }
+  else {
+    breaks_pos <- seq(0, 1.6, length.out = 30)
+  }
+  breaks_all <- unique(append(breaks_neg, breaks_pos))
+  mycol_neg <-
+    gplots::colorpanel(n = length(breaks_neg),
+               low = "blue",
+               high = "white")
+  mycol_pos <-
+    gplots::colorpanel(n = length(breaks_pos) - 1,
+               low = "white",
+               high = "red")
+  mycol <- unique(append(mycol_neg, mycol_pos))
+  color_breaks <- list(breaks_all, mycol)
+  return(color_breaks)
+}
 
-# Helper function for ksea_heatmap
+# draw_kseaapp_summary_heatmap is a helper function for ksea_heatmap
 draw_kseaapp_summary_heatmap <- function(
     x,
     sample_cluster,
@@ -1171,7 +1176,6 @@ To perform for phosphopeptides:
 ### GLOBAL VARIABLES
 
 # parameters for KSEA
-run_ksea <- params$run_ksea
 
 ksea_cutoff_statistic <- params$kseaCutoffStatistic
 ksea_cutoff_threshold <- params$kseaCutoffThreshold
@@ -1275,24 +1279,22 @@ one_way_two_categories <- one_way_two_categories$value
 
 preproc_db       <- params$preprocDb
 ksea_app_prep_db <- params$kseaAppPrepDb
-if (run_ksea) {
-  result <- file.copy(
-    from      = preproc_db,
-    to        = ksea_app_prep_db,
-    overwrite = TRUE
-    )
-  if (!result) {
-    write(
-      sprintf(
-        "fatal error copying initial database '%s' to output '%s'",
-        preproc_db,
-        ksea_app_prep_db,
-      ),
-      stderr()
-    )
-    if (sys.nframe() > 0) quit(save = "no", status = 1)
-    stop("Cannot continue. Goodbye.")
-  }
+result <- file.copy(
+  from      = preproc_db,
+  to        = ksea_app_prep_db,
+  overwrite = TRUE
+  )
+if (!result) {
+  write(
+    sprintf(
+      "fatal error copying initial database '%s' to output '%s'",
+      preproc_db,
+      ksea_app_prep_db,
+    ),
+    stderr()
+  )
+  if (sys.nframe() > 0) quit(save = "no", status = 1)
+  stop("Cannot continue. Goodbye.")
 }
 ```
 
@@ -1774,12 +1776,8 @@ if (sum(is.na(quant_data)) > 0) {
   x[x > 1] <- NA
   x[x == 0] <- 1
   # Log-transform imputed data
-  # ACE temp
-  old <- quant_data_imp_log10
-  # ACE is this obsolete?
+  # update variable because rows may have been eliminated from quant_data_imp
   quant_data_imp_log10 <- log10(quant_data_imp)
-  # ACE temp
-  delta <- sum(old[!is.na(old)] - quant_data_imp_log10[!is.na(quant_data_imp_log10)])
 
   write_debug_file(quant_data_imp_log10)
 
@@ -2421,7 +2419,7 @@ cat("\\leavevmode\n\n\n")
 
 ```{r sqlite, echo = FALSE, fig.dim = c(9, 10), results = 'asis'}
 
-if (run_ksea && count_of_treatment_levels > 1) {
+if (count_of_treatment_levels > 1) {
   # Prepare two-way contrasts with adjusted p-values
   # Strategy:
   # - use imputed, log-transformed data:
@@ -3003,29 +3001,29 @@ Results of Kinase-Substrate Enrichment Analysis are presented here, if the subst
 - The method used is described in Casado et al. (2013) [doi:10.1126/scisignal.2003573](https:/doi.org/10.1126/scisignal.2003573) and Wiredja et al (2017) [doi:10.1093/bioinformatics/btx415](https:/doi.org/10.1093/bioinformatics/btx415).
 - An online alternative (supporting only analysis of human data) is available at [https:/casecpb.shinyapps.io/ksea/](https:/casecpb.shinyapps.io/ksea/).
 
-For each contrast two-way of treatments $j$, the score of each kinase $i$ is "normalized" (i.e., z-score transformed) using the formula:
+For each kinase, $i$, and each two-way contrast of treatments, $j$, an enrichment $z$-score is computed as:
 
 $$
 \text{kinase enrichment score}_{j,i} = \frac{(\overline{s}_{j,i} - \overline{p}_j)\sqrt{m_{j,i}}}{\delta_j}
 $$
 
+and fold-enrichment is computed as:
+
+$$
+\text{Enrichment}_{j,i} = \frac{\overline{s}_{j,i}}{\overline{p}_j}
+$$
+
 where:
 
 - $\overline{s}_{j,i}$ is the mean $\log_2 (|\text{fold-change|})$ in intensities (for contrast $j$) of known substrates of the kinase $i$,
-- $m_{j,i}$ is the total number of phosphosite substrates of kinase $i$ identified in contrast $j$,
 - $\overline{p}_j$ is the mean $\log_2 (|\text{fold-change}|)$ of all phosphosites identified in contrast $j$, and
+- $m_{j,i}$ is the total number of phosphosite substrates of kinase $i$ identified in contrast $j$,
 - $\delta_j$ is the standard deviation of the $\log_2 (|\text{fold-change}|)$ for contrast $j$ across all phosphosites in the dataset.
 - Note that the absolute value of fold-change is used so that both increased and decreased substrates of a kinase will contribute to its enrichment score.
 
-Enrichment within contrast $j$ for kinase $i$ is computed as:
-
-$$
-\text{Enrichment}_{j,i} = \frac{(\overline{s}_{j,i})}{\overline{p}_j}
-$$
-
 $\text{FDR}_{j,i}$ is computed from the $p$-value for the z-score using the R `stats::p.adjust` function, applying the False Discovery Rate correction from Benjamini and Hochberg (1995) [doi:10.1111/j.2517-6161.1995.tb02031.x](https:/doi.org/10.1111/j.2517-6161.1995.tb02031.x)
 
-Color intensity in heatmaps reflects magnitude of $z$-score for enrichment of respective kinase in respective contrast.
+Color intensity in heatmaps reflects magnitude of $z$-score for enrichment of respective kinase in respective contrast; hue reflects the sign of the $z$-score (blue, negative; red, positive).
 
 Asterisks in heatmaps reflect enrichments that are significant at `r ksea_cutoff_statistic` < `r ksea_cutoff_threshold`.
 
@@ -3035,336 +3033,340 @@ Asterisks in heatmaps reflect enrichments that are significant at `r ksea_cutoff
 
 ```{r ksea, echo = FALSE, fig.dim = c(9, 10), results = 'asis'}
 
-if (run_ksea) {
-  db <- RSQLite::dbConnect(RSQLite::SQLite(), ksea_app_prep_db)
+db <- RSQLite::dbConnect(RSQLite::SQLite(), ksea_app_prep_db)
 
-  # -- eliminate the table that's about to be defined
-  ddl_exec(db, "
-  DROP TABLE IF EXISTS site_metadata;
-  ")
+# -- eliminate the table that's about to be defined
+ddl_exec(db, "
+DROP TABLE IF EXISTS site_metadata;
+")
 
-  # -- define the site_metadata table
-  ddl_exec(db, "
-  CREATE TABLE site_metadata(
-    id            INTEGER PRIMARY KEY
-  , site_type_id  INTEGER REFERENCES site_type(id)
-  , full          TEXT    UNIQUE ON CONFLICT IGNORE
-  , abbrev        TEXT
-  , pattern       TEXT
-  , motif         TEXT
-  );
-  ")
+# -- define the site_metadata table
+ddl_exec(db, "
+CREATE TABLE site_metadata(
+  id            INTEGER PRIMARY KEY
+, site_type_id  INTEGER REFERENCES site_type(id)
+, full          TEXT    UNIQUE ON CONFLICT IGNORE
+, abbrev        TEXT
+, pattern       TEXT
+, motif         TEXT
+);
+")
 
-  # -- populate the table with initial values
-  ddl_exec(db, "
-  INSERT INTO site_metadata(full, abbrev, site_type_id)
-    SELECT  DISTINCT kinase_map, kinase_map, site_type_id
-      FROM  ppep_gene_site
-      ORDER BY kinase_map;
-  ")
+# -- populate the table with initial values
+ddl_exec(db, "
+INSERT INTO site_metadata(full, abbrev, site_type_id)
+  SELECT  DISTINCT kinase_map, kinase_map, site_type_id
+    FROM  ppep_gene_site
+    ORDER BY kinase_map;
+")
 
-  # -- drop bogus KSData view if exists
-  ddl_exec(db, "
-  DROP VIEW IF EXISTS ks_data_v;
-  ")
+# -- drop bogus KSData view if exists
+ddl_exec(db, "
+DROP VIEW IF EXISTS ks_data_v;
+")
 
-  # -- create view to serve as an impostor for  KSEAapp::KSData
-  ddl_exec(db, "
-  CREATE VIEW IF NOT EXISTS ks_data_v
-  AS
-  SELECT
-    'NA' AS KINASE,
-    'NA' AS KIN_ACC_ID,
-    kinase_map AS GENE,
-    'NA' AS KIN_ORGANISM,
-    'NA' AS SUBSTRATE,
-    0 AS SUB_GENE_ID,
-    'NA' AS SUB_ACC_ID,
-    gene_names AS SUB_GENE,
-    'NA' AS SUB_ORGANISM,
-    phospho_peptide AS SUB_MOD_RSD,
-    0 AS SITE_GROUP_ID,
-    'NA' AS 'SITE_7AA',
-    2 AS networkin_score,
-    type_name AS Source
-  FROM ppep_gene_site_view;
-  ")
+# -- create view to serve as an impostor for  KSEAapp::KSData
+ddl_exec(db, "
+CREATE VIEW IF NOT EXISTS ks_data_v
+AS
+SELECT
+  'NA' AS KINASE,
+  'NA' AS KIN_ACC_ID,
+  kinase_map AS GENE,
+  'NA' AS KIN_ORGANISM,
+  'NA' AS SUBSTRATE,
+  0 AS SUB_GENE_ID,
+  'NA' AS SUB_ACC_ID,
+  gene_names AS SUB_GENE,
+  'NA' AS SUB_ORGANISM,
+  phospho_peptide AS SUB_MOD_RSD,
+  0 AS SITE_GROUP_ID,
+  'NA' AS 'SITE_7AA',
+  2 AS networkin_score,
+  type_name AS Source
+FROM ppep_gene_site_view;
+")
 
-  contrast_metadata_df <-
-    sqldf::sqldf("select * from contrast_lvl_lvl_metadata", connection = db)
-  rslt <- new_env()
-  rslt$score_list <- list()
-  rslt$name_list  <- list()
-  rslt$longname_list  <- list()
+contrast_metadata_df <-
+  sqldf::sqldf("select * from contrast_lvl_lvl_metadata", connection = db)
+rslt <- new_env()
+rslt$score_list <- list()
+rslt$name_list  <- list()
+rslt$longname_list  <- list()
 
-  ddl_exec(db, "
-    DROP TABLE IF EXISTS contrast_ksea_scores;
-    "
+ddl_exec(db, "
+  DROP TABLE IF EXISTS contrast_ksea_scores;
+  "
+)
+
+next_index <- 0
+err_na_subscr_df_const <-
+ "missing values are not allowed in subscripted assignments of data frames"
+
+for (i_cntrst in seq_len(nrow(contrast_metadata_df))) {
+  cntrst_a_level <- contrast_metadata_df[i_cntrst, "a_level"]
+  cntrst_b_level <- contrast_metadata_df[i_cntrst, "b_level"]
+  cntrst_fold_change <- contrast_metadata_df[i_cntrst, 6]
+  contrast_label <- sprintf("%s -> %s", cntrst_b_level, cntrst_a_level)
+  contrast_longlabel <- (
+    sprintf(
+      "Trt %s {%s} -> Trt %s {%s}",
+      contrast_metadata_df[i_cntrst, "b_level"],
+      gsub(
+        pattern = ";",
+        replacement = ", ",
+        x = contrast_metadata_df[i_cntrst, "b_samples"],
+        fixed = TRUE
+      ),
+      contrast_metadata_df[i_cntrst, "a_level"],
+      gsub(
+        pattern = ";",
+        replacement = ", ",
+        x = contrast_metadata_df[i_cntrst, "a_samples"],
+        fixed = TRUE
+      )
+    )
   )
+  kseaapp_input <-
+    sqldf::sqldf(
+      x = sprintf("
+        SELECT `Protein`, `Gene`, `Peptide`, phosphopep AS `Residue.Both`, `p`, `FC`
+          FROM v_kseaapp_input
+          WHERE contrast = %d
+        ",
+        i_cntrst
+      ),
+    connection = db
+    )
 
-  next_index <- 0
-  err_na_subscr_df_const <-
-   "missing values are not allowed in subscripted assignments of data frames"
+  pseudo_ksdata <- dbReadTable(db, "ks_data_v")
 
-  for (i_cntrst in seq_len(nrow(contrast_metadata_df))) {
-    cntrst_a_level <- contrast_metadata_df[i_cntrst, "a_level"]
-    cntrst_b_level <- contrast_metadata_df[i_cntrst, "b_level"]
-    cntrst_fold_change <- contrast_metadata_df[i_cntrst, 6]
-    contrast_label <- sprintf("%s -> %s", cntrst_b_level, cntrst_a_level)
-    contrast_longlabel <- (
+  # This hack is because SQL table has the log2-transformed values
+  kseaapp_input[, "FC"] <- 2 ** kseaapp_input[, "FC", drop = TRUE]
+  main_title <- (
       sprintf(
-        "Trt %s {%s} -> Trt %s {%s}",
-        contrast_metadata_df[i_cntrst, "b_level"],
-        gsub(
-          pattern = ";",
-          replacement = ", ",
-          x = contrast_metadata_df[i_cntrst, "b_samples"],
-          fixed = TRUE
-        ),
-        contrast_metadata_df[i_cntrst, "a_level"],
-        gsub(
-          pattern = ";",
-          replacement = ", ",
-          x = contrast_metadata_df[i_cntrst, "a_samples"],
-          fixed = TRUE
-        )
-      )
+      "Change from treatment %s to treatment %s",
+      contrast_metadata_df[i_cntrst, "b_level"],
+      contrast_metadata_df[i_cntrst, "a_level"]
     )
-    kseaapp_input <-
-      sqldf::sqldf(
-        x = sprintf("
-          SELECT `Protein`, `Gene`, `Peptide`, phosphopep AS `Residue.Both`, `p`, `FC`
-            FROM v_kseaapp_input
-            WHERE contrast = %d
-          ",
-          i_cntrst
-        ),
-      connection = db
-      )
+  )
+  sub_title <- contrast_longlabel
+  tryCatch(
+    expr = {
+        ksea_scores_rslt <-
+          ksea_scores(
+            ksdata           = pseudo_ksdata, # KSEAapp::KSData,
+            px               = kseaapp_input,
+            networkin        = TRUE,
+            networkin_cutoff = 2
+            )
 
-    pseudo_ksdata <- dbReadTable(db, "ks_data_v")
+        if (0 < sum(!is.nan(ksea_scores_rslt$FDR))) {
+          next_index <- 1 + next_index
+          rslt$score_list[[next_index]] <- ksea_scores_rslt
+          rslt$name_list[[next_index]] <- contrast_label
+          rslt$longname_list[[next_index]] <- contrast_longlabel
+          low_fdr_print(
+            rslt = rslt,
+            i_cntrst = i_cntrst,
+            i = next_index,
+            a_level = cntrst_a_level,
+            b_level = cntrst_b_level,
+            fold_change = cntrst_fold_change,
+            caption = contrast_longlabel
+            )
+        }
+      },
+    error = function(e) str(e)
+  )
+}
 
-    # This hack is because SQL table has the log2-transformed values
-    kseaapp_input[, "FC"] <- 2 ** kseaapp_input[, "FC", drop = TRUE]
-    main_title <- (
+cat_enriched_heading <- function(m, cutoff) {
+  cat("\\newpage\n")
+  if (nrow(m) > intensity_hm_rows) {
+    subsection_header(
+      paste(
         sprintf(
-        "Change from treatment %s to treatment %s",
-        contrast_metadata_df[i_cntrst, "b_level"],
-        contrast_metadata_df[i_cntrst, "a_level"]
+          "Lowest p-valued %d (of %d) enriched kinase-substrates,",
+          intensity_hm_rows,
+          nrow(m)
+        ),
+        sprintf(" KSEA %s < %0.2f\n", cutoff$statistic, cutoff$threshold)
       )
     )
-    sub_title <- contrast_longlabel
-    tryCatch(
-      expr = {
-          ksea_scores_rslt <-
-            ksea_scores(
-              ksdata           = pseudo_ksdata, # KSEAapp::KSData,
-              px               = kseaapp_input,
-              networkin        = TRUE,
-              networkin_cutoff = 2
-              )
-
-          if (0 < sum(!is.nan(ksea_scores_rslt$FDR))) {
-            next_index <- 1 + next_index
-            rslt$score_list[[next_index]] <- ksea_scores_rslt
-            rslt$name_list[[next_index]] <- contrast_label
-            rslt$longname_list[[next_index]] <- contrast_longlabel
-            low_fdr_print(
-              rslt = rslt,
-              i_cntrst = i_cntrst,
-              i = next_index,
-              a_level = cntrst_a_level,
-              b_level = cntrst_b_level,
-              fold_change = cntrst_fold_change,
-              caption = contrast_longlabel
-              )
-          }
-        },
-      error = function(e) str(e)
-    )
-  }
-
-  cat_enriched_heading <- function(m, cutoff) {
-    cat("\\newpage\n")
-    if (nrow(m) > intensity_hm_rows) {
+  } else {
+    if (nrow(m) == 1) {
+      return(FALSE)
+    } else {
       subsection_header(
         paste(
-          sprintf("The %d enriched kinase-substrates with the lowest p-values,",
-            intensity_hm_rows),
+          sprintf("%d enriched kinase-substrates,", nrow(m)),
           sprintf(" KSEA %s < %0.2f\n", cutoff$statistic, cutoff$threshold)
         )
       )
-    } else {
-      if (nrow(m) == 1) {
-        return(FALSE)
-      } else {
-        subsection_header(
-          paste(
-            sprintf("%d enriched kinase-substrates,", nrow(m)),
-            sprintf(" KSEA %s < %0.2f\n", cutoff$statistic, cutoff$threshold)
-          )
-        )
-      }
     }
-    cat("\n\n\n")
-    cat("\n\n\n")
-    return(TRUE)
   }
-
-  plotted_kinases <- NULL
-  if (length(rslt$score_list) > 1) {
-    for (i in seq_len(length(ksea_heatmap_titles))) {
-      hdr <- ksea_heatmap_titles[[i]]
-      which_kinases <- i
-
-      cat("\\clearpage\n\\begin{center}\n")
-      if (i == const_ksea_astrsk_kinases) {
-        subsection_header(hdr)
-      } else {
-        subsection_header(hdr)
-      }
-      cat("\\end{center}\n")
-
-      plotted_kinases <- ksea_heatmap(
-        # the data frame outputs from the KSEA.Scores() function, in list format
-        score_list = rslt$score_list,
-        # a character vector of all the sample names for heatmap annotation:
-        # - the names must be in the same order as the data in score_list
-        # - please avoid long names, as they may get cropped in the final image
-        sample_labels = rslt$name_list,
-        # character string of either "p.value" or "FDR" indicating the data column
-        #   to use for marking statistically significant scores
-        stats = c("p.value", "FDR")[2],
-        # a numeric value between 0 and infinity indicating the min. number of
-        #   substrates a kinase must have to be included in the heatmap
-        m_cutoff = 1,
-        # a numeric value between 0 and 1 indicating the p-value/FDR cutoff
-        #   for indicating significant kinases in the heatmap
-        p_cutoff = 0.05,
-        # a binary input of TRUE or FALSE, indicating whether or not to perform
-        #   hierarchical clustering of the sample columns
-        sample_cluster = TRUE,
-        # a binary input of TRUE or FALSE, indicating whether or not to export
-        #   the heatmap as a .png image into the working directory
-        export = FALSE,
-        # additional arguments to gplots::heatmap.2, such as:
-        # - main: main title of plot
-        # - xlab: x-axis label
-        # - ylab: y-axis label
-        xlab = "Contrast",
-        ylab = "Kinase",
-        # print which kinases:
-        # - 1 : all kinases
-        # - 2 : significant kinases
-        # - 3 : non-significant kinases
-        which_kinases = which_kinases
-      )
-    } # end for (i in ...
-  } # end if (length ...
-
-  for (i_cntrst in seq_len(length(rslt$score_list))) {
-    next_index <- i_cntrst
-    cntrst_a_level <- contrast_metadata_df[i_cntrst, "a_level"]
-    cntrst_b_level <- contrast_metadata_df[i_cntrst, "b_level"]
-    cntrst_fold_change <- contrast_metadata_df[i_cntrst, 6]
-    contrast_label <- sprintf("%s -> %s", cntrst_b_level, cntrst_a_level)
-    contrast_longlabel <- (
-      sprintf(
-        "Trt %s {%s} -> Trt %s {%s}",
-        contrast_metadata_df[i_cntrst, "b_level"],
-        gsub(
-          pattern = ";",
-          replacement = ", ",
-          x = contrast_metadata_df[i_cntrst, "b_samples"],
-          fixed = TRUE
-        ),
-        contrast_metadata_df[i_cntrst, "a_level"],
-        gsub(
-          pattern = ";",
-          replacement = ", ",
-          x = contrast_metadata_df[i_cntrst, "a_samples"],
-          fixed = TRUE
-        )
-      )
-    )
-    main_title <- (
-        sprintf(
-        "Change from treatment %s to treatment %s",
-        contrast_metadata_df[i_cntrst, "b_level"],
-        contrast_metadata_df[i_cntrst, "a_level"]
-      )
-    )
-    sub_title <- contrast_longlabel
-    tryCatch(
-      expr = {
-          ksea_scores_rslt <- rslt$score_list[[next_index]]
-
-          if (0 < sum(!is.nan(ksea_scores_rslt$FDR))) {
-            low_fdr_barplot(
-              rslt = rslt,
-              i_cntrst = i_cntrst,
-              i = next_index,
-              a_level = cntrst_a_level,
-              b_level = cntrst_b_level,
-              fold_change = cntrst_fold_change,
-              caption = contrast_longlabel
-              )
-          }
-        },
-      error = function(e) str(e)
-    )
-  }
-
-  # TODO - do this in SQL
-  # Use enriched kinases to find enriched kinase-substrate pairs
-  enriched_kinases <- data.frame(kinase = ls(ksea_asterisk_hash))
-  enriched_substrates <- sqldf("
-    SELECT ppep, '('||group_concat(gene||'-'||sub_gene)||') '||ppep AS label
-      FROM (
-        SELECT DISTINCT gene, sub_gene, SUB_MOD_RSD AS ppep
-          FROM pseudo_ksdata
-          WHERE GENE IN (SELECT kinase FROM enriched_kinases)
-      )
-      GROUP BY ppep
-    ")
-  # Get the intensity values for the heatmap
-  enriched_intensities <-
-    as.matrix(unimputed_quant_data_log[enriched_substrates$ppep, , drop = FALSE])
-  # Remove rows having too many NA values to be relevant
-  na_counter <- is.na(enriched_intensities)
-  na_counts <- apply(na_counter, 1, sum)
-  enriched_intensities <-
-    enriched_intensities[na_counts < ncol(enriched_intensities) / 2, , drop = FALSE]
-  # Rename the rows with the display-name for the heatmap
-  rownames(enriched_intensities) <-
-    sapply(
-      X = rownames(enriched_intensities),
-      FUN = function(rn) {
-        enriched_substrates[enriched_substrates$ppep == rn, "label"]
-      }
-    )
-  # Format as matrix for heatmap
-  m <- as.matrix(enriched_intensities)
-  # Draw the heading and heatmap
-  if (nrow(m) > 0) {
-    cut_args <-
-      data.frame(
-        statistic = ksea_cutoff_statistic,
-        threshold = ksea_cutoff_threshold
-      )
-    number_of_peptides_found <-
-      draw_intensity_heatmap(
-        m                       = m,
-        cutoff                  = cut_args,
-        hm_heading_function     = cat_enriched_heading,
-        hm_main_title
-          = "Unnormalized (zero-imputed) intensities of enriched kinase-substrates",
-        suppress_row_dendrogram = FALSE
-      )
-  }
-  # We are (appparently) done
-  RSQLite::dbDisconnect(db)
+  cat("\n\n\n")
+  cat("\n\n\n")
+  return(TRUE)
 }
+
+plotted_kinases <- NULL
+if (length(rslt$score_list) > 1) {
+  for (i in seq_len(length(ksea_heatmap_titles))) {
+    hdr <- ksea_heatmap_titles[[i]]
+    which_kinases <- i
+
+    cat("\\clearpage\n\\begin{center}\n")
+    if (i == const_ksea_astrsk_kinases) {
+      subsection_header(hdr)
+    } else {
+      subsection_header(hdr)
+    }
+    cat("\\end{center}\n")
+
+    plotted_kinases <- ksea_heatmap(
+      # the data frame outputs from the KSEA.Scores() function, in list format
+      score_list = rslt$score_list,
+      # a character vector of all the sample names for heatmap annotation:
+      # - the names must be in the same order as the data in score_list
+      # - please avoid long names, as they may get cropped in the final image
+      sample_labels = rslt$name_list,
+      # character string of either "p.value" or "FDR" indicating the data column
+      #   to use for marking statistically significant scores
+      stats = c("p.value", "FDR")[2],
+      # a numeric value between 0 and infinity indicating the min. number of
+      #   substrates a kinase must have to be included in the heatmap
+      m_cutoff = 1,
+      # a numeric value between 0 and 1 indicating the p-value/FDR cutoff
+      #   for indicating significant kinases in the heatmap
+      p_cutoff = 0.05,
+      # a binary input of TRUE or FALSE, indicating whether or not to perform
+      #   hierarchical clustering of the sample columns
+      sample_cluster = TRUE,
+      # a binary input of TRUE or FALSE, indicating whether or not to export
+      #   the heatmap as a .png image into the working directory
+      export = FALSE,
+      # additional arguments to gplots::heatmap.2, such as:
+      # - main: main title of plot
+      # - xlab: x-axis label
+      # - ylab: y-axis label
+      xlab = "Contrast",
+      ylab = "Kinase",
+      # print which kinases:
+      # - 1 : all kinases
+      # - 2 : significant kinases
+      # - 3 : non-significant kinases
+      which_kinases = which_kinases
+    )
+    cat("\\begin{center}\n")
+    cat("Color intensities reflects $z$-score magnitudes; hue reflects $z$-score sign.  Asterisks reflect significance.\n")
+    cat("\\end{center}\n")
+  } # end for (i in ...
+} # end if (length ...
+
+for (i_cntrst in seq_len(length(rslt$score_list))) {
+  next_index <- i_cntrst
+  cntrst_a_level <- contrast_metadata_df[i_cntrst, "a_level"]
+  cntrst_b_level <- contrast_metadata_df[i_cntrst, "b_level"]
+  cntrst_fold_change <- contrast_metadata_df[i_cntrst, 6]
+  contrast_label <- sprintf("%s -> %s", cntrst_b_level, cntrst_a_level)
+  contrast_longlabel <- (
+    sprintf(
+      "Trt %s {%s} -> Trt %s {%s}",
+      contrast_metadata_df[i_cntrst, "b_level"],
+      gsub(
+        pattern = ";",
+        replacement = ", ",
+        x = contrast_metadata_df[i_cntrst, "b_samples"],
+        fixed = TRUE
+      ),
+      contrast_metadata_df[i_cntrst, "a_level"],
+      gsub(
+        pattern = ";",
+        replacement = ", ",
+        x = contrast_metadata_df[i_cntrst, "a_samples"],
+        fixed = TRUE
+      )
+    )
+  )
+  main_title <- (
+      sprintf(
+      "Change from treatment %s to treatment %s",
+      contrast_metadata_df[i_cntrst, "b_level"],
+      contrast_metadata_df[i_cntrst, "a_level"]
+    )
+  )
+  sub_title <- contrast_longlabel
+  tryCatch(
+    expr = {
+        ksea_scores_rslt <- rslt$score_list[[next_index]]
+
+        if (0 < sum(!is.nan(ksea_scores_rslt$FDR))) {
+          low_fdr_barplot(
+            rslt = rslt,
+            i_cntrst = i_cntrst,
+            i = next_index,
+            a_level = cntrst_a_level,
+            b_level = cntrst_b_level,
+            fold_change = cntrst_fold_change,
+            caption = contrast_longlabel
+            )
+        }
+      },
+    error = function(e) str(e)
+  )
+}
+
+# TODO - do this in SQL
+# Use enriched kinases to find enriched kinase-substrate pairs
+enriched_kinases <- data.frame(kinase = ls(ksea_asterisk_hash))
+enriched_substrates <- sqldf("
+  SELECT ppep, '('||group_concat(gene||'-'||sub_gene)||') '||ppep AS label
+    FROM (
+      SELECT DISTINCT gene, sub_gene, SUB_MOD_RSD AS ppep
+        FROM pseudo_ksdata
+        WHERE GENE IN (SELECT kinase FROM enriched_kinases)
+    )
+    GROUP BY ppep
+  ")
+# Get the intensity values for the heatmap
+enriched_intensities <-
+  as.matrix(unimputed_quant_data_log[enriched_substrates$ppep, , drop = FALSE])
+# Remove rows having too many NA values to be relevant
+na_counter <- is.na(enriched_intensities)
+na_counts <- apply(na_counter, 1, sum)
+enriched_intensities <-
+  enriched_intensities[na_counts < ncol(enriched_intensities) / 2, , drop = FALSE]
+# Rename the rows with the display-name for the heatmap
+rownames(enriched_intensities) <-
+  sapply(
+    X = rownames(enriched_intensities),
+    FUN = function(rn) {
+      enriched_substrates[enriched_substrates$ppep == rn, "label"]
+    }
+  )
+# Format as matrix for heatmap
+m <- as.matrix(enriched_intensities)
+# Draw the heading and heatmap
+if (nrow(m) > 0) {
+  cut_args <-
+    data.frame(
+      statistic = ksea_cutoff_statistic,
+      threshold = ksea_cutoff_threshold
+    )
+  number_of_peptides_found <-
+    draw_intensity_heatmap(
+      m                       = m,
+      cutoff                  = cut_args,
+      hm_heading_function     = cat_enriched_heading,
+      hm_main_title
+        = "Unnormalized (zero-imputed) intensities of enriched kinase-substrates",
+      suppress_row_dendrogram = FALSE
+    )
+}
+# We are (appparently) done
+RSQLite::dbDisconnect(db)
 ```
 
 ```{r parmlist, echo = FALSE, fig.dim = c(9, 10), results = 'asis'}
