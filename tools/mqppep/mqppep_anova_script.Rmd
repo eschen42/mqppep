@@ -984,9 +984,7 @@ ksea_heatmap <- function(
     filtered <- dataset[(dataset$m >= m_cutoff), ]
     return(filtered)
   }
-  score_list_m <- lapply(score_list, function(...)
-    filter_m(...,
-             m_cutoff))
+  score_list_m <- lapply(score_list, function(...) filter_m(..., m_cutoff))
   for (i in seq_len(length(score_list_m))) {
     names <- colnames(score_list_m[[i]])[c(2:7)]
     colnames(score_list_m[[i]])[c(2:7)] <-
