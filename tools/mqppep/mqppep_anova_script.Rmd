@@ -285,15 +285,13 @@ data_frame_latex <-
         "\n",
         sep = ""
         )
-    }
-    else if (n == 0L) {
+    } else if (n == 0L) {
       cat("0 rows for:\n")
       latex_itemized_list(
         v = names(x),
         underscore_whack = underscore_whack
         )
-    }
-    else {
+    } else {
       if (is.null(max))
         max <- getOption("max.print", 99999L)
       if (!is.finite(max))
@@ -457,8 +455,7 @@ ksea_scores <- function(
     colnames(new)[c(2, 4)] <- c("SUB_GENE", "SUB_MOD_RSD")
     new$log2_fc <- log2(abs(as.numeric(as.character(new$FC))))
     new <- new[complete.cases(new$log2_fc), ]
-  }
-  else {
+  } else {
     # Split each row having semicolons in Residue.Both into rows that are
     #   duplicated in all respects except that each row has a single
     #   member of the set "split-on-semicolon-Residue.Both"
@@ -501,8 +498,7 @@ ksea_scores <- function(
     ksdata_filtered <- ksdata[grep("[a-z]", ksdata$Source), ]
     ksdata_filtered <- ksdata_filtered[
       (ksdata_filtered$networkin_score >= networkin_cutoff), ]
-  }
-  else {
+  } else {
     # Otherwise, simply use PhosphSitePlus rows
     ksdata_filtered <- ksdata[
       grep("PhosphoSitePlus", ksdata$Source), ]
@@ -609,13 +605,13 @@ ksea_scores <- function(
   # Create column 3: mS
   mean_fc$m_s <- mean_fc[, 2]
   # Create column 4: Enrichment
-  mean_fc$enrichment <- mean_fc$m_s / abs(mean(new$log2_fc, na.rm = T))
+  mean_fc$enrichment <- mean_fc$m_s / abs(mean(new$log2_fc, na.rm = TRUE))
   # Create column 5: m, count of substrates
   mean_fc$m <- kinase_list
   # Create column 6: z-score
   mean_fc$z_score <- (
-    (mean_fc$m_s - mean(new$log2_fc, na.rm = T)) *
-      sqrt(mean_fc$m)) / sd(new$log2_fc, na.rm = T)
+    (mean_fc$m_s - mean(new$log2_fc, na.rm = TRUE)) *
+      sqrt(mean_fc$m)) / sd(new$log2_fc, na.rm = TRUE)
   # Create column 7: p-value, deduced from z-score
   mean_fc$p_value <- pnorm(-abs(mean_fc$z_score))
   # Create column 8: FDR, deduced by Benjamini-Hochberg adustment from p-value
@@ -689,13 +685,13 @@ low_fdr_barplot <- function(
       barplot(
         height = numeric_z_score[z_score_order],
         border = NA,
-        xpd = F,
+        xpd = FALSE,
         cex.names = 1.0,
         cex.axis = 1.0,
         main = long_caption,
         cex.main = my_cex_caption,
         names.arg = kinase_name[z_score_order],
-        horiz = T,
+        horiz = TRUE,
         srt = 45,
         las = 1)
       par(op)
@@ -864,8 +860,7 @@ create_breaks <- function(merged_scores) {
         breaks_neg
         )
     breaks_neg <- sort(unique(breaks_neg))
-  }
-  else {
+  } else {
     breaks_neg <- seq(-1.6, 0, length.out = 30)
   }
   if (max(merged_scores, na.rm = TRUE) > 1.6) {
@@ -877,8 +872,7 @@ create_breaks <- function(merged_scores) {
         length.out = 10)
         )
     breaks_pos <- sort(unique(breaks_pos))
-  }
-  else {
+  } else {
     breaks_pos <- seq(0, 1.6, length.out = 30)
   }
   breaks_all <- unique(append(breaks_neg, breaks_pos))
@@ -1001,7 +995,7 @@ ksea_heatmap <- function(
   master <-
     Reduce(
       f = function(...) {
-        base::merge(..., by = "Kinase.Gene", all = F)
+        base::merge(..., by = "Kinase.Gene", all = FALSE)
       },
       x = score_list_m
       )
@@ -1018,8 +1012,7 @@ ksea_heatmap <- function(
         my_value <- mtrx[i, j]
         if (!is.na(my_value) && my_value < p_cutoff) {
           new[i, j] <- "*"
-        }
-        else {
+        } else {
           new[i, j] <- ""
         }
       }
@@ -1126,12 +1119,14 @@ draw_intensity_heatmap <-
               ...
               )
           },
-          error = function(e) cat(
-            sprintf(
-              "\nCould not draw heatmap, possibly because of too many missing values.  Internal message: %s\n",
-              e$message
+          error = function(e) {
+            cat(
+              sprintf(
+                "\nCould not draw heatmap, possibly because of too many missing values.  Internal message: %s\n",
+                e$message
+                )
               )
-            ),
+            },
           finally = par(old_oma)
         )
       }
@@ -1201,7 +1196,7 @@ if (fdc_is_integer) {
 # False discovery rate adjustment for ANOVA
 #  Since pY abundance is low, set to 0.10 and 0.20 in addition to 0.05
 val_fdr <-
-  read.table(file = params$alphaFile, sep = "\t", header = F, quote = "")
+  read.table(file = params$alphaFile, sep = "\t", header = FALSE, quote = "")
 
 if (
   ncol(val_fdr) != 1 ||
@@ -1292,7 +1287,7 @@ if (!result) {
 full_data <- read.table(
   file = input_file,
   sep = "\t",
-  header = T,
+  header = TRUE,
   quote = "",
   check.names = FALSE
   )
@@ -1471,7 +1466,7 @@ q1 <- quantile(logvalues, probs = mean_percentile)[1]
 sds <- apply(quant_data_log, 1, sd_finite)
 if (sum(!is.na(sds)) > 2) {
   plot(
-    density(sds, na.rm = T)
+    density(sds, na.rm = TRUE)
   , main = "Smoothed estimated probability density vs. std. deviation"
   , sub = "(probability estimation made with Gaussian smoothing)"
   , ylab = "Probability density"
@@ -1548,7 +1543,7 @@ switch(
       #   a given ppep has no measurement; otherwise, proceed.
       if (ncol(lvlsbst) > 1) {
         the_centers <-
-          apply(lvlsbst, 1, median, na.rm = T)
+          apply(lvlsbst, 1, median, na.rm = TRUE)
         for (j in seq_len(nrow(lvlsbst))) {
           for (k in seq_len(ncol(lvlsbst))) {
             if (is.na(lvlsbst[j, k])) {
@@ -1572,7 +1567,7 @@ switch(
     # Take the accurate ln(x+1) because the data are log-normally distributed
     #   and because median can involve an average of two measurements.
     quant_data_imp <- log1p(quant_data_imp)
-    quant_data_imp[ind] <- apply(quant_data_imp, 1, median, na.rm = T)[ind[, 1]]
+    quant_data_imp[ind] <- apply(quant_data_imp, 1, median, na.rm = TRUE)[ind[, 1]]
     # Take the accurate e^x - 1 to match scaling of original input.
     quant_data_imp <- round(expm1(quant_data_imp_ln <- quant_data_imp))
     good_rows <- !is.nan(rowMeans(quant_data_imp))
@@ -1588,14 +1583,14 @@ switch(
     #   this will have to be
     quant_data_imp <- log1p(quant_data_imp)
     # Assign to NA cells the mean for the row
-    quant_data_imp[ind] <- apply(quant_data_imp, 1, mean, na.rm = T)[ind[, 1]]
+    quant_data_imp[ind] <- apply(quant_data_imp, 1, mean, na.rm = TRUE)[ind[, 1]]
     # Take the accurate e^x - 1 to match scaling of original input.
     quant_data_imp <- round(expm1(quant_data_imp_ln <- quant_data_imp))
     good_rows <- !is.nan(rowMeans(quant_data_imp))
   }
 , "random" = {
     quant_data_imp <- quant_data
-    m1 <- median(sds, na.rm = T) * sd_percentile #sd to be used is the median sd
+    m1 <- median(sds, na.rm = TRUE) * sd_percentile #sd to be used is the median sd
     # If you want results to be reproducible, you will want to call
     #   base::set.seed before calling stats::rnorm
     imputation_method_description <-
@@ -1858,7 +1853,7 @@ if (sum(is.na(quant_data)) > 0) {
       col = "lightpink1",
       side = "right",
       plotCentre = "line",
-      add = T
+      add = TRUE
       )
   }
 
@@ -2230,8 +2225,7 @@ if (count_of_treatment_levels < 2) {
     if (nrow(filtered_p) && nrow(filtered_data_filtered) > 0) {
       if (first_page_suppress == 1) {
         first_page_suppress <- 0
-        }
-        else {
+        } else {
           cat("\\newpage\n")
         }
       if (nrow(filtered_data_filtered) > 1) {
