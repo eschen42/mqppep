@@ -48,6 +48,7 @@
         --ksea_cutoff_threshold '$ksea_cutoff_threshold'
         --ksea_cutoff_statistic 'FDR'
         --reportFile '$report_file'
+        --anova_ksea_metadata '$anova_ksea_metadata'
     ]]></command>
     <configfiles>
       <configfile name="sample_names_regex_f">
@@ -124,6 +125,7 @@
     <outputs>
         <data name="imputed_data_file" format="tabular" label="${input_file.name}.${imputation.imputation_method}-imputed_intensities" ></data>
         <data name="imp_qn_lt_file" format="tabular" label="${input_file.name}.${imputation.imputation_method}-imputed_QN_LT_intensities" ></data>
+        <data name="anova_ksea_metadata" format="tabular" label="${input_file.name}.${imputation.imputation_method}-anova_ksea_metadata" ></data>
         <!--
         <data name="report_file" format="html" label="${input_file.name}.${imputation.imputation_method}-imputed_report (download/unzip to view)" ></data>
         -->
@@ -242,9 +244,9 @@
         </test>
     </tests>
     <help><![CDATA[
-===========================================
-Phopsphoproteomic Enrichment Pipeline ANOVA
-===========================================
+====================================================
+Phopsphoproteomic Enrichment Pipeline ANOVA and KSEA
+====================================================
 
 **Input files**
 
@@ -302,6 +304,11 @@ Phopsphoproteomic Enrichment Pipeline ANOVA
 ``report_file``
   Summary report for normalization, imputation, and **ANOVA**, in PDF format.
 
+**Algorithm**
+
+The KSEA algorithm used here is as in the KSEAapp package as reported in [Wiredja 2017].
+The code is adapted from "Danica D. Wiredja (2017). KSEAapp: Kinase-Substrate Enrichment Analysis. R package version 0.99.0." to work with output from the "MaxQuant Phosphopeptide Preprocessing" Galaxy tool.
+
 **Authors**
 
 ``Larry C. Cheng``
@@ -320,5 +327,7 @@ Note that the PERL-compatible regular expressions accepted by this tool are docu
     <citations>
         <!-- Cheng_2018 "Phosphopeptide Enrichment ..." PMID: 30124664 -->
         <citation type="doi">10.3791/57996</citation>
+        <!-- Wiredja_2017 "The KSEA App ..." PMID: 28655153 -->
+        <citation type="doi">10.1093/bioinformatics/btx415</citation>
     </citations>
 </tool>

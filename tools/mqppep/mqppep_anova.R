@@ -122,6 +122,13 @@ option_list <- list(
     default = 0.05,
     type = "double",
     help = paste0("Maximum score to be used to score a kinase enrichment as significant")
+  ),
+  make_option(
+    c("-M", "--anova_ksea_metadata"),
+    action = "store",
+    default = "anova_ksea_metadata.tsv",
+    type = "character",
+    help = "Phosphopeptide metadata, ANOVA FDR, and KSEA enribhments"
   )
 )
 args <- parse_args(OptionParser(option_list = option_list))
@@ -138,6 +145,7 @@ alpha_file             <- args$alphaFile
 preproc_sqlite         <- args$preproc_sqlite
 imputed_data_file_name <- args$imputedDataFile
 imp_qn_lt_data_filenm  <- args$imputedQNLTDataFile
+anova_ksea_metadata    <- args$anova_ksea_metadata
 report_file_name       <- args$reportFile
 ksea_sqlite            <- args$ksea_sqlite
 ksea_cutoff_statistic  <- args$ksea_cutoff_statistic
@@ -259,6 +267,7 @@ rmarkdown_params <- list(
   , regexSampleGrouping = regex_sample_grouping
   , imputedDataFilename = imputed_data_file_name
   , imputedQNLTDataFile = imp_qn_lt_data_filenm
+  , anovaKseaMetadata = anova_ksea_metadata
   , kseaAppPrepDb = ksea_sqlite
   , kseaCutoffThreshold = ksea_cutoff_threshold
   , kseaCutoffStatistic = ksea_cutoff_statistic

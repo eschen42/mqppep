@@ -18,9 +18,9 @@ header-includes:
   - \newcommand\B{\rule[-1.2ex]{0pt}{0pt}} % Bottom strut
 params:
   alphaFile:            "test-data/alpha_levels.tabular"
-  inputFile:            "test-data/UT_phospho_ST_sites.preproc.tabular"
-  preprocDb:            "test-data/UT_phospho_ST_sites.preproc.sqlite"
-  kseaAppPrepDb:        !r c(":memory:", "test-data/UT_phospho_ST_sites.ksea.sqlite")[2]
+  inputFile:            "test-data/test_input_for_anova.tabular"
+  preprocDb:            "test-data/test_input_for_anova.sqlite"
+  kseaAppPrepDb:        !r c(":memory:", "test-data/mqppep.sqlite")[2]
   show_toc:             true
   firstDataColumn:      "^Intensity[^_]"
   imputationMethod:     !r c("group-median", "median", "mean", "random")[1]
@@ -30,6 +30,7 @@ params:
   regexSampleGrouping:  "\\d+"
   imputedDataFilename:  "test-data/limbo/imputedDataFilename.txt"
   imputedQNLTDataFile:  "test-data/limbo/imputedQNLTDataFile.txt"
+  anovaKseaMetadata:    "test-data/limbo/anovaKseaMetadata.txt"
   oneWayManyCategories: !r c("aov", "kruskal.test", "oneway.test")[1]
   oneWayTwoCategories:  !r c("aov", "kruskal.test", "oneway.test")[3]
   kseaCutoffStatistic:  !r c("p.value", "FDR")[2]
@@ -205,8 +206,8 @@ anova_func <- function(x, grouping_factor, one_way_f) {
 
 ### LaTeX functions
 
-latex_collapsed_vector <- function(collapse_string, v) {
-  v_sub <- if (TRUE) gsub("_", "\\\\_", v) else v
+latex_collapsed_vector <- function(collapse_string, v, underscore_whack = TRUE) {
+  v_sub <- if (underscore_whack) gsub("_", "\\\\_", v) else v
   cat(
     paste0(
       v_sub,
@@ -215,19 +216,19 @@ latex_collapsed_vector <- function(collapse_string, v) {
     )
 }
 
-latex_itemized_collapsed <- function(collapse_string, v) {
+latex_itemized_collapsed <- function(collapse_string, v, underscore_whack = TRUE) {
   cat("\\begin{itemize}\n\\item ")
-  latex_collapsed_vector(collapse_string, v)
+  latex_collapsed_vector(collapse_string, v, underscore_whack)
   cat("\n\\end{itemize}\n")
 }
 
-latex_itemized_list <- function(v) {
-  latex_itemized_collapsed("\n\\item ", v)
+latex_itemized_list <- function(v, underscore_whack = TRUE) {
+  latex_itemized_collapsed("\n\\item ", v, underscore_whack)
 }
 
-latex_enumerated_collapsed <- function(collapse_string, v) {
+latex_enumerated_collapsed <- function(collapse_string, v, underscore_whack = TRUE) {
   cat("\\begin{enumerate}\n\\item ")
-  latex_collapsed_vector(collapse_string, v)
+  latex_collapsed_vector(collapse_string, v, underscore_whack)
   cat("\n\\end{enumerate}\n")
 }
 
@@ -235,8 +236,8 @@ latex_enumerated_list <- function(v) {
   latex_enumerated_collapsed("\n\\item ", v)
 }
 
-latex_table_row <- function(v, extra = "") {
-  latex_collapsed_vector(" & ", v)
+latex_table_row <- function(v, extra = "", underscore_whack = TRUE) {
+  latex_collapsed_vector(" & ", v, underscore_whack)
   cat(extra)
   cat(" \\\\\n")
 }
@@ -259,7 +260,9 @@ data_frame_latex <-
     # optional caption
     caption = NULL,
     # h(inline); b(bottom); t (top) or p (separate page)
-    anchor = "h"
+    anchor = "h",
+    # set underscore_whack to TRUE to escape underscores
+    underscore_whack = TRUE
   ) {
     if (is.null(justification))
       justification <-
@@ -285,7 +288,10 @@ data_frame_latex <-
     }
     else if (n == 0L) {
       cat("0 rows for:\n")
-      latex_itemized_list(names(x))
+      latex_itemized_list(
+        v = names(x),
+        underscore_whack = underscore_whack
+        )
     }
     else {
       if (is.null(max))
@@ -321,10 +327,17 @@ data_frame_latex <-
       if (!is.null(caption))
         cat("\\B \\\\ \\hline\\hline\n")
       # ref for top and bottom struts: https://tex.stackexchange.com/a/50355
-      latex_table_row(v = colnames(m), extra = "\\T\\B")
+      latex_table_row(
+        v = colnames(m),
+        extra = "\\T\\B",
+        underscore_whack = underscore_whack
+        )
       cat("\\hline\n")
       for (i in seq_len(length(m[, 1]))) {
-        latex_table_row(m[i, ])
+        latex_table_row(
+        v = m[i, ],
+        underscore_whack = underscore_whack
+        )
       }
       cat(
         paste(
@@ -540,8 +553,6 @@ ksea_scores <- function(
         ksdata_dataset_abbrev$Substrate.Mod,
         ksdata_dataset_abbrev$p),
       ]
-  # Save for now; TODO delete next line
-  ksdata_dataset_disaggregated <- ksdata_dataset_abbrev
   # First aggregation step to account for multiply phosphorylated peptides
   #   and differing peptide sequences; the goal here is to combine results
   #   for all measurements of the same substrate.
@@ -610,45 +621,12 @@ ksea_scores <- function(
   # Create column 8: FDR, deduced by Benjamini-Hochberg adustment from p-value
   mean_fc$fdr <- p.adjust(mean_fc$p_value, method = "fdr")
 
-  # TODO - repair or remove
-  if (FALSE) {
-    mean_fc$max_2_to_s <- 2 ** (max_fc[, 2] * sign(mean_fc$m_s))
-
-    max_metadata <- sqldf(
-      dbname = ":memory",
-      x = "
-        SELECT  a.rowid AS max_rowid,
-                b.Protein,
-                b.Gene,
-                b.Peptide,
-                b.FC,
-                b.FC - a.max_2_to_s AS delta
-          FROM
-                mean_fc AS a,
-                px AS b
-          WHERE abs(b.FC - a.max_2_to_s) < 0.000001
-          ORDER BY a.rowid
-      "
-      )
-    mean_fc$max_prot <- max_metadata$Protein
-    mean_fc$max_gene <- max_metadata$Gene
-    mean_fc$max_pptd <- max_metadata$Peptide
-
-    mean_fc$delta_fc <- max_metadata$delta
-
-    mean_fc <- mean_fc[order(mean_fc$Kinase.Gene), -2]
-    colnames(mean_fc) <- c(
-      "Kinase.Gene", "mS", "Enrichment", "m", "z.score", "p.value", "FDR",
-      "maxFC", "maxProtein", "maxGene", "maxPeptide", "deltaFC"
-      )
-  } else {
-    # Remove log2FC column, which is duplicated as mS
-    mean_fc <- mean_fc[order(mean_fc$Kinase.Gene), -2]
-    # Correct the column names which we had to hack because of the linter...
-    colnames(mean_fc) <- c(
-      "Kinase.Gene", "mS", "Enrichment", "m", "z.score", "p.value", "FDR"
-      )
-  }
+  # Remove log2FC column, which is duplicated as mS
+  mean_fc <- mean_fc[order(mean_fc$Kinase.Gene), -2]
+  # Correct the column names which we had to hack because of the linter...
+  colnames(mean_fc) <- c(
+    "Kinase.Gene", "mS", "Enrichment", "m", "z.score", "p.value", "FDR"
+    )
   return(mean_fc)
 }
 
@@ -780,7 +758,6 @@ low_fdr_print <- function(
       conn = db,
       name = "contrast_ksea_scores",
       value = contrast_ksea_scores,
-      overwrite = db_write_table_overwrite,
       append = db_write_table_append
       )
     selector <- switch(
@@ -1124,32 +1101,40 @@ draw_intensity_heatmap <-
             max(80, sqrt(nchar(rownames(m_margin)))) * 5 / 16  # row
           )
         }
-      try(
-        if (nrow(m) > 1) {
-          # Heuresticly determined character size adjustment formula
-          char_contractor <-
-            250000 / (
-              max(4500, (nchar(rownames(m_margin)))^2) * intensity_hm_rows
+      if (nrow(m) > 1) {
+        tryCatch(
+          {
+            old_oma <- par("oma")
+            par(cex.main = 0.6)
+            # Heuristically determined character size adjustment formula
+            char_contractor <-
+              250000 / (
+                max(4500, (nchar(rownames(m_margin)))^2) * intensity_hm_rows
+                )
+            heatmap(
+              m[peptide_count:1, ],
+              Rowv = if (suppress_row_dendrogram) NA else NULL,
+              Colv = NA,
+              cexRow = char_contractor,
+              cexCol = char_contractor * 50 / max_peptide_count,
+              scale = "row",
+              margins = margins,
+              main =
+                "Unimputed, unnormalized log(intensities)",
+              xlab = "",
+              las = 1,
+              ...
               )
-          old_oma <- par("oma")
-          par(cex.main = 0.6)
-          heatmap(
-            m[peptide_count:1, ],
-            Rowv = if (suppress_row_dendrogram) NA else NULL,
-            Colv = NA,
-            cexRow = char_contractor,
-            cexCol = char_contractor * 50 / max_peptide_count,
-            scale = "row",
-            margins = margins,
-            main =
-              "Unimputed, unnormalized log(intensities)",
-            xlab = "",
-            las = 1,
-            ...
-            )
-          par(old_oma)
-        }
-      )
+          },
+          error = function(e) cat(
+            sprintf(
+              "\nCould not draw heatmap, possibly because of too many missing values.  Internal message: %s\n",
+              e$message
+              )
+            ),
+          finally = par(old_oma)
+        )
+      }
     }
     return(peptide_count)
   }
@@ -1231,6 +1216,7 @@ val_fdr <- val_fdr[, 1]
 #Imputed Data filename
 imputed_data_filename <- params$imputedDataFilename
 imp_qn_lt_data_filenm <- params$imputedQNLTDataFile
+anova_ksea_mtdt_file  <- params$anovaKseaMetadata
 
 ```
 
@@ -1349,7 +1335,8 @@ data_frame_latex(
   justification = "l l",
   centered = TRUE,
   caption = "Input data column names",
-  anchor = const_table_anchor_bp
+  anchor = const_table_anchor_bp,
+  underscore_whack = FALSE
   )
 
 ```
@@ -1386,7 +1373,8 @@ data_frame_latex(
   justification = "rp{0.2\\linewidth} lp{0.3\\linewidth}",
   centered = TRUE,
   caption = "Treatment levels",
-  anchor = const_table_anchor_tbp
+  anchor = const_table_anchor_tbp,
+  underscore_whack = FALSE
   )
 ```
 
@@ -2023,17 +2011,8 @@ quant_data_imp_qn_ls <- as.data.frame(quant_data_imp_qn_ls)
 write_debug_file(quant_data_imp_qn_ls)
 write_debug_file(quant_data_imp_qn_ls2)
 
-#output quantile normalized data
+# Create data.frame used by ANOVA analysis
 data_table_imp_qn_lt <- cbind(full_data[1:9], quant_data_imp_qn_log)
-write.table(
-  data_table_imp_qn_lt,
-  file = imp_qn_lt_data_filenm,
-  sep = "\t",
-  col.names = TRUE,
-  row.names = FALSE,
-  quote = FALSE
-)
-
 ```
 
 <!-- ACE insertion begin -->
@@ -2048,18 +2027,6 @@ unimputed_quant_data_log <- quant_data_log
 #   which should never happen...)
 quant_data_imp_qn[quant_data_imp_qn == 0] <- .000000001
 quant_data_log <- log10(quant_data_imp_qn)
-
-# Output with imputed, un-normalized data
-
-data_table_imputed <- cbind(full_data[1:9], quant_data_imp)
-write.table(
-    data_table_imputed
-  , file = imputed_data_filename
-  , sep = "\t"
-  , col.names = TRUE
-  , row.names = FALSE
-  , quote = FALSE
-  )
 
 how_many_peptides <- nrow(quant_data_log)
 
@@ -2208,8 +2175,9 @@ if (count_of_treatment_levels < 2) {
   #   becomes "Outpufile_pST_ANOVA_STEP5_FDR0.05.txt"
 
   # Re-output datasets to include p-values
+  metadata_plus_p <- cbind(full_data[1:9], p_value_data[, 2:3])
   write.table(
-    cbind(full_data[1:9], p_value_data[, 2:3], quant_data_imp),
+    cbind(metadata_plus_p, quant_data_imp),
     file = imputed_data_filename,
     sep = "\t",
     col.names = TRUE,
@@ -2218,7 +2186,7 @@ if (count_of_treatment_levels < 2) {
     )
 
   write.table(
-    cbind(full_data[1:9], p_value_data[, 2:3], quant_data_imp_qn_log),
+    cbind(metadata_plus_p, quant_data_imp_qn_log),
     file = imp_qn_lt_data_filenm,
     sep = "\t",
     col.names = TRUE,
@@ -2402,14 +2370,14 @@ if (count_of_treatment_levels < 2) {
       }
       # draw the heading and heatmap
       if (nrow(m) > 0) {
-        number_of_peptides_found <-
-          draw_intensity_heatmap(
-            m                       = m,
-            cutoff                  = cutoff,
-            hm_heading_function     = cat_hm_heading,
-            hm_main_title           = "Unimputed, unnormalized log(intensities)",
-            suppress_row_dendrogram = FALSE
-          )
+          number_of_peptides_found <-
+            draw_intensity_heatmap(
+              m                       = m,
+              cutoff                  = cutoff,
+              hm_heading_function     = cat_hm_heading,
+              hm_main_title           = "Unimputed, unnormalized log(intensities)",
+              suppress_row_dendrogram = FALSE
+            )
       }
     }
   }
@@ -2773,7 +2741,6 @@ if (count_of_treatment_levels > 1) {
       conn = db,
       name = "contrast_ppep_p_val",
       value = contrast_p_df,
-      overwrite = db_write_table_overwrite,
       append = db_write_table_append
       )
     # Create UK for insert
@@ -2963,29 +2930,6 @@ if (count_of_treatment_levels > 1) {
       ;
       "
   )
-param_unlist <- unlist(as.list(params))
-  mqppep_anova_script_param_df <- data.frame(
-    script    = "mqppep_anova_script.Rmd",
-    parameter = names(param_unlist),
-    value     = param_unlist
-    )
-  ddl_exec(db, "
-    CREATE TABLE IF NOT EXISTS script_parameter(
-      script    TEXT,
-      parameter TEXT,
-      value     ANY,
-      UNIQUE (script, parameter) ON CONFLICT REPLACE
-      )
-      ;
-    "
-  )
-  RSQLite::dbWriteTable(
-    conn = db,
-    name = "script_parameter",
-    value = mqppep_anova_script_param_df,
-    append = TRUE
-  )
-  RSQLite::dbDisconnect(db)
 }
 ```
 
@@ -3181,36 +3125,6 @@ for (i_cntrst in seq_len(nrow(contrast_metadata_df))) {
   )
 }
 
-cat_enriched_heading <- function(m, cutoff) {
-  cat("\\newpage\n")
-  if (nrow(m) > intensity_hm_rows) {
-    subsection_header(
-      paste(
-        sprintf(
-          "Lowest p-valued %d (of %d) enriched kinase-substrates,",
-          intensity_hm_rows,
-          nrow(m)
-        ),
-        sprintf(" KSEA %s < %0.2f\n", cutoff$statistic, cutoff$threshold)
-      )
-    )
-  } else {
-    if (nrow(m) == 1) {
-      return(FALSE)
-    } else {
-      subsection_header(
-        paste(
-          sprintf("%d enriched kinase-substrates,", nrow(m)),
-          sprintf(" KSEA %s < %0.2f\n", cutoff$statistic, cutoff$threshold)
-        )
-      )
-    }
-  }
-  cat("\n\n\n")
-  cat("\n\n\n")
-  return(TRUE)
-}
-
 plotted_kinases <- NULL
 if (length(rslt$score_list) > 1) {
   for (i in seq_len(length(ksea_heatmap_titles))) {
@@ -3317,60 +3231,252 @@ for (i_cntrst in seq_len(length(rslt$score_list))) {
     error = function(e) str(e)
   )
 }
+```
 
-# TODO - do this in SQL
+```{r enriched, echo = FALSE, fig.dim = c(9, 10), results = 'asis'}
+
 # Use enriched kinases to find enriched kinase-substrate pairs
 enriched_kinases <- data.frame(kinase = ls(ksea_asterisk_hash))
-enriched_substrates <- sqldf("
-  SELECT ppep, '('||group_concat(gene||'-'||sub_gene)||') '||ppep AS label
-    FROM (
-      SELECT DISTINCT gene, sub_gene, SUB_MOD_RSD AS ppep
+all_enriched_substrates <- sqldf("
+  SELECT
+    gene AS kinase,
+    ppep,
+    '('||group_concat(gene||'-'||sub_gene)||') '||ppep AS label
+  FROM (
+    SELECT DISTINCT gene, sub_gene, SUB_MOD_RSD AS ppep
+      FROM pseudo_ksdata
+      WHERE GENE IN (SELECT kinase FROM enriched_kinases)
+    )
+  GROUP BY ppep
+  ")
+
+# helper used to label per-kinase substrate enrichment figure
+cat_enriched_heading <- function(m, cut_args) {
+  cutoff <- cut_args$cutoff
+  kinase <- cut_args$kinase
+  statistic <- cut_args$statistic
+  threshold <- cut_args$threshold
+  cat("\\newpage\n")
+  if (nrow(m) > intensity_hm_rows) {
+    subsection_header(
+      paste(
+        sprintf(
+          "Lowest p-valued %d (of %d) enriched %s-substrates,",
+          intensity_hm_rows,
+          nrow(m),
+          kinase
+        ),
+        sprintf(" KSEA %s < %0.2f\n", statistic, threshold)
+      )
+    )
+  } else {
+    if (nrow(m) == 1) {
+      return(FALSE)
+    } else {
+      subsection_header(
+        paste(
+          sprintf(
+            "%d enriched %s-substrates,",
+            nrow(m),
+            kinase
+            ),
+          sprintf(
+            " KSEA %s < %0.2f\n",
+            statistic,
+            threshold
+            )
+        )
+      )
+    }
+  }
+  cat("\n\n\n")
+  cat("\n\n\n")
+  return(TRUE)
+}
+
+# Disabling heatmaps for substrates pending decision whether to eliminate them altogether
+if (FALSE)
+  for (kinase_name in sort(enriched_kinases$kinase)) {
+    enriched_substrates <-
+      all_enriched_substrates[
+        all_enriched_substrates$kinase == kinase_name,
+        ,
+        drop = FALSE
+        ]
+    # Get the intensity values for the heatmap
+    enriched_intensities <-
+      as.matrix(unimputed_quant_data_log[enriched_substrates$ppep, , drop = FALSE])
+    # Remove rows having too many NA values to be relevant
+    na_counter <- is.na(enriched_intensities)
+    na_counts <- apply(na_counter, 1, sum)
+    enriched_intensities <-
+      enriched_intensities[na_counts < ncol(enriched_intensities) / 2, , drop = FALSE]
+    # Rename the rows with the display-name for the heatmap
+    rownames(enriched_intensities) <-
+      sapply(
+        X = rownames(enriched_intensities),
+        FUN = function(rn) {
+          enriched_substrates[enriched_substrates$ppep == rn, "label"]
+        }
+      )
+    # Format as matrix for heatmap
+    m <- as.matrix(enriched_intensities)
+    # Draw the heading and heatmap
+    if (nrow(m) > 0) {
+      cut_args <- new_env()
+      cut_args$cutoff <- cutoff
+      cut_args$kinase <- kinase_name
+      cut_args$statistic <- ksea_cutoff_statistic
+      cut_args$threshold <- ksea_cutoff_threshold
+      number_of_peptides_found <-
+        draw_intensity_heatmap(
+          m                       = m,
+          cutoff                  = cut_args,
+          hm_heading_function     = cat_enriched_heading,
+          hm_main_title
+            = "Unnormalized (zero-imputed) intensities of enriched kinase-substrates",
+          suppress_row_dendrogram = FALSE
+        )
+    }
+  }
+
+# Write output tabular files
+
+# get kinase, ppep, concat(kinase) tuples for enriched kinases
+
+kinase_ppep_label <- sqldf("
+  WITH
+    t(ppep, label) AS
+      (
+        SELECT DISTINCT
+            SUB_MOD_RSD AS ppep,
+            group_concat(gene, '; ') AS label
+          FROM pseudo_ksdata
+          WHERE GENE IN (SELECT kinase FROM enriched_kinases)
+          GROUP BY ppep
+      ),
+    k(kinase, ppep_join) AS
+      (
+      SELECT DISTINCT gene AS kinase, SUB_MOD_RSD AS ppep_join
         FROM pseudo_ksdata
         WHERE GENE IN (SELECT kinase FROM enriched_kinases)
-    )
-    GROUP BY ppep
+      )
+  SELECT k.kinase, t.ppep, t.label
+    FROM  t,  k
+    WHERE t.ppep = k.ppep_join
+    ORDER BY k.kinase, t.ppep
   ")
-# Get the intensity values for the heatmap
-enriched_intensities <-
-  as.matrix(unimputed_quant_data_log[enriched_substrates$ppep, , drop = FALSE])
-# Remove rows having too many NA values to be relevant
-na_counter <- is.na(enriched_intensities)
-na_counts <- apply(na_counter, 1, sum)
-enriched_intensities <-
-  enriched_intensities[na_counts < ncol(enriched_intensities) / 2, , drop = FALSE]
-# Rename the rows with the display-name for the heatmap
-rownames(enriched_intensities) <-
-  sapply(
-    X = rownames(enriched_intensities),
-    FUN = function(rn) {
-      enriched_substrates[enriched_substrates$ppep == rn, "label"]
-    }
+
+# extract what we need from full_data
+impish <- cbind(rownames(quant_data_imp), quant_data_imp)
+colnames(impish)[1] <- "Phosphopeptide"
+data_table_imputed_sql <- "
+  SELECT
+    f.*,
+    k.label AS KSEA_enrichments,
+    q.*
+  FROM
+    metadata_plus_p f
+      LEFT JOIN kinase_ppep_label k
+        ON f.Phosphopeptide = k.ppep,
+    impish q
+  WHERE
+    f.Phosphopeptide = q.Phosphopeptide
+  "
+data_table_imputed <- sqldf(data_table_imputed_sql)
+# Zap the duplicated 'Phosphopeptide' column named 'ppep'
+data_table_imputed <-
+    data_table_imputed[, c(1:12, 14:ncol(data_table_imputed))]
+
+# Output with imputed, un-normalized data
+
+write.table(
+    data_table_imputed
+  , file = imputed_data_filename
+  , sep = "\t"
+  , col.names = TRUE
+  , row.names = FALSE
+  , quote = FALSE
   )
-# Format as matrix for heatmap
-m <- as.matrix(enriched_intensities)
-# Draw the heading and heatmap
-if (nrow(m) > 0) {
-  cut_args <-
-    data.frame(
-      statistic = ksea_cutoff_statistic,
-      threshold = ksea_cutoff_threshold
-    )
-  number_of_peptides_found <-
-    draw_intensity_heatmap(
-      m                       = m,
-      cutoff                  = cut_args,
-      hm_heading_function     = cat_enriched_heading,
-      hm_main_title
-        = "Unnormalized (zero-imputed) intensities of enriched kinase-substrates",
-      suppress_row_dendrogram = FALSE
-    )
-}
-# We are (appparently) done
-RSQLite::dbDisconnect(db)
+
+
+#output quantile normalized data
+impish <- cbind(rownames(quant_data_imp_qn_log), quant_data_imp_qn_log)
+colnames(impish)[1] <- "Phosphopeptide"
+data_table_imputed <- sqldf(data_table_imputed_sql)
+# Zap the duplicated 'Phosphopeptide' column named 'ppep'
+data_table_imputed <-
+    data_table_imputed[, c(1:12, 14:ncol(data_table_imputed))]
+write.table(
+  data_table_imputed,
+  file = imp_qn_lt_data_filenm,
+  sep = "\t",
+  col.names = TRUE,
+  row.names = FALSE,
+  quote = FALSE
+)
+
+ppep_kinase <- sqldf("
+  SELECT DISTINCT k.ppep, k.kinase
+    FROM (
+      SELECT DISTINCT gene AS kinase, SUB_MOD_RSD AS ppep
+        FROM pseudo_ksdata
+        WHERE GENE IN (SELECT kinase FROM enriched_kinases)
+      ) k
+    ORDER BY k.ppep, k.kinase
+  ")
+
+RSQLite::dbWriteTable(
+  conn = db,
+  name = "ksea_enriched_ks",
+  value = ppep_kinase,
+  append = FALSE
+  )
+
+RSQLite::dbWriteTable(
+  conn = db,
+  name = "anova_signif",
+  value = p_value_data,
+  append = FALSE
+  )
+
+  ddl_exec(db, "
+    DROP VIEW IF EXISTS stats_metadata_v;
+    "
+  )
+  dml_no_rows_exec(db, "
+      CREATE VIEW stats_metadata_v
+        AS
+      SELECT DISTINCT  m.*,
+          p.raw_anova_p,
+          p.fdr_adjusted_anova_p,
+          kek.kinase AS ksea_enrichments
+        FROM
+          mrgfltr_metadata_view m
+            LEFT JOIN anova_signif p
+              ON m.phospho_peptide = p.phosphopeptide
+            LEFT JOIN ksea_enriched_ks kek
+              ON m.phospho_peptide = kek.ppep
+      ;
+    "
+  )
+
+write.table(
+  dbReadTable(db, "stats_metadata_v"),
+  file = anova_ksea_mtdt_file,
+  sep = "\t",
+  col.names = TRUE,
+  row.names = FALSE,
+  quote = FALSE
+  )
+
+
 ```
 
 ```{r parmlist, echo = FALSE, fig.dim = c(9, 10), results = 'asis'}
 cat("\\leavevmode\n\n\n")
+
+# write parameters to report
 
 param_unlist <- unlist(as.list(params))
 param_df <- data.frame(
@@ -3383,8 +3489,40 @@ data_frame_latex(
   justification = "p{0.35\\linewidth} p{0.6\\linewidth}",
   centered = TRUE,
   caption = "Input parameters",
-  anchor = const_table_anchor_bp
+  anchor = const_table_anchor_bp,
+  underscore_whack = FALSE
   )
+
+# write parameters to SQLite output
+
+mqppep_anova_script_param_df <- data.frame(
+  script    = "mqppep_anova_script.Rmd",
+  parameter = names(param_unlist),
+  value     = param_unlist
+  )
+ddl_exec(db, "
+  DROP TABLE IF EXISTS script_parameter;
+  "
+)
+ddl_exec(db, "
+  CREATE TABLE IF NOT EXISTS script_parameter(
+    script    TEXT,
+    parameter TEXT,
+    value     ANY,
+    UNIQUE (script, parameter) ON CONFLICT REPLACE
+    )
+    ;
+  "
+)
+RSQLite::dbWriteTable(
+  conn = db,
+  name = "script_parameter",
+  value = mqppep_anova_script_param_df,
+  append = TRUE
+)
+
+# We are done with output
+RSQLite::dbDisconnect(db)
 ```
 <!--
 There's gotta be a better way...
