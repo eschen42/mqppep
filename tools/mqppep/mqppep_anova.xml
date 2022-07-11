@@ -77,7 +77,7 @@
         />
         <!-- imputation_method <- c("group-median","median","mean","random")[1] -->
         <conditional name="imputation">
-            <param name="imputation_method" type="select" label="Imputation Method"
+            <param name="imputation_method" type="select" label="Imputation method"
                    help="Impute missing values by (1) using median for each sample-group; (2) using median across all samples; (3) using mean across all samples; or (4) using randomly generated values having same std. dev. as across all samples (with mean specified by [meanPercentile])"
             >
                 <option value="random" selected="true">random</option>
@@ -250,12 +250,12 @@ Phopsphoproteomic Enrichment Pipeline ANOVA and KSEA
 
 **Input files**
 
-``input_file``
+``Filtered Phosphopeptide Intensities``
   Phosphopeptides annotated with SwissProt and phosphosite metadata (in tabular format).
   This is the output from the "Phopsphoproteomic Enrichment Pipeline Merge and Filter"
   (``mqppep_mrgflt``) tool.
 
-``alpha_file``
+``ANOVA alpha cutoff level``
   List of alpha cutoff values for significance testing; text file having one column and no header.  For example:
 
 ::
@@ -266,43 +266,51 @@ Phopsphoproteomic Enrichment Pipeline ANOVA and KSEA
 
 **Input parameters**
 
-``intensity_column_regex``
+``Intensity-column pattern``
   First column of ``input_file`` having intensity values (integer or PERL-compatible regular expression matching column label). Default: **Intensity**
 
-``imputation_method``
+``Imputation method``
   Impute missing values by:
 
-    1. using median for each sample-group;
-    2. using median across all samples;
-    3. using mean across all samples; or
-    4. using randomly generated values where:
+    1. ``group-median`` - use median for each sample-group;
+    2. ``mean`` - use mean across all samples; or
+    3. ``median`` - use median across all samples;
+    4. ``random`` - use randomly generated values where:
 
-      - ``meanPercentile`` specifies the percentile among non-missing values to be used as mean of random values, and
-      - ``sdPercentile`` specifies the factor to be multiplied by the standard deviation among the non-missing values (across all samples) to determine the standard deviation of random values.
+      - ``Mean percentile for random values`` specifies the percentile among non-missing values to be used as mean of random values, and
+      - ``Percentile std. dev. for random values`` specifies the factor to be multiplied by the standard deviation among the non-missing values (across all samples) to determine the standard deviation of random values.
 
-``sample_names_regex``
+``Sample-extraction pattern``
   PERL-compatible regular expression extracting the sample-name from the the name of a column of instensities (from ``input_file``) for one sample.
 
     - For example, ``"\.\d+[A-Z]$"`` applied to ``Intensity.splunge.10A`` would produce ``.10A``
     - Note that *this is case sensitive* by default.
 
-``sample_grouping_regex``
+``Group-extraction pattern``
   PERL-compatible regular expression extracting the sample-grouping from the sample-name that was extracted with ``sample_names_regex`` from a column of intensites (from ``input_file``).
 
     - For example, ``"\d+$"`` applied to ``.10A`` would produce ``10``
     - Note that *this is case sensitive* by default.
 
+``KSEA threshold level``
+  Specifies minimum FDR at which a kinase will be considered to be enriched; the default choice of 0.05 is arbitrary.
 
 **Outputs**
 
-``imputed_intensities``
+``imputed_intensities (input_file.imputation_method-imputed_intensities)``
   Phosphopeptide MS intensities where missing values have been **imputed** by the chosen method, in tabular format.
 
-``imputed_QN_LT_intensities``
+``imputed_QN_LT_intensities (input_file.imputation_method-imputed_QN_LT_intensities)``
   Phosphopeptide MS intensities where missing values have been **imputed** by the chosen method, quantile-normalized (**QN**), and log10-transformed (**LT**), in tabular format.
 
-``report_file``
+``report_file (input_file.imputation_method-imputed_report)``
   Summary report for normalization, imputation, and **ANOVA**, in PDF format.
+
+``anova_ksea_metadata (input_file.imputation_method-imputed_anova_ksea_metadata)``
+  Phosphopeptide metadata including ANOVA significance and KSEA enrichments.
+
+``ksea_sqlite (input_file.imputation_method-imputed_ksea_sqlite)``
+  SQLite database for ad-hoc report creation.
 
 **Algorithm**
 
