@@ -25,7 +25,7 @@ params:
   regexSampleGrouping:  "\\d+"
   show_toc:             true
   firstDataColumn:      "^Intensity[^_]"
-  imputationMethod:     !r c("group-median", "median", "mean", "random")[4]
+  imputationMethod:     !r c("group-median", "median", "mean", "random")[1]
   meanPercentile:       1
   sdPercentile:         1.0
   imputedDataFilename:  "test-data/limbo/imputedDataFilename.txt"
@@ -74,6 +74,8 @@ params:
   inputFile:            "test-data/pST_Sites_NancyDu.txt.preproc.tabular"
   preprocDb:            "test-data/pST_Sites_NancyDu.txt.preproc.sqlite"
   kseaAppPrepDb:        !r c(":memory:", "test-data/pST_Sites_NancyDu.ksea.sqlite")[2]
+  regexSampleNames:     "\\.\\d+[A-Z]$"
+  regexSampleGrouping:  "\\d+"
 
   inputFile:            "test-data/density_failure.preproc_tab.tabular"
   kseaAppPrepDb:        !r c(":memory:", "mqppep.sqlite")[2]
@@ -2456,13 +2458,16 @@ if (count_of_treatment_levels < 2) {
                 "log(intensities), row-scaled, unimputed, unnormalized",
               suppress_row_dendrogram = FALSE
             )
+          if (number_of_peptides_found > 1) {
+            cat("\\leavevmode\n")
+            cat("The adjusted ANOVA \\textit{p}-value is shown in parentheses
+              after the phosphopeptide sequence.\n\n")
+          }
       }
     }
   }
 }
 cat("\\leavevmode\n")
-cat("The adjusted ANOVA \\textit{p}-value is shown in parentheses
-  after the phosphopeptide sequence.\n\n")
 ```
 
 ```{r sqlite, echo = FALSE, fig.dim = c(9, 10), results = 'asis'}
@@ -3243,7 +3248,9 @@ if (length(rslt$score_list) > 1) {
     )
     if (!is.null(plotted_kinases)) {
       cat("\\begin{center}\n")
-      cat("Color intensity reflects $z$-score magnitudes; hue reflects $z$-score sign.  Asterisks reflect significance.\n")
+      cat("Color intensity reflects $z$-score magnitudes; hue reflects $z$-score sign.\n")
+      if (which_kinases != const_ksea_nonastrsk_kinases)
+        cat("Asterisks reflect significance.\n")
       cat("\\end{center}\n")
     }
   } # end for (i in ...
