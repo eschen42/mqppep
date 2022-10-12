@@ -1,8 +1,8 @@
 #!/usr/bin/env Rscript
 # libraries
 library(optparse)
-library(data.table)
 library(stringr)
+library(tinytex)
 
 # ref for parameterizing Rmd document: https://stackoverflow.com/a/37940285
 
@@ -84,6 +84,32 @@ option_list <- list(
              " from an extracted sample-name")
   ),
   make_option(
+    c("-F", "--sampleGroupFilter"),
+    action = "store",
+    default = "none",
+    type = "character",
+    help = paste0("Should no filter be applied to sample group names (none)",
+             " or should the filter specify samples to include or exclude?")
+  ),
+  make_option(
+    c("-G", "--sampleGroupFilterPatterns"),
+    action = "store",
+    default = ".*",
+    type = "character",
+    help = paste0("Regular expression extracting sample-group",
+             " from an extracted sample-name")
+  ),
+  make_option(
+    c("--sampleGroupFilterMode"),
+    action = "store",
+    default = "r",
+    type = "character",
+    help = paste0("First character ('f', 'p', or 'r') indicating regular",
+      "expression matching mode ('fixed', 'perl', or 'grep'; ",
+      "see https://rdrr.io/r/base/grep.html).  Second character may be 'i;",
+      "to make search ignore case.")
+  ),
+  make_option(
     c("-o", "--imputedDataFile"),
     action = "store",
     default = "output_imputed.tsv",
@@ -104,9 +130,9 @@ option_list <- list(
   make_option(
     c("-r", "--reportFile"),
     action = "store",
-    default = "QuantDataProcessingScript.html",
+    default = "mqppep_anova.pdf",
     type = "character",
-    help = "HTML report file path"
+    help = "PDF report file path"
   ),
   make_option(
     c("-k", "--ksea_cutoff_statistic"),
@@ -129,9 +155,56 @@ option_list <- list(
     default = "anova_ksea_metadata.tsv",
     type = "character",
     help = "Phosphopeptide metadata, ANOVA FDR, and KSEA enribhments"
+  ),
+  make_option(
+    c("--oneWayManyCategories"),
+    action = "store",
+    default = "aov",
+    type = "character",
+    help = "Name of R function for one-way tests among more than two categories"
+  ),
+  make_option(
+    c("--oneWayTwoCategories"),
+    action = "store",
+    default = "two.way",
+    type = "character",
+    help = "Name of R function for one-way tests between two categories"
+  ),
+  make_option(
+    c("-c", "--kseaMinSubstrateCount"),
+    action = "store",
+    default = "1",
+    type = "integer",
+    help = "Minimum number of substrates to consider any kinase for KSEA"
+  ),
+  make_option(
+    c("-C", "--intensityMinValuesPerClass"),
+    action = "store",
+    default = "0",
+    type = "integer",
+    help = "Minimum number of observed values per class"
   )
 )
-args <- parse_args(OptionParser(option_list = option_list))
+
+tryCatch(
+  args <- parse_args(
+    OptionParser(
+      option_list = option_list,
+      add_help_option = TRUE
+    ),
+    print_help_and_exit = TRUE
+  ),
+  error = function(e) {
+    parse_args(
+      OptionParser(
+        option_list = option_list,
+        add_help_option = TRUE
+      ),
+      print_help_and_exit = TRUE
+    )
+    stop(as.character(e))
+  }
+)
 print("args is:")
 cat(str(args))
 
@@ -140,16 +213,19 @@ cat(str(args))
 if (! file.exists(args$inputFile)) {
   stop((paste("Input file", args$inputFile, "does not exist")))
 }
-input_file             <- args$inputFile
 alpha_file             <- args$alphaFile
-preproc_sqlite         <- args$preproc_sqlite
-imputed_data_file_name <- args$imputedDataFile
-imp_qn_lt_data_filenm  <- args$imputedQNLTDataFile
 anova_ksea_metadata    <- args$anova_ksea_metadata
-report_file_name       <- args$reportFile
-ksea_sqlite            <- args$ksea_sqlite
+imp_qn_lt_data_filenm  <- args$imputedQNLTDataFile
+imputed_data_file_name <- args$imputedDataFile
+input_file             <- args$inputFile
+intensity_min_values_per_class <- args$intensityMinValuesPerClass
 ksea_cutoff_statistic  <- args$ksea_cutoff_statistic
 ksea_cutoff_threshold  <- args$ksea_cutoff_threshold
+ksea_min_substrate_count <- args$kseaMinSubstrateCount
+ksea_sqlite            <- args$ksea_sqlite
+preproc_sqlite         <- args$preproc_sqlite
+report_file_name       <- args$reportFile
+sample_group_filter    <- args$sampleGroupFilter
 if (
   sum(
     grepl(
@@ -192,32 +268,59 @@ if (imputation_method == "random") {
 #  - regexSampleNames
 #  - regexSampleGrouping
 read_config_file_string <- function(fname, limit) {
+  cat(sprintf("read_config_file_string: fname = '%s'\n", fname))
+  cat(sprintf("length(fname) = '%s'\n", length(fname)))
+  result <-
+    if (file.exists(fname)) {
+      cat(sprintf("reading '%s' ...\n", fname))
+      readChar(fname, limit)
+    } else {
+      cat(sprintf("not a file: '%s'\n", fname))
+      fname
+    }
+  #AC print(paste0("read_config_file_string: opening file '", as.character(fname), "'"))
   # eliminate any leading whitespace
-  result    <- gsub("^[ \t\n]*", "", readChar(fname, limit))
+  result <- gsub("^[ \t\n]*", "",   result)
   # eliminate any trailing whitespace
-  result    <- gsub("[ \t\n]*$", "", result)
+  result <- gsub("[ \t\n]*$", "",   result)
   # substitute characters escaped by Galaxy sanitizer
-  result <- gsub("__lt__", "<",  result)
-  result <- gsub("__le__", "<=", result)
-  result <- gsub("__eq__", "==", result)
-  result <- gsub("__ne__", "!=", result)
-  result <- gsub("__gt__", ">",  result)
-  result <- gsub("__ge__", ">=", result)
-  result <- gsub("__sq__", "'",  result)
-  result <- gsub("__dq__", '"',  result)
-  result <- gsub("__ob__", "[",  result)
-  result <- gsub("__cb__", "]",  result)
+  result <- gsub("__lt__",    "<",  result)
+  result <- gsub("__le__",    "<=", result)
+  result <- gsub("__eq__",    "==", result)
+  result <- gsub("__ne__",    "!=", result)
+  result <- gsub("__gt__",    ">",  result)
+  result <- gsub("__ge__",    ">=", result)
+  result <- gsub("__sq__",    "'",  result)
+  result <- gsub("__dq__",    '"',  result)
+  result <- gsub("__ob__",    "[",  result)
+  result <- gsub("__cb__",    "]",  result)
 }
-cat(paste0("first_data_column file: ", args$firstDataColumn, "\n"))
-cat(paste0("regex_sample_names file: ", args$regexSampleNames, "\n"))
-cat(paste0("regex_sample_grouping file: ", args$regexSampleGrouping, "\n"))
 nc <- 1000
-regex_sample_names <- read_config_file_string(args$regexSampleNames, nc)
-regex_sample_grouping <- read_config_file_string(args$regexSampleGrouping, nc)
+
+sink(stderr())
+
+cat(paste0("first_data_column file: ", args$firstDataColumn, "\n"))
 first_data_column <- read_config_file_string(args$firstDataColumn,  nc)
 cat(paste0("first_data_column: ",     first_data_column,     "\n"))
-cat(paste0("regex_sample_names: ",    regex_sample_names,    "\n"))
+
+cat(paste0("regex_sample_grouping file: ", args$regexSampleGrouping, "\n"))
+regex_sample_grouping <- read_config_file_string(args$regexSampleGrouping, nc)
 cat(paste0("regex_sample_grouping: ", regex_sample_grouping, "\n"))
+
+cat(paste0("regex_sample_names file: ", args$regexSampleNames, "\n"))
+regex_sample_names <- read_config_file_string(args$regexSampleNames, nc)
+cat(paste0("regex_sample_names: ",    regex_sample_names,    "\n"))
+
+if (sample_group_filter != "none") {
+  cat(paste0("group_filter_patterns file: '", args$sampleGroupFilterPatterns, "'\n"))
+  group_filter_patterns <- read_config_file_string(args$sampleGroupFilterPatterns, nc)
+} else {
+  group_filter_patterns <- ".*"
+}
+cat(paste0("group_filter_patterns: ", group_filter_patterns, "\n"))
+
+sink()
+
 
 # from: https://github.com/molgenis/molgenis-pipelines/wiki/
 #   How-to-source-another_file.R-from-within-your-R-script
@@ -253,45 +356,58 @@ location_of_this_script <- function() {
     return(NULL)
 }
 
-script_dir <-  location_of_this_script()
+# validation of input parameters is complete; it is now justifiable to
+#   install LaTeX tools to render markdown as PDF; this involves a big
+#   download from GitHub
+if (!tinytex::is_tinytex()) tinytex::install_tinytex()
 
 rmarkdown_params <- list(
     inputFile = input_file
   , alphaFile = alpha_file
-  , preprocDb = preproc_sqlite
+  , anovaKseaMetadata = anova_ksea_metadata
   , firstDataColumn = first_data_column
+  , groupFilterPatterns = group_filter_patterns
   , imputationMethod = imputation_method
-  , meanPercentile = mean_percentile
-  , sdPercentile = sd_percentile
-  , regexSampleNames = regex_sample_names
-  , regexSampleGrouping = regex_sample_grouping
   , imputedDataFilename = imputed_data_file_name
   , imputedQNLTDataFile = imp_qn_lt_data_filenm
-  , anovaKseaMetadata = anova_ksea_metadata
+  , intensityMinValuesPerGroup = intensity_min_values_per_class
   , kseaAppPrepDb = ksea_sqlite
-  , kseaCutoffThreshold = ksea_cutoff_threshold
   , kseaCutoffStatistic = ksea_cutoff_statistic
+  , kseaCutoffThreshold = ksea_cutoff_threshold
+  , kseaMinSubstrateCount = ksea_min_substrate_count
+  , meanPercentile = mean_percentile
+  , preprocDb = preproc_sqlite
+  , regexSampleGrouping = regex_sample_grouping
+  , regexSampleNames = regex_sample_names
+  , sdPercentile = sd_percentile
+  , sampleGroupFilter = sample_group_filter
   )
 
 print("rmarkdown_params")
-str(rmarkdown_params)
+print(rmarkdown_params)
+print(
+  lapply(
+    X = rmarkdown_params,
+    FUN = function(x) paste0(nchar(as.character(x)), ": '", as.character(x),"'")
+  )
+)
+
 
 # freeze the random number generator so the same results will be produced
 #  from run to run
 set.seed(28571)
 
-# BUG (or "opportunity")
-# To render as PDF for the time being requires installing the conda
-# package `r-texlive` until this issue in `texlive-core` is resolved:
-#   https://github.com/conda-forge/texlive-core-feedstock/issues/19
-# This workaround is detailed in the fourth comment of:
-#   https://github.com/conda-forge/texlive-core-feedstock/issues/61
+script_dir <-  location_of_this_script()
 
-library(tinytex)
-tinytex::install_tinytex()
 rmarkdown::render(
   input = paste(script_dir, "mqppep_anova_script.Rmd", sep = "/")
-, output_format = rmarkdown::pdf_document(toc = TRUE)
 , output_file = report_file_name
 , params = rmarkdown_params
+, output_format = rmarkdown::pdf_document(
+    includes = rmarkdown::includes(in_header = "mqppep_anova_preamble.tex")
+  , dev = 'pdf'
+  , toc = TRUE
+  , toc_depth = 2
+  , number_sections = FALSE
+  )
 )
