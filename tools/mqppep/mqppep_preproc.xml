@@ -433,7 +433,7 @@ The result should be a tab-separated file with the following columns:
 ``p_sty_motifs``
    This database merges motif patterns from [Amanchy 2007] and Phosida [Gnad 2011].
 
-   The Amanchy data are adapted from `http://hprd.org/serine_motifs <https://web.archive.org/web/*/http://hprd.org/serine_motifs>`_ and `http://hprd.org/tyrosine_motifs <https://web.archive.org/web/*/http://hprd.org/tyrosine_motifs>`_ (both links cite the reference where each motif was published), and the patterns are translated into Perl regular expression format (`https://perldoc.perl.org/perlre <https://perldoc.perl.org/perlre>`_).
+     The Amanchy data are adapted from `https://web.archive.org/web/*/http://hprd.org/serine_motifs <https://web.archive.org/web/*/http://hprd.org/serine_motifs>`_ and `https://web.archive.org/web/*/http://hprd.org/tyrosine_motifs <https://web.archive.org/web/*/http://hprd.org/tyrosine_motifs>`_ (both links cite the reference where each motif was published), and the patterns are translated into Perl regular expression format (`https://perldoc.perl.org/perlre <https://perldoc.perl.org/perlre>`_).
 
    The Phosida data are adapted (translated to Perl-formatted regular expressions) from `http://pegasus.biochem.mpg.de/phosida/help/motifs.aspx <http://pegasus.biochem.mpg.de/phosida/help/motifs.aspx>`_ (this link cites the reference where each motif was published).
 
