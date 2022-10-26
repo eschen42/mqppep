@@ -1263,7 +1263,6 @@ param_df_noexit <-
     data_frame_tabbing_latex(
       x = param_df,
       tabstops = c(1.75),
-      #landscape = TRUE,
       underscore_whack = TRUE,
       caption = "Input parameters",
       verbatim = FALSE
@@ -3507,7 +3506,6 @@ if (sample_group_filter %in% c("include", "exclude")) {
           ),
         ],
       tabstops = c(1.75),
-      #landscape = TRUE,
       underscore_whack = TRUE,
       caption = "Input parameters for sample-name parsing",
       verbatim = FALSE
@@ -4859,7 +4857,6 @@ if (count_of_treatment_levels < 2) {
                 "log(intensities), row-scaled, unimputed, unnormalized",
               suppress_row_dendrogram = FALSE,
               master_cex              = 0.35,
-              #notecex                 = 1.5,
               sepcolor                = "black",
               colsep                  = sample_colsep
             )
@@ -5917,7 +5914,6 @@ write_params <- function(db) {
   data_frame_tabbing_latex(
     x = param_df,
     tabstops = c(1.75),
-    #landscape = TRUE,
     underscore_whack = TRUE,
     caption = "Input parameters",
     verbatim = FALSE
