@@ -78,12 +78,14 @@
           --sampleGroupFilterMode '$group_filter.group_filter_mode'
         #end if
         --intensityMinValuesPerClass '$intnsty_min_vals_per_smpl_grp'
-        --imputedDataFile $imputed_data_file
+        --imputedDataFile '$imputed_data_file'
         --imputedQNLTDataFile '$imp_qn_lt_file'
         --ksea_sqlite '$ksea_sqlite'
         --kseaMinSubstrateCount '$ksea_min_substrate_count'
         --ksea_cutoff_threshold '$ksea_cutoff_threshold'
         --ksea_cutoff_statistic 'FDR'
+        --kseaUseAbsoluteLog2FC '$ksea_use_absolute_log2_fc'
+        --minQuality '$ksea_min_quality'
         --anova_ksea_metadata '$anova_ksea_metadata'
         --reportFile '$report_file'
     ]]></command>
@@ -179,7 +181,7 @@
         </param>
         <param name="intnsty_min_vals_per_smpl_grp" type="integer" value="1" min="0"
                label="Minimum number of values per sample-group"
-               help="Only consider as comparable those intensities having this minimum number of values in any sample-group (range [0,&#8734;])"
+               help="Only consider as comparable those intensities having at least this number of values in each sample-group (range [0,&#8734;])"
         />
         <conditional name="group_filter">
             <param name="group_filter_method" type="select" label="Filter sample-groups"
@@ -205,14 +207,26 @@
                label="KSEA threshold level"
                help="Maximum FDR to be used to score a kinase enrichment as significant; see warning against setting this too low in help text below."
         />
+        <param name="ksea_use_absolute_log2_fc"
+               type="boolean"
+               label="Use abs(log2(fold-change)) for KSEA"
+               help="Should log2(fold-change) be used for KSEA? (Checking this may alter (possibly reduce) the number of hits.)"
+               checked="false"
+               truevalue="TRUE"
+               falsevalue="FALSE"
+        />
+        <param name="ksea_min_quality" type="integer" value="0" min="0"
+               label="Minimum quality of substrates for KSEA"
+               help="Minimum 'quality' of substrates to be considered for KSEA (range [0,&#8734;]); higher numbers reduce the number of substrates considered - see help text below."
+        />
     </inputs>
     <outputs>
-        <data name="imputed_data_file" format="tabular" label="${input_file.name}.${imputation.imputation_method}-imputed_intensities" ></data>
-        <data name="imp_qn_lt_file" format="tabular" label="${input_file.name}.${imputation.imputation_method}-imputed_QN_LT_intensities" ></data>
-        <data name="anova_ksea_metadata" format="tabular" label="${input_file.name}.${imputation.imputation_method}-anova_ksea_metadata" ></data>
-        <data name="report_file" format="pdf" label="${input_file.name}.${imputation.imputation_method}-imputed_report" ></data>
-        <data name="ksea_sqlite" format="sqlite" label="${input_file.name}..${imputation.imputation_method}-imputed_ksea_sqlite">
-        </data>
+        <!-- earlier outputs will appear lower in the history list; therefore, put report at the top -->
+        <data name="ksea_sqlite" format="sqlite" label="${input_file.name}..${imputation.imputation_method}-imputed_ksea_sqlite" />
+        <data name="anova_ksea_metadata" format="tabular" label="${input_file.name}.${imputation.imputation_method}-anova_ksea_metadata" />
+        <data name="imputed_data_file" format="tabular" label="${input_file.name}.${imputation.imputation_method}-imputed_intensities" />
+        <data name="imp_qn_lt_file" format="tabular" label="${input_file.name}.${imputation.imputation_method}-imputed_QN_LT_intensities" />
+        <data name="report_file" format="pdf" label="${input_file.name}.${imputation.imputation_method}-imputed_report" />
     </outputs>
     <tests>
         <test><!-- test #1 -->
@@ -237,7 +251,7 @@
                     <has_text text="Phosphopeptide" />
                     <has_text text="AAAITDMADLEELSRLpSPLPPGpSPGSAAR" />
                     <!--                                               missing   missing   observed  missing   observed  observed  -->
-                    <has_text_matching expression="pSQKQEEENPAEETGEEK.*6.962256.*6.908828.*6.814580.*6.865411.*6.908828.*7.088909" />
+                    <has_text_matching expression="pSQKQEEENPAEETGEEK.*6.962256.*6.908828.*6.814580.*6.865411.*6.908828.*7.093748" />
 
                     <has_text text="pSQKQEEENPAEETGEEK" />
                 </assert_contents>
@@ -277,7 +291,7 @@
                     <has_text text="Phosphopeptide" />
                     <has_text text="AAAITDMADLEELSRLpSPLPPGpSPGSAAR" />
                     <!--                                               missing   missing   observed  missing   observed  observed  -->
-                    <has_text_matching expression="pSQKQEEENPAEETGEEK.*6.839850.*6.797424.*6.797424.*6.797424.*6.896609.*7.092451" />
+                    <has_text_matching expression="pSQKQEEENPAEETGEEK.*6.839850.*6.797424.*6.797424.*6.797424.*6.896609.*7.097251" />
                 </assert_contents>
             </output>
         </test>
@@ -342,8 +356,8 @@
                 <assert_contents>
                     <has_text text="Phosphopeptide" />
                     <has_text text="AAAITDMADLEELSRLpSPLPPGpSPGSAAR" />
-                    <has_text text="5.409549" /> <!-- log-transformed value for pTYVDPFTpYEDPNQAVR .1B -->
-                    <has_text text="6.464714" /> <!-- log-transformed value for pSQKQEEENPAEETGEEK .2A -->
+                    <has_text text="5.522821" /> <!-- log-transformed value for pTYVDPFTpYEDPNQAVR .1B -->
+                    <has_text text="6.638251" /> <!-- log-transformed value for pSQKQEEENPAEETGEEK .2A -->
                 </assert_contents>
             </output>
         </test>
@@ -441,6 +455,12 @@ Upstream tool
 
 ``KSEA threshold level``
   Specifies minimum FDR at which a kinase will be considered to be enriched; the default choice of ``0.05`` is arbitrary and may exclude kinases that are interesting.  The KSEA FDR perhaps should not be treated as conservatively as would be appropriate for hypothesis testing.  For example, at an FDR of ``0.05``, for every ``20`` kinases that on discards, ``19`` are likely truely enriched.
+
+``Use abs(log2(fold-change)) for KSEA``
+  When TRUE, consider only the magnitude of the differences across the contrast for all of the substrates when aggregating them to assess the enrichment of a given kinase's substrates.  When FALSE, also consider the direction.  Surprisingly, setting this to TRUE may decrease the enriched kinases. 
+
+``Minimum quality of substrates for KSEA``
+  An arbitrary "quality score" is assigned to each substrate, as described in the PDF report produced by the tool.  This score takes into account both FDR-adjusted p-value and the number of missing values for each substrate.  Setting the minimum to zero retains all substrates, which may be a large number.
 
 **Outputs**
 ===========

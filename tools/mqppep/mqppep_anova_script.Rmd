@@ -21,35 +21,16 @@ raw_tex: true
 urlcolor: blue
 params:
   alphaFile:            "test-data/alpha_levels.tabular"
-  inputFile:            "test-data/PDX_pST_by_trt.ppep_intensities.ppep_map.preproc_tab.tabular"
-  preprocDb:            "test-data/PDX_pST_by_trt.ppep_intensities.ppep_map.preproc_sqlite.sqlite"
+  inputFile:            "test-data/test_input_for_anova.tabular"
+  preprocDb:            "test-data/test_input_for_anova.sqlite"
   kseaAppPrepDb:        !r c(":memory:", "test-data/mqppep.sqlite")[2]
-  regexSampleNames:     "\\.\\w+\\.\\d+[A-Z]$"
-  regexSampleGrouping:  "\\w+"
+  regexSampleNames:     "\\.\\d+[A-Z]$"
+  regexSampleGrouping:  "\\d+"
   groupFilterPatterns:  ".+"
-  sampleGroupFilter:    !r c("none", "exclude", "include")[3]
+  groupFilter:    !r c("none", "exclude", "include")[1]
   imputationMethod:     !r c("group-median", "median", "mean", "random")[4]
-  kseaCutoffThreshold:  !r c(0.05, 0.1, 0.20, 0.25, 0.5, 0.9)[3]
-  pdx_alphaFile:            "test-data/alpha_levels.tabular"
-  pdx_inputFile:            "test-data/PDX012970_pST.preproc_tab.tabular"
-  pdx_preprocDb:            "test-data/PDX012970_pST.preproc.sqlite"
-  pdx_kseaAppPrepDb:        !r c(":memory:", "test-data/PDX012970.sqlite")[2]
-  pdx_regexSampleNames:     "\\.\\w+\\.\\w+\\.\\d+[A-Z]$"
-  pdx_regexSampleGrouping:  "\\.\\w+\\K\\.\\w+"
-  pdx_groupFilterPatterns:  "AdCa,AVPC"
-  pdx_sampleGroupFilter:    !r c("none", "exclude", "include")[3]
-  pdx_imputationMethod:     !r c("group-median", "median", "mean", "random")[4]
-  pdx_kseaCutoffThreshold:  !r c(0.05, 0.1, 0.25, 0.5, 0.9)[1]
-  tst_alphaFile:            "test-data/alpha_levels.tabular"
-  tst_inputFile:            "test-data/test_input_for_anova.tabular"
-  tst_preprocDb:            "test-data/test_input_for_anova.sqlite"
-  tst_kseaAppPrepDb:        !r c(":memory:", "test-data/mqppep.sqlite")[2]
-  tst_regexSampleNames:     "\\.\\d+[A-Z]$"
-  tst_regexSampleGrouping:  "\\d+"
-  tst_groupFilterPatterns:  ".+"
-  tst_sampleGroupFilter:    !r c("none", "exclude", "include")[1]
-  tst_kseaCutoffThreshold:  !r c(0.05, 0.1, 0.25, 0.5, 0.9)[5]
-  tst_imputationMethod:     !r c("group-median", "median", "mean", "random")[1]
+  kseaCutoffThreshold:  !r c(0.05, 0.1, 0.25, 0.5, 0.9)[5]
+  #imputationMethod:     !r c("group-median", "median", "mean", "random")[1]
 
   # how should sample groups be interpreted?
   #  - "f": fixed patterns (like `grep -F`)
@@ -57,12 +38,13 @@ params:
   #  - "r": extended grep patterns (like `grep -E`)
   # use what case sensitivity?
   #  - "i": case insensitive matching (like `grep -i`)
-  sampleGroupFilterMode: !r c("r", "ri", "p", "pi", "f", "fi")[1]
+  groupFilterMode: !r c("r", "ri", "p", "pi", "f", "fi")[1]
   # what pattern should be used for the first column
   #   (extended grep pattern, case sensitive)
   firstDataColumn:      "^Intensity[^_]"
   # for small random value imputation, what percentile should be center?
-  meanPercentile:       1
+  meanPercentile:       50
+  #meanPercentile:       1
   # for small random value imputation, what should `s / mean(x)` ratio be?
   sdPercentile:         1.0
   # output path for imputed data file
@@ -75,19 +57,23 @@ params:
   oneWayManyCategories: !r c("aov", "kruskal.test", "oneway.test")[1]
   # how to test one variable with 2 categories (e.g., oneway.test)
   oneWayTwoCategories:  !r c("aov", "kruskal.test", "oneway.test")[3]
+  # what should be the minimum quality for consideration in both
+  minQuality:           0
   # correct KSEA with FDR (recommended) or raw p-value
   kseaCutoffStatistic:  !r c("FDR", "p.value")[1]
   # correct KSEA threshold 0.05 (conventional) or higher (perhaps better)
   #   "perhaps better" meaning that KSEA is an hypothesis-generator, not -test
   #kseaCutoffThreshold:  !r c(0.05, 0.1, 0.25, 0.5)[1]
   # minimum number of substrates required for a kinase to be considered in KSEA
-  kseaMinSubstrateCount: 3
+  kseaMinSubstrateCount: 1
   # Should KSEA be performed aggregating signed log2FC or absolute?
   # FALSE use raw log2FC for KSEA as for KSEAapp::KSEA.Scores
-  # TRUE use abs(log2FC) for KSEA as Justin requested
+  # TRUE  use abs(log2FC) for KSEA as Justin Drake requested; this is a
+  #         justifiable deviation from the KSEAapp::KSEA.Scores algorithm.
   kseaUseAbsoluteLog2FC: TRUE
+  #kseaUseAbsoluteLog2FC: FALSE
   # minimum number of observed values per sample-group
-  intensityMinValuesPerGroup: 2
+  intensityMinValuesPerGroup: 1
   # maximum number of heatmap rows (result are poor when > 50)
   intensityHeatmapRows: 50
   # what should be the primary criterion to eliminate excessive heatmap rows
@@ -112,6 +98,8 @@ params:
   # should debugging trace messages be printed?
   showEnrichedSubstrates: FALSE
 
+  # should debugging nb/nbe messages be printed?
+  printNBMsgs:          FALSE
   # should debugging trace messages be printed?
   printTraceMsgs:       FALSE
   # when debugging files are needed, set debugFileBasePath to the path
@@ -119,7 +107,16 @@ params:
   debugFileBasePath:    !r if (TRUE) NULL else "test-data"
 ---
 <!--
-
+  alphaFile:            "test-data/alpha_levels.tabular"
+  inputFile:            "test-data/PDX_pST_by_trt.ppep_intensities.ppep_map.preproc_tab.tabular"
+  preprocDb:            "test-data/PDX_pST_by_trt.ppep_intensities.ppep_map.preproc_sqlite.sqlite"
+  kseaAppPrepDb:        !r c(":memory:", "test-data/mqppep.sqlite")[2]
+  regexSampleNames:     "\\.\\w+\\.\\d+[A-Z]$"
+  regexSampleGrouping:  "\\w+"
+  groupFilterPatterns:  ".+"
+  groupFilter:    !r c("none", "exclude", "include")[3]
+  imputationMethod:     !r c("group-median", "median", "mean", "random")[1]
+  kseaCutoffThreshold:  !r c(0.05, 0.1, 0.20, 0.35, 0.4, 0.5, 0.999)[1]
   ut_alphaFile:            "test-data/alpha_levels.tabular"
   ut_inputFile:            "test-data/UT_phospho_ST_sites.preproc.tabular"
   ut_preprocDb:            "test-data/UT_phospho_ST_sites.preproc.sqlite"
@@ -127,7 +124,68 @@ params:
   ut_regexSampleNames:     "\\.\\d+[A-Z]$"
   ut_regexSampleGrouping:  "\\d+"
   ut_groupFilterPatterns:  ".+,.*"
-  ut_sampleGroupFilter:    !r c("none", "exclude", "include")[1]
+  ut_groupFilter:    !r c("none", "exclude", "include")[1]
+  ut_imputationMethod:     !r c("group-median", "median", "mean", "random")[4]
+  ut_kseaCutoffThreshold:  !r c(0.05, 0.1, 0.25, 0.5, 0.9)[1]
+  tst_alphaFile:            "test-data/alpha_levels.tabular"
+  tst_inputFile:            "test-data/test_input_for_anova.tabular"
+  tst_preprocDb:            "test-data/test_input_for_anova.sqlite"
+  tst_kseaAppPrepDb:        !r c(":memory:", "test-data/mqppep.sqlite")[2]
+  tst_regexSampleNames:     "\\.\\d+[A-Z]$"
+  tst_regexSampleGrouping:  "\\d+"
+  tst_groupFilterPatterns:  ".+"
+  tst_groupFilter:    !r c("none", "exclude", "include")[1]
+  tst_imputationMethod:     !r c("group-median", "median", "mean", "random")[4]
+  tst_kseaCutoffThreshold:  !r c(0.05, 0.1, 0.25, 0.5, 0.9)[5]
+
+  tst_alphaFile:            "test-data/alpha_levels.tabular"
+  tst_inputFile:            "test-data/UT_phospho_ST_sites.preproc.tabular"
+  tst_preprocDb:            "test-data/UT_phospho_ST_sites.preproc.sqlite"
+  tst_kseaAppPrepDb:        !r c(":memory:", "test-data/UT_phospho_ST_sites.ksea.sqlite")[2]
+  tst_regexSampleNames:     "\\.\\d+[A-Z]$"
+  tst_regexSampleGrouping:  "\\d+"
+  tst_groupFilterPatterns:  ".+,.*"
+  tst_groupFilter:    !r c("none", "exclude", "include")[1]
+  tst_imputationMethod:     !r c("group-median", "median", "mean", "random")[4]
+  tst_kseaCutoffThreshold:  !r c(0.05, 0.1, 0.20, 0.35, 0.4, 0.5, 0.999)[5]
+  px_alphaFile:            "test-data/alpha_levels.tabular"
+  px_inputFile:            "test-data/PDX_pST_by_trt.ppep_intensities.ppep_map.preproc_tab.tabular"
+  px_preprocDb:            "test-data/PDX_pST_by_trt.ppep_intensities.ppep_map.preproc_sqlite.sqlite"
+  px_kseaAppPrepDb:        !r c(":memory:", "test-data/mqppep.sqlite")[2]
+  px_regexSampleNames:     "\\.\\w+\\.\\d+[A-Z]$"
+  px_regexSampleGrouping:  "\\w+"
+  px_groupFilterPatterns:  ".+"
+  px_groupFilter:    !r c("none", "exclude", "include")[3]
+  px_imputationMethod:     !r c("group-median", "median", "mean", "random")[4]
+  px_kseaCutoffThreshold:  !r c(0.05, 0.1, 0.20, 0.35, 0.4, 0.5, 0.999)[5]
+  pdx_alphaFile:            "test-data/alpha_levels.tabular"
+  pdx_inputFile:            "test-data/PDX012970_pST.preproc_tab.tabular"
+  pdx_preprocDb:            "test-data/PDX012970_pST.preproc.sqlite"
+  pdx_kseaAppPrepDb:        !r c(":memory:", "test-data/PDX012970.sqlite")[2]
+  pdx_regexSampleNames:     "\\.\\w+\\.\\w+\\.\\d+[A-Z]$"
+  pdx_regexSampleGrouping:  "\\.\\w+\\K\\.\\w+"
+  pdx_groupFilterPatterns:  "AdCa,AVPC"
+  pdx_groupFilter:    !r c("none", "exclude", "include")[3]
+  pdx_imputationMethod:     !r c("group-median", "median", "mean", "random")[4]
+  pdx_kseaCutoffThreshold:  !r c(0.05, 0.1, 0.25, 0.5, 0.9)[1]
+  tst_alphaFile:            "test-data/alpha_levels.tabular"
+  tst_inputFile:            "test-data/test_input_for_anova.tabular"
+  tst_preprocDb:            "test-data/test_input_for_anova.sqlite"
+  tst_kseaAppPrepDb:        !r c(":memory:", "test-data/mqppep.sqlite")[2]
+  tst_regexSampleNames:     "\\.\\d+[A-Z]$"
+  tst_regexSampleGrouping:  "\\d+"
+  tst_groupFilterPatterns:  ".+"
+  tst_groupFilter:    !r c("none", "exclude", "include")[1]
+  tst_kseaCutoffThreshold:  !r c(0.05, 0.1, 0.25, 0.5, 0.9)[5]
+  tst_imputationMethod:     !r c("group-median", "median", "mean", "random")[1]
+  ut_alphaFile:            "test-data/alpha_levels.tabular"
+  ut_inputFile:            "test-data/UT_phospho_ST_sites.preproc.tabular"
+  ut_preprocDb:            "test-data/UT_phospho_ST_sites.preproc.sqlite"
+  ut_kseaAppPrepDb:        !r c(":memory:", "test-data/UT_phospho_ST_sites.ksea.sqlite")[2]
+  ut_regexSampleNames:     "\\.\\d+[A-Z]$"
+  ut_regexSampleGrouping:  "\\d+"
+  ut_groupFilterPatterns:  ".+,.*"
+  ut_groupFilter:    !r c("none", "exclude", "include")[1]
   ut_imputationMethod:     !r c("group-median", "median", "mean", "random")[4]
   alphaFile:            "test-data/alpha_levels.tabular"
   inputFile:            "test-data/test_input_for_anova.tabular"
@@ -136,7 +194,7 @@ params:
   regexSampleNames:     "\\.\\d+[A-Z]$"
   regexSampleGrouping:  "\\d+"
   groupFilterPatterns:  ".+,.*"
-  sampleGroupFilter:    !r c("none", "exclude", "include")[1]
+  groupFilter:    !r c("none", "exclude", "include")[1]
   imputationMethod:     !r c("group-median", "median", "mean", "random")[4]
   nd_alphaFile:            "test-data/alpha_levels.tabular"
   nd_inputFile:            "test-data/pST_Sites_NancyDu.txt.preproc.tabular"
@@ -145,7 +203,7 @@ params:
   nd_regexSampleNames:     "\\.\\d+[A-Z]$"
   nd_regexSampleGrouping:  "\\d+"
   nd_groupFilterPatterns:     ".+,.*"
-  nd_sampleGroupFilter:    !r c("none", "exclude", "include")[1]
+  nd_groupFilter:    !r c("none", "exclude", "include")[1]
   nd_imputationMethod:     !r c("group-median", "median", "mean", "random")[4]
   pxd_alphaFile:            "test-data/alpha_levels.tabular"
   pxd_inputFile:            "test-data/PDX_pST_by_trt.ppep_intensities.ppep_map.preproc_tab.tabular"
@@ -154,7 +212,7 @@ params:
   pxd_regexSampleNames:     "\\.\\w+\\.\\d+[A-Z]$"
   pxd_regexSampleGrouping:  "\\w+"
   pxd_groupFilterPatterns:     ".+"
-  pxd_sampleGroupFilter:    !r c("none", "exclude", "include")[3]
+  pxd_groupFilter:    !r c("none", "exclude", "include")[3]
   pxd_imputationMethod:     !r c("group-median", "median", "mean", "random")[4]
 
   alphaFile:            "test-data/alpha_levels.tabular"
@@ -164,7 +222,7 @@ params:
   regexSampleNames:     "\\.\\d+[A-Z]$"
   regexSampleGrouping:  "\\d+"
   groupFilterPatterns:  ".+,.*"
-  sampleGroupFilter:    !r c("none", "exclude", "include")[1]
+  groupFilter:    !r c("none", "exclude", "include")[1]
 
   alphaFile:            "test-data/alpha_levels.tabular"
   inputFile:            "test-data/PDX012970_pST.preproc_tab.tabular"
@@ -173,7 +231,7 @@ params:
   regexSampleNames:     "\\.\\w+\\.\\w+\\.\\d+[A-Z]$"
   regexSampleGrouping:  "\\.\\w+\\K\\.\\w+"
   groupFilterPatterns:  "AdCa,AVPC"
-  sampleGroupFilter:    !r c("none", "exclude", "include")[3]
+  groupFilter:    !r c("none", "exclude", "include")[3]
 
   alphaFile:            "test-data/alpha_levels.tabular"
   inputFile:            "test-data/PDX_pST_by_trt.ppep_intensities.ppep_map.preproc_tab.tabular"
@@ -182,7 +240,7 @@ params:
   regexSampleNames:     "\\.\\w+\\.\\d+[A-Z]$"
   regexSampleGrouping:  "\\w+"
   groupFilterPatterns:     ".+,.*"
-  sampleGroupFilter:    !r c("none", "exclude", "include")[3]
+  groupFilter:    !r c("none", "exclude", "include")[3]
 
   kseaCutoffStatistic:  !r c("p.value", "FDR")[2]
   kseaCutoffThreshold:  !r c(0.05, 0.1)[1]
@@ -201,7 +259,7 @@ params:
   regexSampleNames:     "\\.\\d+[A-Z]$"
   regexSampleGrouping:  "\\d+"
   groupFilterPatterns:  ".+,.*"
-  sampleGroupFilter:    !r c("none", "exclude", "include")[3]
+  groupFilter:    !r c("none", "exclude", "include")[3]
 
   alphaFile:            "test-data/alpha_levels.tabular"
   inputFile:            "test-data/pST_Sites_NancyDu.txt.preproc.tabular"
@@ -210,20 +268,31 @@ params:
   regexSampleNames:     "\\.\\d+[A-Z]$"
   regexSampleGrouping:  "\\d+"
   groupFilterPatterns:  ".+,.*"
-  sampleGroupFilter:    !r c("none", "exclude", "include")[1]
+  groupFilter:    !r c("none", "exclude", "include")[1]
 
 -->
 ```{r setup, include = FALSE, results = 'asis'}
 
 # simple debug messaging
-nb <- function(..., f = cat) f("\n$\\exists{}\\supset\\forall{}$", ...)
-nbe <- function(..., f = cat, file = stderr()) {
-  cat(
-    stringi::stri_unescape_unicode("\n\\u2203\\u2283\\u2200"),
-    ...,
-    file = file
-  )
-}
+print_nb_messages <- params$printNBMsgs
+
+nb <- if (!print_nb_messages) {
+    function(...) invisible()
+  } else {
+    function(..., f = cat) f("\n$\\exists{}\\supset\\forall{}$", ...)
+  }
+
+nbe <- if (!print_nb_messages) {
+    function(...) invisible()
+  } else {
+    function(..., f = cat, file = stderr()) {
+      cat(
+        stringi::stri_unescape_unicode("\nNBE \\u2203\\u2283\\u2200"),
+        ...,
+        file = file
+      )
+    }
+  }
 
 #ref for debugging: https://yihui.org/tinytex/r/#debugging
 options(tinytex.verbose = TRUE)
@@ -238,17 +307,17 @@ set.seed(28571)
 
 ### LIBRARIES
 
-nbe("library(gplots)")
+if (print_nb_messages) nbe("library(gplots)")
 library(gplots)
-nbe("library(caret)")
+if (print_nb_messages) nbe("library(caret)")
 # load caret for nearZeroVar
-nbe("Please ignore the messages about systemd, if any.\n")
+if (print_nb_messages) nbe("Please ignore the messages about systemd, if any.\n")
 library(caret)
-nbe("library(DBI)")
+if (print_nb_messages) nbe("library(DBI)")
 library(DBI)
-nbe("library(RSQLite)")
+if (print_nb_messages) nbe("library(RSQLite)")
 library(RSQLite)
-nbe("library(sqldf)\n")
+if (print_nb_messages) nbe("library(sqldf)\n")
 # Suppress "Warning: no DISPLAY variable so Tk is not available"
 suppressWarnings(suppressMessages(library(sqldf)))
 
@@ -349,8 +418,10 @@ see_kvp <-
         is.character(value),
         is.character(suffix)
       )
-    ) stop("all arguments to see_kvp should be character")
-
+    ) {
+      cat("all arguments to see_kvp should be character")
+      knitr::knit_exit()
+    }
     result <- sprintf(format, value)
     if (length(result) > 1) {
       sprintf(
@@ -412,14 +483,17 @@ see_character <-
 
 see_variable <-
   function(x, suffix = "", digits = 3, xprssn = deparse1(substitute(x))) {
-    if (is.character(x)) see_character(x, suffix, xprssn)
-    else if (is.numeric(x)) see_numeric(x, suffix, digits, xprssn)
-    else if (is.logical(x)) see_logical(x, suffix, xprssn)
-    else {
+    if (is.character(x)) {
+      see_character(x, suffix, xprssn)
+    } else if (is.numeric(x)) {
+      see_numeric(x, suffix, digits, xprssn)
+    } else if (is.logical(x)) {
+      see_logical(x, suffix, xprssn)
+    } else {
       f <- file("")
       sink(f)
       str(x)
-      msg <- paste(readLines(f), collapse = "\n") 
+      msg <- paste(readLines(f), collapse = "\n")
       sink()
       close(f)
       paste0(
@@ -555,11 +629,11 @@ regex_sample_grouping <- params$regexSampleGrouping
 #   - include: include sample groups matching filter
 #   - exclude: include sample groups not matching filter
 
-sample_group_filter <- params$sampleGroupFilter
-if (grepl("f", params$sampleGroupFilterMode, fixed = TRUE)) {
+sample_group_filter <- params$groupFilter
+if (grepl("f", params$groupFilterMode, fixed = TRUE)) {
   sample_group_filter_perl <- FALSE
   sample_group_filter_fixed <- TRUE
-} else if (grepl("p", params$sampleGroupFilterMode, fixed = TRUE)) {
+} else if (grepl("p", params$groupFilterMode, fixed = TRUE)) {
   sample_group_filter_perl <- TRUE
   sample_group_filter_fixed <- FALSE
 } else { # normal regex
@@ -568,7 +642,7 @@ if (grepl("f", params$sampleGroupFilterMode, fixed = TRUE)) {
 }
 
 sample_group_filter_nocase <-
-  grepl("i", params$sampleGroupFilterMode, fixed = TRUE)
+  grepl("i", params$groupFilterMode, fixed = TRUE)
 
 # What PCRE patterns should be included or excluded
 group_filter_patterns_csv <- params$groupFilterPatterns
@@ -584,12 +658,17 @@ one_way_all_categories_fname <- params$oneWayManyCategories
 
 one_way_all_categories <- try_catch_w_e(
   match.fun(one_way_all_categories_fname))
+
 if (!is.function(one_way_all_categories$value)) {
   write("fatal error for parameter oneWayManyCategories:", stderr())
   write(one_way_all_categories$value$message,             stderr())
-  if (sys.nframe() > 0) quit(save = "no", status = 1)
-  stop("Cannot continue. Goodbye.")
+  if (sys.nframe() > 0) {
+    cat("Cannot continue and quit() failed. Goodbye.")
+    knitr::knit_exit()
+    quit(save = "no", status = 1)
+  }
 }
+
 one_way_all_categories <- one_way_all_categories$value
 
 one_way_two_categories_fname <- params$oneWayManyCategories
@@ -598,8 +677,11 @@ one_way_two_categories <- try_catch_w_e(
 if (!is.function(one_way_two_categories$value)) {
   cat("fatal error for parameter oneWayTwoCategories: \n")
   cat(one_way_two_categories$value$message, fill = TRUE)
-  if (sys.nframe() > 0) quit(save = "no", status = 1)
-  stop("Cannot continue. Goodbye.")
+  if (sys.nframe() > 0) {
+    cat("Cannot continue and quit() failed. Goodbye.")
+    knitr::knit_exit()
+    quit(save = "no", status = 1)
+  }
 }
 one_way_two_categories <- one_way_two_categories$value
 
@@ -607,42 +689,60 @@ one_way_two_categories <- one_way_two_categories$value
 
 ksea_cutoff_statistic <- params$kseaCutoffStatistic
 ksea_cutoff_threshold <- params$kseaCutoffThreshold
-ksea_min_kinase_count <- params$kseaMinSubstrateCount
+ksea_min_substrate_count <- params$kseaMinSubstrateCount
 
 ## parameters for global variables consumed by functions
 
 # intensityHeatmapCriteria: !r c("na_count", "p_value")[2] # TODO switch to 1
 # TODO Validate within list
 g_intensity_hm_criteria <- params$intensityHeatmapCriteria
-if (is_string_null_or_empty(g_intensity_hm_criteria))
-  stop("invalid intensityHeatmapCriteria parameter (must be string)")
+if (is_string_null_or_empty(g_intensity_hm_criteria)) {
+  cat("invalid intensityHeatmapCriteria parameter (must be string)")
+  knitr::knit_exit()
+}
 switch(
   g_intensity_hm_criteria,
   "quality" = NULL,
   "na_count" = NULL,
   "p_value" = NULL,
-  stop(
-    sprintf(
-      "invalid intensityHeatmapCriteria parameter %s (must be %s)"
+  {
+    with(
+      params,
+      cat(
+        sprintf(
+        "invalid %s (must be %s)",
+        see_variable(intensityHeatmapCriteria),
+        "one of quality or na_count or p_value"
+        )
+      )
     )
-  )
+    knitr::knit_exit()
+  }
 )
 
 # intensityHeatmapRows: 50
 # TODO Validate >> 0 < 75
 g_intensity_hm_rows     <- params$intensityHeatmapRows
-if (!is.integer(g_intensity_hm_rows) || g_intensity_hm_rows < 1)
-  stop("invalid intensityHeatmapRows (must be integer > 0")
+if (!is.integer(g_intensity_hm_rows) || g_intensity_hm_rows < 1) {
+  cat("invalid intensityHeatmapRows (must be integer > 0)")
+  knitr::knit_exit()
+}
 
 g_intensity_min_per_class <- params$intensityMinValuesPerGroup
-if (!is.integer(g_intensity_min_per_class) || g_intensity_min_per_class < 0)
-  stop("invalid intensityMinValuesPerGroup (must be integer > -1")
+if (!is.integer(g_intensity_min_per_class) || g_intensity_min_per_class < 0) {
+  cat("invalid intensityMinValuesPerGroup (must be integer > -1")
+  knitr::knit_exit()
+}
 
-if (is.na(as.logical(g_correlate_substrates  <- params$correlateSubstrates)))
-  stop("invalid correlateSubstrates (must be TRUE or FALSE)")
+if (is.na(as.logical(g_correlate_substrates  <- params$correlateSubstrates))) {
+  cat("invalid correlateSubstrates (must be TRUE or FALSE)")
+  knitr::knit_exit()
+}
 
-if (is.na(as.logical(g_filter_cov_var_gt_1   <- params$filterCovVarGT1)))
-  stop("invalid filterCovVarGT1 parameter (must be TRUE or FALSE)")
+if (is.na(as.logical(g_filter_cov_var_gt_1   <- params$filterCovVarGT1))) {
+  cat("invalid filterCovVarGT1 parameter (must be TRUE or FALSE)")
+  knitr::knit_exit()
+}
 
 # TODO Validate >> 0 < 30
 g_ppep_trunc_n          <- params$ppepTruncN
@@ -675,6 +775,9 @@ g_sbstr_trunc_n         <- params$substTruncN
 
 ### FUNCTIONS
 
+no_op <-
+  function() {
+  }
 # this function is not used in this file and should be removed while
 #   factoring out reusable code
 all_apply <- function(f, v, na_rm = TRUE, ...) {
@@ -908,166 +1011,6 @@ is_positive_definite <- function(x, tol = 1e-08) {
 
 ### LaTeX functions
 
-# make control sequences into printable latex sequences
-latex_printable_control_seqs <-
-  function(s) {
-    s <- gsub("[\\]", "xyzzy_plugh", s)
-    s <- gsub("[$]", "\\\\$", s)
-    s <- gsub("xyzzy_plugh", "$\\\\backslash$", s)
-    return(s)
-  }
-nolatex_verbatim <-
-  function(expr) eval(expr)
-
-latex_verbatim <-
-  function(expr) {
-    arg_string <- deparse1(substitute(expr))
-    cat("\n\\begin{verbatim}\n___\n")
-    tryCatch(
-      expr = expr,
-      error =
-        function(e) {
-          cat("Caught error:\n\n")
-          str(e)
-          stop(e)
-        },
-      finally = cat("...\n\\end{verbatim}\n")
-    )
-  }
-
-latex_samepage <-
-  function(expr) {
-    arg_string <- deparse1(substitute(expr))
-    cat("\n\\begin{samepage}\n")
-    tryCatch(
-      expr = expr,
-      error =
-        function(e) {
-          cat("Caught error:\n\n")
-          str(e)
-          stop(e)
-        },
-      finally = cat("\n\\end{samepage}\n")
-    )
-  }
-
-# return the result of invocation after showing parameters
-# ref: https://www.r-bloggers.com/2013/08/a-new-r-trick-for-me-at-least/
-show_invocation <-
-  function(f, f_name = deparse1(substitute(f)), head_patch = FALSE) {
-    function(...) {
-      my_env <- (as.list(environment()))
-      va <- list(...)
-      my_rslt <- new_env()
-      my_rslt$rslt <- NULL
-      latex_verbatim(
-        expr = {
-          cat(sprintf("\n ..  Local variables for '%s':\n\n", f_name))
-          str(va)
-          if (!head_patch) {
-            # return this result
-            # ref: https://www.r-bloggers.com/2013/08/a-new-r-trick-for-me-at-least/
-            cat(sprintf("\n ..  Invoking '%s'\n", f_name))
-            tryCatch(
-              {
-                cat("\n\\end{verbatim}\n")
-                rslt <- do.call(f, va)
-              },
-              error = function(e) {
-                 cat("\n\\begin{verbatim}\n")
-                 str(e)
-                 cat("\n\\end{verbatim}\n")
-                 stop(e)
-              },
-              finally = cat("\n\\begin{verbatim}\n")
-            )
-            cat(sprintf("\n ..  '%s' returned:\n", f_name))
-            str(rslt)
-            my_rslt$rslt <- rslt
-          }
-        }
-      )
-      # return the result of invocation with the shown parameters
-      # ref: https://www.r-bloggers.com/2013/08/a-new-r-trick-for-me-at-least/
-      if (head_patch) my_rslt$rslt <- do.call(f, va)
-      (my_rslt$rslt)
-    }
-  }
-
-latex_collapsed_vector <- function(
-    collapse_string,
-    v,
-    underscore_whack = TRUE,
-    action = cat0
-  ) {
-  v_sub <-
-    if (underscore_whack) whack_underscores(v) else v
-  action(
-    paste0(
-      v_sub,
-      collapse = collapse_string
-      )
-    )
-}
-
-latex_itemized_collapsed <- function(collapse_string, v, underscore_whack = TRUE) {
-  cat("\\begin{itemize}\n\\item ")
-  latex_collapsed_vector(collapse_string, v, underscore_whack)
-  cat("\n\\end{itemize}\n")
-}
-
-latex_itemized_list <- function(v, underscore_whack = TRUE) {
-  latex_itemized_collapsed("\n\\item ", v, underscore_whack)
-}
-
-latex_enumerated_collapsed <- function(collapse_string, v, underscore_whack = TRUE) {
-  cat("\\begin{enumerate}\n\\item ")
-  latex_collapsed_vector(collapse_string, v, underscore_whack)
-  cat("\n\\end{enumerate}\n")
-}
-
-latex_enumerated_list <- function(v) {
-  latex_enumerated_collapsed("\n\\item ", v)
-}
-
-latex_table_row <- function(v, extra = "", underscore_whack = TRUE) {
-  latex_collapsed_vector(" & ", v, underscore_whack)
-  cat(extra)
-  cat(" \\\\\n")
-}
-
-latex_tabbing_row <- function(
-    v,
-    extra = "",
-    underscore_whack = TRUE,
-    action = cat0
-  ) {
-    # latex_collapsed_vector applies action to result of paste0;
-    #   by default, action = cat;
-    #   hence, a scalar string is assigned to v_collapsed
-    v_collapsed <-
-      latex_collapsed_vector(
-        "} \\> \\tabfill{",
-        v,
-        underscore_whack,
-        action = paste0
-      )
-    action(
-      "\\tabfill{",
-      v_collapsed,
-      "}",
-      extra,
-      " \\\\\n"
-    )
-  }
-
-# N.B. use con = "" to emulate regular cat
-fcat0 <-
-  function(..., sprtr = " ", cnnctn = file()) {
-    cat0(..., sep = sprtr, file = cnnctn)
-    invisible(cnnctn)
-  }
-
 # Use this like print.data.frame, from which it is adapted:
 data_frame_table_latex <-
   function(
@@ -1121,9 +1064,10 @@ data_frame_table_latex <-
     } else {
       if (is.null(max))
         max <- getOption("max.print", 99999L)
-      if (!is.finite(max))
-        stop("invalid 'max' / getOption(\"max.print\"): ",
-          max)
+      if (!is.finite(max)) {
+        cat("Abend because: invalid 'max' / getOption(\"max.print\"): ", max)
+        knitr::knit_exit()
+      }
       omit <- (n0 <- max %/% length(x)) < n
       m <- as.matrix(
         format.data.frame(
@@ -1245,9 +1189,10 @@ data_frame_tabbing_latex <-
     } else {
       if (is.null(max))
         max <- getOption("max.print", 99999L)
-      if (!is.finite(max))
-        stop("invalid 'max' / getOption(\"max.print\"): ",
-          max)
+      if (!is.finite(max)) {
+        cat("Abend because: invalid 'max' / getOption(\"max.print\"): ", max)
+        knitr::knit_exit()
+      }
       omit <- (n0 <- max %/% length(x)) < n
       m <- as.matrix(
         format.data.frame(
@@ -1311,6 +1256,207 @@ data_frame_tabbing_latex <-
         cat("\\end{landscape}\n")
     }
     invisible(x)
+  }
+
+param_df_noexit <-
+  function(e = NULL) {
+    data_frame_tabbing_latex(
+      x = param_df,
+      tabstops = c(1.75),
+      underscore_whack = TRUE,
+      caption = "Input parameters",
+      verbatim = FALSE
+      )
+    if (!is.null(e)) {
+      sink(stderr())
+      cat("Caught fatal error:\n\n")
+      str(e)
+      sink()
+    }
+  }
+
+param_df_exit <-
+  function(e = NULL) {
+    param_df_noexit(e)
+    knitr::knit_exit()
+    exit(-1)
+  }
+
+# exit with exit code (default 0) and optional msg
+exit <-
+  function(code = 0, msg = NULL, use_stderr = FALSE) {
+    if (!is.null(msg)) {
+      if (use_stderr) sink(stderr())
+      cat("\n\n", msg, "\n\n")
+      if (use_stderr) sink()
+    }
+    q(save = "no", status = code)
+  }
+
+# make control sequences into printable latex sequences
+latex_printable_control_seqs <-
+  function(s) {
+    s <- gsub("[\\]", "xyzzy_plugh", s)
+    s <- gsub("[$]", "\\\\$", s)
+    s <- gsub("xyzzy_plugh", "$\\\\backslash$", s)
+    return(s)
+  }
+nolatex_verbatim <-
+  function(expr) eval(expr)
+
+latex_verbatim <-
+  function(expr) {
+    arg_string <- deparse1(substitute(expr))
+    cat("\n\\begin{verbatim}\n___\n")
+    tryCatch(
+      expr = expr,
+      error = param_df_exit,
+      #ACE error =
+      #ACE   function(e) {
+      #ACE     cat("Caught error:\n\n")
+      #ACE     str(e)
+      #ACE     knitr::knit_exit()
+      #ACE     stop(e)
+      #ACE   },
+      finally = cat("...\n\\end{verbatim}\n")
+    )
+  }
+
+latex_samepage <-
+  function(expr) {
+    arg_string <- deparse1(substitute(expr))
+    cat("\n\\begin{samepage}\n")
+    tryCatch(
+      expr = expr,
+      error = param_df_exit,
+      #ACE error =
+      #ACE   function(e) {
+      #ACE     cat("Caught error:\n\n")
+      #ACE     str(e)
+      #ACE     knitr::knit_exit()
+      #ACE     stop(e)
+      #ACE   },
+      finally = cat("\n\\end{samepage}\n")
+    )
+  }
+
+# return the result of invocation after showing parameters
+# ref: https://www.r-bloggers.com/2013/08/a-new-r-trick-for-me-at-least/
+latex_show_invocation <-
+  function(f, f_name = deparse1(substitute(f)), head_patch = FALSE) {
+    function(...) {
+      my_env <- (as.list(environment()))
+      va <- list(...)
+      my_rslt <- new_env()
+      my_rslt$rslt <- NULL
+      latex_verbatim(
+        expr = {
+          cat(sprintf("\n ..  Local variables for '%s':\n\n", f_name))
+          str(va)
+          if (!head_patch) {
+            # return this result
+            # ref: https://www.r-bloggers.com/2013/08/a-new-r-trick-for-me-at-least/
+            cat(sprintf("\n ..  Invoking '%s'\n", f_name))
+            tryCatch(
+              {
+                cat("\n\\end{verbatim}\n")
+                rslt <- do.call(f, va)
+              },
+              error = param_df_exit,
+              #ACE error = function(e) {
+              #ACE    cat("\n\\begin{verbatim}\n")
+              #ACE    str(e)
+              #ACE    cat("\n\\end{verbatim}\n")
+              #ACE    knitr::knit_exit()
+              #ACE    stop(e)
+              #ACE },
+              finally = cat("\n\\begin{verbatim}\n")
+            )
+            cat(sprintf("\n ..  '%s' returned:\n", f_name))
+            str(rslt)
+            my_rslt$rslt <- rslt
+          }
+        }
+      )
+      # return the result of invocation with the shown parameters
+      # ref: https://www.r-bloggers.com/2013/08/a-new-r-trick-for-me-at-least/
+      if (head_patch) my_rslt$rslt <- do.call(f, va)
+      (my_rslt$rslt)
+    }
+  }
+
+latex_collapsed_vector <- function(
+    collapse_string,
+    v,
+    underscore_whack = TRUE,
+    action = cat0
+  ) {
+  v_sub <-
+    if (underscore_whack) whack_underscores(v) else v
+  action(
+    paste0(
+      v_sub,
+      collapse = collapse_string
+      )
+    )
+}
+
+latex_itemized_collapsed <- function(collapse_string, v, underscore_whack = TRUE) {
+  cat("\\begin{itemize}\n\\item ")
+  latex_collapsed_vector(collapse_string, v, underscore_whack)
+  cat("\n\\end{itemize}\n")
+}
+
+latex_itemized_list <- function(v, underscore_whack = TRUE) {
+  latex_itemized_collapsed("\n\\item ", v, underscore_whack)
+}
+
+latex_enumerated_collapsed <- function(collapse_string, v, underscore_whack = TRUE) {
+  cat("\\begin{enumerate}\n\\item ")
+  latex_collapsed_vector(collapse_string, v, underscore_whack)
+  cat("\n\\end{enumerate}\n")
+}
+
+latex_enumerated_list <- function(v) {
+  latex_enumerated_collapsed("\n\\item ", v)
+}
+
+latex_table_row <- function(v, extra = "", underscore_whack = TRUE) {
+  latex_collapsed_vector(" & ", v, underscore_whack)
+  cat(extra)
+  cat(" \\\\\n")
+}
+
+latex_tabbing_row <- function(
+    v,
+    extra = "",
+    underscore_whack = TRUE,
+    action = cat0
+  ) {
+    # latex_collapsed_vector applies action to result of paste0;
+    #   by default, action = cat;
+    #   hence, a scalar string is assigned to v_collapsed
+    v_collapsed <-
+      latex_collapsed_vector(
+        "} \\> \\tabfill{",
+        v,
+        underscore_whack,
+        action = paste0
+      )
+    action(
+      "\\tabfill{",
+      v_collapsed,
+      "}",
+      extra,
+      " \\\\\n"
+    )
+  }
+
+# N.B. use con = "" to emulate regular cat
+fcat0 <-
+  function(..., sprtr = " ", cnnctn = file()) {
+    cat0(..., sep = sprtr, file = cnnctn)
+    invisible(cnnctn)
   }
 
 hypersub <-
@@ -1388,31 +1534,53 @@ dml_no_rows_exec <- function(db, sql) {
 
 ### KSEA functions and helpers
 
-# Adapted from KSEAapp::KSEA.Scores to allow retrieval of:
-# - maximum log2(FC)
-# Produces data.frame with column names
-#   "Kinase.Gene", "mS", "Enrichment", "m", "z.score", "p.value", "FDR"
-# "Please refer to the original Casado et al. publication for detailed
-#   description of these columns and what they represent:
-#
-#   - Kinase.Gene
-#                 indicates the gene name for each kinase.
-#   - mS
-#                 represents the mean log2(fold change) of all the
-#                 kinase's substrates.
-#   - Enrichment
-#                 is the background-adjusted value of the kinase's mS.
-#   - m
-#                 is the total number of detected substrates
-#                 from the experimental dataset for each kinase.
-#   - z.score
-#                 is the normalized score for each kinase, weighted by
-#                 the number of identified substrates.
-#   - p.value
-#                 represents the statistical assessment for the z.score.
-#   - FDR
-#                 is the p-value adjusted for multiple hypothesis testing
-#                 using the Benjamini & Hochberg method."
+#' The KSEA App Analysis (KSEA Kinase Scores Only)
+#'
+#' Compute KSEA kinase scores and statistics from phoshoproteomics data input
+#' Adapted from KSEAapp::KSEA.Scores to allow retrieval of maximum log2(FC)
+#'
+#' Result is an R data.frame with column names
+#'   "Kinase.Gene", "mS", "Enrichment", "m", "z.score", "p.value", "FDR"
+#' "Please refer to the original Casado et al. publication for detailed
+#'   description of these columns and what they represent:
+#'
+#'   - Kinase.Gene indicates the gene name for each kinase.
+#'   - mS          represents the mean log2(fold change) of all the
+#'                   kinase's substrates.
+#'   - Enrichment  is the background-adjusted value of the kinase's mS.
+#'   - m           is the total number of detected substrates
+#'                   from the experimental dataset for each kinase.
+#'   - z.score     is the normalized score for each kinase, weighted by
+#'                   the number of identified substrates.
+#'   - p.value     represents the statistical assessment for the z.score.
+#'   - FDR         is the p-value adjusted for multiple hypothesis testing
+#'                   using the Benjamini & Hochberg method."
+#'
+#' @param ksdata           the Kinase-Substrate dataset uploaded from the file
+#'                           prefaced with "PSP&NetworKIN_"
+#'                           available from github.com/casecpb/KSEA/
+#' @param px               the experimental data file formatted as described in
+#'                           the KSEA.Complete() documentation
+#' @param networkin        a binary input of TRUE or FALSE, indicating whether
+#'                           or not to include NetworKIN predictions, where
+#'                           \code{NetworKIN = TRUE}
+#'                           means include NetworKIN predictions
+#' @param networkin_cutoff a numeric value between 1 and infinity setting
+#'                           the minimum NetworKIN score
+#'                           (this can be omitted if NetworKIN = FALSE)
+#'
+#' @return                 creates a new R data.frame with all the KSEA kinase
+#'                           scores, along with each one's statistical
+#'                           assessment, as described herein.
+#'
+#' @references
+#'
+#' Casado et al. (2013) Sci Signal. 6(268):rs6
+#'
+#' Hornbeck et al. (2015) Nucleic Acids Res. 43:D512-20
+#'
+#' Horn et al. (2014) Nature Methods 11(6):603-4
+#'
 ksea_scores <- function(
   # For human data, typically, ksdata = KSEAapp::ksdata
   ksdata,
@@ -1435,9 +1603,13 @@ ksea_scores <- function(
 
   # A numeric value between 1 and infinity setting the minimum NetworKIN
   #   score (can be left out if networkin = FALSE)
-  networkin_cutoff
+  networkin_cutoff,
+
+  # Minimum substrate count, necessary to adjust the p-value appropriately.
+  minimum_substrate_count
 
 ) {
+  # no px$FC should be <= 0, but abs(px$FC) is used below as a precaution.
   if (length(grep(";", px$Residue.Both)) == 0) {
     # There are no Residue.Both entries having semicolons, so new is
     #   simply px except two columns are renamed and a column is added
@@ -1483,20 +1655,43 @@ ksea_scores <- function(
     # Eliminate rows having missing values (e.g., non-imputed data)
     new <- new[complete.cases(new$log2_fc), ]
   }
+  # At this point, new$log2_fc is signed according to which contrast has
+  #   the greater intensity
+  # To take the magnitude into account without taking the direction into
+  #   account, set params$kseaUseAbsoluteLog2FC to TRUE
+  #
+  # Should KSEA be performed aggregating signed log2FC or absolute?
+  # FALSE use raw log2FC for KSEA as for KSEAapp::KSEA.Scores
   if (params$kseaUseAbsoluteLog2FC) {
+    # TRUE  use abs(log2FC) for KSEA as Justin requested; this is a
+    #         justifiable deviation from the KSEAapp::KSEA.Scores algorithm.
     new$log2_fc <- abs(new$log2_fc)
   }
-  if (networkin == TRUE) {
-    # When NetworKIN is true, filter on NetworKIN.cutoff which includes
-    #   PhosphoSitePlus data *because its networkin_score is set to Inf*
-    ksdata_filtered <- ksdata[grep("[a-z]", ksdata$Source), ]
-    ksdata_filtered <- ksdata_filtered[
-      (ksdata_filtered$networkin_score >= networkin_cutoff), ]
-  } else {
-    # Otherwise, simply use PhosphSitePlus rows
-    ksdata_filtered <- ksdata[
-      grep("PhosphoSitePlus", ksdata$Source), ]
+
+  monitor_filtration_on_stderr <- TRUE
+  if (monitor_filtration_on_stderr) {
+    # set to TRUE to monitor filtration on stderr
+    sink(stderr())
+    cat(see_variable(networkin, "\n"))
   }
+  ksdata_filtered <-
+    sqldf(
+      sprintf("%s %s",
+        "select * from ksdata where not Source = 'NetworKIN'",
+        if (networkin)
+          sprintf("or networkin_score >= %d", networkin_cutoff)
+        else
+          ""
+        )
+      )
+  if (monitor_filtration_on_stderr) {
+    cat(see_variable(sqldf(
+      "select count(*), Source from ksdata group by Source"), "\n"))
+    cat(see_variable(sqldf(
+      "select count(*), Source from ksdata_filtered group by Source"), "\n"))
+    sink()
+  }
+
   ############################################################################
   # Line numbers below refer to lines of:
   #   https://github.com/casecpb/KSEAapp/blob/master/R/KSEA.Scores.R
@@ -1561,7 +1756,7 @@ ksea_scores <- function(
         ksdata_dataset_abbrev$Substrate.Mod,
         ksdata_dataset_abbrev$p),
       ]
-  nbe(see_variable(ksdata_dataset_abbrev))
+  if (print_nb_messages) nbe(see_variable(ksdata_dataset_abbrev))
   # First aggregation step to account for multiply phosphorylated peptides
   #   and differing peptide sequences; the goal here is to combine results
   #   for all measurements of the same substrate.
@@ -1580,6 +1775,7 @@ ksea_scores <- function(
     data = ksdata_dataset_abbrev,
     FUN = mean
     )
+  if (print_nb_messages) nbe(see_variable(ksdata_dataset_abbrev))
   # (2) order by Kinase.Gene
   #   (KSEA.Scores.R line # 117)
   ksdata_dataset_abbrev <-
@@ -1605,22 +1801,14 @@ ksea_scores <- function(
   #   FROM  ksdata_dataset_abbrev
   #   GROUP BY `Kinase.Gene`
   #   (KSEA.Scores.R line # 127)
+  if (print_nb_messages) nb(see_variable(ksdata_dataset_abbrev), "\n")
   mean_fc <-
     aggregate(
       log2FC ~ Kinase.Gene,
       data = ksdata_dataset_abbrev,
       FUN = mean
       )
-  #ACE nbe(see_variable(new))
-  #ACE ??? see_variable - str(new):
-  #ACE 'data.frame':	13 obs. of  7 variables:
-  #ACE  $ Protein    : chr  "Q9Y3B9" "Q6ZN18" "P63027" "P23763" ...
-  #ACE  $ SUB_GENE   : chr  "RRP15" "AEBP2" "VAMP2" "VAMP1" ...
-  #ACE  $ Peptide    : chr  "AAAAPDSRVSEEENLK" ...
-  #ACE  $ SUB_MOD_RSD: chr  "AAAAPDSRVpSEEENLK" ...
-  #ACE  $ p          : num  0.642 0.144 0.213 0.201 0.981 ...
-  #ACE  $ FC         : num  1.177 0.111 1.646 3.181 1.014 ...
-  #ACE  $ log2_fc    : num  0.2349 -3.1697 0.7191 1.6693 0.0205 ...
+  if (print_nb_messages) nbe(see_variable(mean_fc), "\n")
 
   # for contrast j
   #   for each kinase i
@@ -1631,11 +1819,17 @@ ksea_scores <- function(
 
   # for contrast j
   #   for all kinases i
+  #     compute mean of abs(log2 of fold-change)
+  #     (used in KSEA.Scores.R lines # 130)
+  mean_abs_log2_fc_j_all_i <-
+    mean(abs(log2_fc_j_each_i), na.rm = TRUE)
+
+  # for contrast j
+  #   for all kinases i
   #     compute mean of log2 of fold-change
-  #     (used in KSEA.Scores.R lines # 130 & 132)
+  #     (used in KSEA.Scores.R lines # 132)
   mean_log2_fc_j_all_i <-
     mean(log2_fc_j_each_i, na.rm = TRUE)
-  nbe(see_variable(mean_log2_fc_j_all_i))
 
   # Reorder mean_fc, although I don't see why
   #   (KSEA.Scores.R line 128
@@ -1657,8 +1851,7 @@ ksea_scores <- function(
   #               is the background-adjusted value of the kinase's mS.
   #   (KSEA.Scores.R line # 130)
   mean_fc$enrichment <-
-    mean_fc_m_s / abs(mean_log2_fc_j_all_i)
-  #ACE HACK    mean_fc_m_s / mean(abs(log2_fc_j_each_i), na.rm = TRUE)
+    mean_fc_m_s / mean_abs_log2_fc_j_all_i
 
   # Create column 5: m, count of substrates of kinase (count of j for i)
   # - m
@@ -1668,13 +1861,14 @@ ksea_scores <- function(
   mean_fc$m <-
     mean_fc_m <- kinase_list
 
+
   # Create column 6: z-score
   # - z.score
   #               is the normalized score for each kinase, weighted by
   #               the number of identified substrates.
   #   (KSEA.Scores.R line # 132)
   mean_fc$z_score <-
-    (mean_fc_m_s - mean_log2_fc_j_all_i * sqrt(mean_fc_m)) /
+    (mean_fc_m_s - mean_log2_fc_j_all_i) * sqrt(mean_fc_m) /
       sd(log2_fc_j_each_i, na.rm = TRUE)
 
   # Create column 7: p-value, deduced from z-score
@@ -1685,6 +1879,17 @@ ksea_scores <- function(
   mean_fc$p_value <-
     pnorm(-abs(mean_fc$z_score))
 
+  # zap excluded kinases; this must be done before adjusting p-value
+  if (TRUE) {
+    mean_fc <-
+      mean_fc[
+        mean_fc$m >= minimum_substrate_count,
+        ,
+        drop = FALSE
+      ]
+  }
+
+  #ACE nb(see_variable(nrow(mean_fc)), "\n")
   # Create column 8: FDR, deduced by Benjamini-Hochberg adustment from p-value
   # - FDR
   #               is the p-value adjusted for multiple hypothesis testing
@@ -1692,6 +1897,12 @@ ksea_scores <- function(
   #   (KSEA.Scores.R line # 134)
   mean_fc$fdr <-
     p.adjust(mean_fc$p_value, method = "fdr")
+
+  # It makes no sense to leave Z-scores negative when using
+  #   absolute value of fold-change
+  if (params$kseaUseAbsoluteLog2FC) {
+    mean_fc$z_score <- abs(mean_fc$z_score)
+  }
 
   # Remove second column (log2FC), which is duplicated as mS
   #   (KSEA.Scores.R line # 136)
@@ -1701,11 +1912,6 @@ ksea_scores <- function(
   colnames(mean_fc) <- c(
     "Kinase.Gene", "mS", "Enrichment", "m", "z.score", "p.value", "FDR"
     )
-  nbe(see_variable(mean_fc[mean_fc$Kinase.Gene == "CK2alpha", ]))
-  nbe(see_variable(mean_fc))
-  #ACE # filter for m >= params$kseaMinSubstrateCount
-  #ACE mean_fc <- mean_fc[mean_fc$m >= ksea_min_kinase_count, , drop = FALSE]
-  #ACE #cat_variable(mean_fc)
   #   (KSEA.Scores.R line # 138)
   return(mean_fc)
 }
@@ -1742,16 +1948,22 @@ ksea_low_fdr_barplot_factory <- function(
       "p.value" = {
         k$p_value
         },
-      stop(
-        sprintf(
-          "Unexpected cutoff statistic %s rather than 'FDR' or 'p.value'",
-          ksea_cutoff_statistic
+      {
+        cat(
+          sprintf(
+            "Unexpected cutoff statistic %s rather than 'FDR' or 'p.value'",
+            ksea_cutoff_statistic
+            )
           )
-        )
-      )
+        param_df_exit()
+        knitr::knit_exit()
+      }
+    )
 
     k <- k[selector < ksea_cutoff_threshold, ]
     nrow_k <- nrow(k)
+
+    #ACE nbe(see_variable(fdr_barplot_dataframe <- k))
 
     if (nrow_k > 0) {
       max_nchar_rowname <- max(nchar(rownames(k)))
@@ -1769,7 +1981,7 @@ ksea_low_fdr_barplot_factory <- function(
 
 # mar: The figure region dimensions, (width, height), in inches.
       numeric_z_score <- as.numeric(k$z_score)
-      z_score_order <- order(numeric_z_score)
+      bar_order <- order(-as.numeric(k$p_value))
       kinase_name <- k$kinase_gene
       long_caption <-
         sprintf(
@@ -1781,7 +1993,7 @@ ksea_low_fdr_barplot_factory <- function(
       my_cex_caption <- 65.0 / max(65.0, nchar(long_caption))
       # return a function that draws the plot
       function() {
-        par_fin <- par("fin") # c(width_in_inches, height_in_inches)
+        par_fin <- par("fin") # vector of width_in_inches and height_in_inches)
         op <- par(
           bg = if (print_trace_messages) "yellow" else "white",
           fin = c(par_fin[1], min(par_fin[2], 2.5 + nrow_k / 6)),
@@ -1793,13 +2005,13 @@ ksea_low_fdr_barplot_factory <- function(
         if (print_trace_messages) cat_margins("Eventually")
 
         barplot(
-          height = numeric_z_score[z_score_order],
+          height = numeric_z_score[bar_order],
           border = NA,
           xpd = FALSE,
           cex.names = my_cex_names,
           main = long_caption,
           cex.main = my_cex_caption,
-          names.arg = kinase_name[z_score_order],
+          names.arg = kinase_name[bar_order],
           horiz = TRUE,
           srt = 45,
           las = 1,
@@ -1808,7 +2020,7 @@ ksea_low_fdr_barplot_factory <- function(
       }
     }
   } else {
-    function() { }
+    no_op
   }
 }
 
@@ -1849,13 +2061,17 @@ ksea_low_fdr_print <- function(
       "p.value" = {
         k$p_value
         },
-      stop(
-        sprintf(
-          "Unexpected cutoff statistic %s rather than 'FDR' or 'p.value'",
-          ksea_cutoff_statistic
+      {
+        cat(
+          sprintf(
+            "Unexpected cutoff statistic %s rather than 'FDR' or 'p.value'",
+            ksea_cutoff_statistic
+            )
           )
-        )
-      )
+        param_df_exit()
+        knitr::knit_exit()
+      }
+    )
 
     k <- k[selector < ksea_cutoff_threshold, ]
     # save kinase names to ksea_asterisk_hash
@@ -1882,14 +2098,18 @@ ksea_low_fdr_print <- function(
         "p.value" = {
           contrast_ksea_scores$p_value
           },
-        stop(
-          sprintf(
-            "Unexpected cutoff statistic %s rather than 'FDR' or 'p.value'",
-            ksea_cutoff_statistic
+        {
+          cat(
+            sprintf(
+              "Unexpected cutoff statistic %s rather than 'FDR' or 'p.value'",
+              ksea_cutoff_statistic
+              )
             )
-          )
-        )
-      nbe(see_variable(contrast_ksea_scores))
+          param_df_exit()
+          knitr::knit_exit()
+        }
+      )
+      if (print_nb_messages) nbe(see_variable(contrast_ksea_scores))
       output_df <- contrast_ksea_scores[
         selector < ksea_cutoff_threshold,
         c("kinase_gene", "mean_log2_fc", "enrichment", "substrate_count",
@@ -1911,7 +2131,8 @@ ksea_low_fdr_print <- function(
           "p_value",
           "fdr"
         )
-      output_order <- with(output_df, order(fdr))
+      #ACE output_order <- with(output_df, order(fdr))
+      output_order <- with(output_df, order(p_value))
       output_df <- output_df[output_order, ]
 
       output_df[, 2] <- sprintf("%0.3g", output_df[, 2])
@@ -1939,15 +2160,19 @@ ksea_low_fdr_print <- function(
         "p.value" = {
           rslt$score_list[[i]]$p.value
           },
-        stop(
-          sprintf(
-            "Unexpected cutoff statistic %s rather than 'FDR' or 'p.value'",
-            ksea_cutoff_statistic
+        {
+          cat(
+            sprintf(
+              "Unexpected cutoff statistic %s rather than 'FDR' or 'p.value'",
+              ksea_cutoff_statistic
+              )
             )
-          )
-        )
+          param_df_exit()
+          knitr::knit_exit()
+        }
+      )
       if (sum(selector < ksea_cutoff_threshold) > 0) {
-        nbe(see_variable(output_df))
+        if (print_nb_messages) nbe(see_variable(output_df))
         math_caption <- gsub("{", "\\{", caption,      fixed = TRUE)
         math_caption <- gsub("}", "\\}", math_caption, fixed = TRUE)
         # with (
@@ -1967,7 +2192,7 @@ ksea_low_fdr_print <- function(
             max = NULL,
             # optional caption
             caption = sprintf(
-              "\\text{%s}, foobar KSEA %s < %s",
+              "\\text{%s}, KSEA %s < %s",
               math_caption,
               ksea_cutoff_statistic,
               ksea_cutoff_threshold
@@ -2084,22 +2309,46 @@ hm2plus <- function(
   srtrow       = 0,
   density_info = "none",
   key_xlab = latex2exp::TeX("$log_{10}$(peptide intensity)"),
+  key_par = list(),
   hclustfun = hclust,
   ...
 ) {
-  varargs <- list(...)
 
+  varargs <- list(...)
   if (FALSE) # this is to avoid commenting out code to pass linting...
-    my_hm2 <- show_invocation(heatmap.2, head_patch = FALSE)
+    my_hm2 <- latex_show_invocation(heatmap.2, head_patch = FALSE)
   else
     my_hm2 <- heatmap.2
 
   x <- as.matrix(x)
   if (sum(!is.na(x)) < 1)
     return(NULL)
-  color_count <- 1 + max(64, length(as.vector(x)))
+  color_count <- 1 + max(64, length(as.vector(x))) # 8 was not enough
+  break_count <- 1 + color_count
   min_nonax <- min(x, na.rm = TRUE)
   max_nonax <- max(x, na.rm = TRUE)
+  if (print_nb_messages) nb("within hm2plus", see_variable(divergent), "\n")
+  if (divergent) {
+    zlim <- max(abs(min_nonax), abs(max_nonax))
+    if (print_nb_messages) nb(see_variable(pre_zlim <- zlim, "\n"))
+    breaks <- (zlim) / (break_count:1)
+    if (print_nb_messages) nb(see_variable(breaks, "\n"))
+    breaks <- breaks - median(breaks)
+    zlim <- c(-zlim, zlim)
+    if (print_nb_messages) nb(see_variable(zlim, "\n"))
+  } else {
+    zlim <- max(abs(min_nonax), abs(max_nonax))
+    if (print_nb_messages) nb(see_variable(pre_zlim <- zlim, "\n"))
+    breaks <- zlim / (break_count:1)
+    if (print_nb_messages) nb(see_variable(breaks, "\n"))
+    if  (max_nonax < 0) {
+      breaks <- breaks - zlim
+      zlim <- c(-zlim, 0)
+    } else {
+      zlim <- c(0, zlim)
+    }
+    if (print_nb_messages) nb(see_variable(zlim, "\n"))
+  }
   nonax <- x
   nonax[is.na(x)] <- min_nonax
   if (is.null(widths)) widths <- c(denwid, 4 - denwid, 1.5)
@@ -2119,11 +2368,18 @@ hm2plus <- function(
       hcl.colors(color_count, "YlOrRd", rev = TRUE)
     }
 
+  #ACE if (print_nb_messages) nb("within hm2plus", see_variable(key_par), "\n")
+  #ACE if (print_nb_messages) nb(see_variable(colors, "\n"))
+  #ACE key_par$col = colors
+  #ACE key_par$breaks = breaks
+
+  if (print_nb_messages) nb(see_variable(par(), "\n")) #ACE TODO remove me
+  if (print_nb_messages) cat("\\leavevmode\n\\linebreak\n") #ACE TODO remove me
   suppressWarnings(
     my_hm2(
       x = x,
       col = colors,
-      symkey = FALSE,
+      #ACE symkey = FALSE,
       density.info = density_info,
       srtCol = srtcol,
       srtRow = srtrow,
@@ -2132,12 +2388,15 @@ hm2plus <- function(
       lhei = heights,
       key.title = NA,
       key.xlab = key_xlab,
+      key.par = key_par,
       lmat = mat,
       notecol = notecol,
       trace = trace,
       bg = "yellow",
       hclustfun = hclustfun,
-      ...
+      #ACE breaks = breaks,
+      oldstyle = FALSE,
+      ... # varargs
     )
   )
   # implicitly returning value returned by heatmap.2
@@ -2256,7 +2515,7 @@ draw_kseaapp_summary_heatmap <- function(
     density_info = "none",
     denwid       = 0.5,
     divergent    = TRUE,
-    key.par      = list(cex = my_key_cex),
+    key_par      = list(cex = my_key_cex),
     key_xlab     = "Z-score",
     margins      = my_margins,
     notecex      = my_scale * min(
@@ -2303,8 +2562,11 @@ ksea_heatmap <- function(
   m_cutoff,
   # a numeric value between 0 and 1 indicating the p-value/FDR cutoff
   #   for indicating significant kinases in the heatmap
-  p_cutoff =
-    stop("argument 'p_cutoff' is required for function 'ksea_heatmap'"),
+  p_cutoff = {
+    cat("argument 'p_cutoff' is required for function 'ksea_heatmap'")
+    param_df_exit()
+    knitr::knit_exit()
+  },
   # a binary input of TRUE or FALSE, indicating whether or not to perform
   #   hierarchical clustering of the sample columns
   sample_cluster,
@@ -2629,7 +2891,7 @@ ppep_heatmap <-
                     main = title,
                     key_xlab = latex2exp::TeX("$log_{10}$(peptide intensity)"),
                     cex = my_hm2_cex,
-                    key.par = list(cex = my_key_cex),
+                    key_par = list(cex = my_key_cex),
                     margins = my_margins,
                     widths =  c(0.4, 2.6, 1.5),
                     heights = my_heights,
@@ -2744,6 +3006,11 @@ cov_heatmap <-
     top_substrates = FALSE,
     ...                             # passthru to hm2plus or heatmap.2
   ) {
+      if (print_nb_messages) nbe(see_variable(m), " [", nrow(m), "x", ncol(m), "\n")
+      #ACE nb(rowSums(m, na.rm = TRUE))
+      #ACE bad_rows <- (rowSums(m, na.rm = TRUE) == 0)
+      #ACE nb(see_variable(bad_rows))
+      #ACE m <- m[-bad_rows, , drop = FALSE]
       colnames_m <- colnames(m)
       is_na_m <- is.na(m)
       tmp <- m
@@ -2931,7 +3198,7 @@ cov_heatmap <-
         denhgt       = 0.15,
         denwid       = 0.5,
         divergent    = TRUE,
-        key.par      = list(cex = my_key_cex),
+        key_par      = list(cex = my_key_cex),
         key_xlab     = if (my_correlate_substrates) "Correlation"
                          else "Covariance",
         main         = my_main,
@@ -2947,10 +3214,14 @@ cov_heatmap <-
                        ),
         heights = my_heights,
         margins      = c(my_margin, my_margin),
-        widths       = c(0.5, 3.1, 0.9)
-        # , ...
+        widths       = c(0.5, 3.1, 0.9),
+        scale        = "none",
+        symkey       = TRUE,
+        symbreaks    = TRUE,
+        symm         = FALSE #TODO evaluate TRUE
+        # ...
       )
-  }
+  } # end cov_heatmap
 
 ### FILE IMPORT
 
@@ -2989,6 +3260,16 @@ The purpose of this analysis is to perform for phosphopeptides:
 
 ```{r include = FALSE}
 
+if (params$kseaUseAbsoluteLog2FC) {
+  sfc <- "|s|"
+  pfc <- "|p|"
+  pfc_txt <- "$\\text{absolute value}({\\log_2 (\\text{fold-change})})$"
+} else {
+  sfc <- "s"
+  pfc <- "p"
+  pfc_txt <- "${\\log_2 (\\text{fold-change}})$"
+}
+
 ksea_heatmap_titles <- list()
 ksea_heatmap_titles[[const_ksea_astrsk_kinases]] <-
   sprintf(
@@ -3019,7 +3300,9 @@ if (
   sum(val_fdr[, 1] < 0) ||
   sum(val_fdr[, 1] > 1)
 ) {
-  stop("alphaFile should be one column of numbers within the range [0.0,1.0]")
+  cat("alphaFile should be one column of numbers within the range [0.0,1.0]")
+  param_df_exit()
+  knitr::knit_exit()
 }
 val_fdr <- val_fdr[, 1]
 
@@ -3042,8 +3325,13 @@ if (!result) {
     ),
     stderr()
   )
-  if (sys.nframe() > 0) quit(save = "no", status = 1)
-  stop("Cannot continue. Goodbye.")
+  if (sys.nframe() > 0) {
+    cat("Cannot continue and quit() failed. Goodbye.")
+    param_df_exit()
+    knitr::knit_exit()
+    # in case knit_exit doesn't exit
+    quit(save = "no", status = 1)
+  }
 }
 
 if (FALSE) {
@@ -3079,7 +3367,9 @@ if (!fdc_is_integer) {
   if (length(data_column_indices) > 0) {
     first_data_column <- data_column_indices[1]
   } else {
-    stop(paste("failed to convert firstDataColumn:", first_data_column))
+    cat(paste("failed to convert firstDataColumn:", first_data_column))
+    param_df_exit()
+    knitr::knit_exit()
   }
 }
 
@@ -3150,6 +3440,10 @@ write_debug_file(quant_data)
 rx_match <- regexpr(regex_sample_grouping, sample_name_matches, perl = TRUE)
 smpl_trt <- as.factor(regmatches(sample_name_matches, rx_match))
 
+if (print_nb_messages) nbe(see_variable(smpl_trt, "\n\n"))
+if (print_nb_messages) nbe(see_variable(sample_name_matches, "\n\n"))
+if (print_nb_messages) nbe(see_variable(full_data_names, "\n\n"))
+
 sample_treatment_df <-
   save_sample_treatment_df <-
     data.frame(
@@ -3157,6 +3451,9 @@ sample_treatment_df <-
       sample = sample_name_matches,
       full_sample_names = full_data_names
       )
+
+if (print_nb_messages) nbe(see_variable(sample_treatment_df, "\n\n"))
+
 # reorder data
 my_order <- with(sample_treatment_df, order(class, sample))
 quant_data <- quant_data[, my_order]
@@ -3178,8 +3475,13 @@ if (sample_group_filter %in% c("include", "exclude")) {
       ignore.case = sample_group_filter_nocase
     )
   if (sum(include_sample) < 2) {
-    errmsg <- paste("ERROR: Too few samples for analysis;",
-        "check input parameters for sample-name parsing")
+    errmsg <-
+      paste(
+        "ERROR:",
+        sum(include_sample),
+        "samples are too few for analysis;",
+        "check input parameters for sample-name parsing"
+        )
     cat0(
       errmsg,
       "\\stepcounter{offset}\n",
@@ -3199,16 +3501,16 @@ if (sample_group_filter %in% c("include", "exclude")) {
           c("regexSampleNames",
             "regexSampleGrouping",
             "groupFilterPatterns",
-            "sampleGroupFilter",
-            "sampleGroupFilterMode"
+            "groupFilter",
+            "groupFilterMode"
           ),
         ],
       tabstops = c(1.75),
-      #landscape = TRUE,
       underscore_whack = TRUE,
       caption = "Input parameters for sample-name parsing",
       verbatim = FALSE
       )
+    param_df_exit()
     knitr::knit_exit()
     return(invisible(-1))
   }
@@ -3576,10 +3878,33 @@ cat("\\quad\n\nImputation method:\n\n\n", imputation_method_description)
 imp_smry_pot_peptides_after <- sum(good_rows)
 imp_smry_rejected_after  <- sum(!good_rows)
 imp_smry_missing_values_after   <- sum(is.na(quant_data_imp[good_rows, ]))
+
+# From ?`%in%`, %in% is currently defined as function(x, table) match(x, table, nomatch = 0) > 0
+
+sink(stderr())
+print("`%in%`:")
+print(`%in%`)
+sink()
+
+stock_in <-
+  names(good_rows) %in%
+    names(min_group_obs_count[g_intensity_min_per_class <= min_group_obs_count])
+if (print_nb_messages) nbe(see_variable(stock_in), "\n")
+
+explicit_in <-
+  0 < match(
+    names(good_rows),
+    names(min_group_obs_count[g_intensity_min_per_class <= min_group_obs_count])
+    )
+if (print_nb_messages) nbe(see_variable(explicit_in), "\n")
+
 great_enough_row_names <- good_rows[
   names(good_rows) %in%
     names(min_group_obs_count[g_intensity_min_per_class <= min_group_obs_count])
 ]
+if (print_nb_messages) nbe(see_variable(great_enough_row_names), "\n")
+great_enough_row_names <- great_enough_row_names[great_enough_row_names]
+if (print_nb_messages) nbe(see_variable(great_enough_row_names), "\n")
 ```
 
 ```{r echo = FALSE, results = 'asis'}
@@ -3622,7 +3947,9 @@ cat(tabular_lines)
 
 ```{r filter_good_rows, echo = FALSE}
 
+if (print_nb_messages) nbe("before name extraction, ", see_variable(length(good_rows)), " ", see_variable(good_rows), "\n")
 good_rows <- names(good_rows[names(great_enough_row_names)])
+if (print_nb_messages) nbe("after name extraction, ", see_variable(length(good_rows)), see_variable(good_rows), "\n")
 
 #ACE min_group_obs_count <- min_group_obs_count[names(great_enough_row_names)]
 #ACE nbe("good_rows")
@@ -3638,7 +3965,9 @@ full_data         <- full_data        [good_rows, ]
 quant_data        <- quant_data       [good_rows, ]
 quant_data_log    <- quant_data_log   [good_rows, ]
 
+if (print_nb_messages) nbe("before row filter, ", see_variable(nrow(quant_data_imp)), "\n")
 quant_data_imp <- quant_data_imp[good_rows, ]
+if (print_nb_messages) nbe("after row filter, ", see_variable(nrow(quant_data_imp)), "\n")
 write_debug_file(quant_data_imp)
 quant_data_imp_good_rows <- quant_data_imp
 
@@ -3699,7 +4028,9 @@ zero_sd_rownames <-
   ]
 
 if (length(zero_sd_rownames) >= nrow(quant_data_imp)) {
-  stop("All peptides have zero standard deviation.  Cannot continue.")
+  cat("All peptides have zero standard deviation.  Cannot continue.")
+  param_df_exit()
+  knitr::knit_exit()
 }
 if (length(zero_sd_rownames) > 0) {
   cat(
@@ -3975,6 +4306,7 @@ installed.  The installation command equivalent to what was used to install the 
 -->
 ```{r echo = FALSE, results = 'asis'}
 
+if (print_nb_messages) nbe(see_variable(nrow(quant_data_imp)), "\n")
 if (nrow(quant_data_imp) > 0) {
   quant_data_imp_qn <- preprocessCore::normalize.quantiles(
      as.matrix(quant_data_imp), keep.names = TRUE
@@ -3983,13 +4315,16 @@ if (nrow(quant_data_imp) > 0) {
   quant_data_imp_qn <- as.matrix(quant_data_imp)
 }
 
-quant_data_imp_qn <- as.data.frame(quant_data_imp_qn)
+if (print_nb_messages) nbe(see_variable(nrow(quant_data_imp_qn)), "\n")
 
+quant_data_imp_qn <- as.data.frame(quant_data_imp_qn)
 write_debug_file(quant_data_imp_qn)
 
 quant_data_imp_qn_log <- log10(quant_data_imp_qn)
-
 write_debug_file(quant_data_imp_qn_log)
+
+if (print_nb_messages) nbe(see_variable(nrow(quant_data_imp_qn_log)), "\n")
+if (print_nb_messages) nbe(see_variable(ncol(quant_data_imp_qn_log)), "\n")
 
 quant_data_imp_qn_ls <- t(scale(t(log10(quant_data_imp_qn))))
 
@@ -4097,7 +4432,7 @@ cat("\\leavevmode\\newpage\n")
 
 For each phosphopeptide, ANOVA analysis was performed to compute a $p$-value representing the evidence against the "null hypothesis" ($H_0$) that the intensity does not vary significantly among sample groups.
 
-However, because as more and more phosphopeptides are tested, there is increasd probability that, by random chance, a given peptide will have a $p$-value that appears to indicte significance.  For this reason, the $p$-values were adjusted by applying the False Discovery Rate (FDR) correction from Benjamini and Hochberg (1995) [doi:10.1111/j.2517-6161.1995.tb02031.x](https:/doi.org/10.1111/j.2517-6161.1995.tb02031.x).
+However, because as more and more phosphopeptides are tested, there is increasd probability that, by random chance, a given peptide will have a $p$-value that appears to indicate significance.  For this reason, the $p$-values were adjusted by applying the False Discovery Rate (FDR) correction from Benjamini and Hochberg (1995) [doi:10.1111/j.2517-6161.1995.tb02031.x](https:/doi.org/10.1111/j.2517-6161.1995.tb02031.x).
 
 Furthermore, to give more weight to phosphopeptides having fewer missing values, an (arbitrarily defined) quality score was assigned to each, defined as:
 
@@ -4178,13 +4513,38 @@ if (count_of_treatment_levels < 2) {
 
 } else {
 
-  p_value_data_anova_ps <-
-    row_apply(
-      quant_data_imp_qn_log,
-      anova_func,
-      grouping_factor = smpl_trt,
-      one_way_f = one_way_all_categories
-      )
+  if (print_nb_messages) nbe("computing p_value_data_anova_ps\n")
+  if (print_nb_messages) nbe(see_variable(nrow(quant_data_imp_qn_log)), "\n")
+  if (print_nb_messages) nbe(see_variable(ncol(quant_data_imp_qn_log)), "\n")
+  if (print_nb_messages) nbe(see_variable(quant_data_imp_qn_log[, ".NE.7C"]), "\n")
+  if (print_nb_messages) nbe(see_variable(quant_data_imp_qn_log), "\n")
+  if (print_nb_messages) nbe(see_variable(anova_func), "\n")
+  if (print_nb_messages) nbe(see_variable(smpl_trt), "\n")
+  if (print_nb_messages) nbe(see_variable(one_way_all_categories), "\n")
+  tryCatch(
+    {
+      p_value_data_anova_ps <-
+        row_apply(
+          quant_data_imp_qn_log,
+          anova_func,
+          grouping_factor = smpl_trt,
+          one_way_f = one_way_all_categories
+          )
+    },
+    error = function(e) {
+      mesg <- paste("Could not compute ANOVA because", e$message)
+      cat("\n\n", mesg, "\n\n")
+      param_df_noexit(e)
+      sink(stderr())
+      cat("\n\n", mesg, "\n\n")
+      values <- paste(param_df$parameter, "=", param_df$value, collapse = "\n")
+      cat(values)
+      sink()
+      knitr::knit_exit()
+      exit(code = 1)
+    }
+  )
+  if (print_nb_messages) nbe(see_variable(p_value_data_anova_ps), "\n")
 
   p_value_data_anova_ps_fdr <-
     p.adjust(p_value_data_anova_ps, method = "fdr")
@@ -4233,7 +4593,7 @@ if (count_of_treatment_levels < 2) {
 
   # output ANOVA file to constructed filename,
   #   e.g.    "Outputfile_pST_ANOVA_STEP5.txt"
-  #   becomes "Outpufile_pST_ANOVA_STEP5_FDR0.05.txt"
+  #   becomes "Outputfile_pST_ANOVA_STEP5_FDR0.05.txt"
 
   # Re-output datasets to include p-values
   metadata_plus_p <- cbind(full_data[1:9], p_value_data[, 2:ncol(p_value_data)])
@@ -4269,7 +4629,12 @@ if (count_of_treatment_levels < 2) {
     bool_1 <- (p_value_data$fdr_adjusted_anova_p < cutoff)
     bool_2 <- (p_value_data$min_group_obs_count >= g_intensity_min_per_class)
     g_can_run_ksea <- g_can_run_ksea || (sum(bool_2) > 0)
-    bool_3 <- as.logical(as.integer(bool_1) * as.integer(bool_2))
+    bool_4 <- (p_value_data$quality >= params$minQuality)
+    bool_3 <- as.logical(
+        as.integer(bool_1) *
+        as.integer(bool_2) *
+        as.integer(bool_4)
+      )
     if (print_trace_messages) {
       if (length(bool_1) > 30) {
         cat_variable(bool_1, force_str = TRUE)
@@ -4492,7 +4857,6 @@ if (count_of_treatment_levels < 2) {
                 "log(intensities), row-scaled, unimputed, unnormalized",
               suppress_row_dendrogram = FALSE,
               master_cex              = 0.35,
-              #notecex                 = 1.5,
               sepcolor                = "black",
               colsep                  = sample_colsep
             )
@@ -4519,9 +4883,9 @@ if (!g_can_run_ksea) {
         ".\n\n"
       )
   if (FALSE) {
-    nbe(see_variable(p_value_data))
+    if (print_nb_messages) nbe(see_variable(p_value_data))
   } else {
-    nbe(see_variable(p_value_data))
+    if (print_nb_messages) nbe(see_variable(p_value_data))
 
     display_p_value_data <- p_value_data
     display_p_value_data$raw_anova_p <-
@@ -4550,15 +4914,7 @@ if (!g_can_run_ksea) {
     caption = "Sample classes",
     use_subsubsection_header = FALSE
     )
-  data_frame_tabbing_latex(
-    x =
-      param_df,
-    tabstops = c(1.75),
-    #landscape = TRUE,
-    underscore_whack = TRUE,
-    caption = "Input parameters for sample-name parsing",
-    verbatim = FALSE
-    )
+  param_df_exit()
   knitr::knit_exit()
   return(invisible(-1))
 }
@@ -4783,7 +5139,7 @@ if (g_can_run_ksea && count_of_treatment_levels > 1) {
   )
 
   # - create contrast-metadata table
-  nbe("CREATE TABLE contrast_lvl_lvl_metadata")
+  if (print_nb_messages) nbe("CREATE TABLE contrast_lvl_lvl_metadata")
   dml_no_rows_exec(db, "
       CREATE TABLE contrast_lvl_lvl_metadata
         AS
@@ -5130,21 +5486,21 @@ Results of Kinase-Substrate Enrichment Analysis are presented here, if the subst
 For each kinase, $i$, and each two-way contrast of treatments, $j$, an enrichment $z$-score is computed as:
 
 $$
-\text{kinase enrichment }z{-score}_{j,i} = \frac{(\overline{s}_{j,i} - \overline{|p|}_j)\sqrt{m_{j,i}}}{\delta_j}
+\text{kinase enrichment }z\text{-score}_{j,i} = \frac{(\overline{`r sfc`}_{j,i} - \overline{`r pfc`}_j)\sqrt{m_{j,i}}}{\delta_j}
 $$
 
 and fold-enrichment is computed as:
 
 $$
-\text{Enrichment}_{j,i} = \frac{\overline{s}_{j,i}}{\overline{|p|}_j}
+\text{Enrichment}_{j,i} = \frac{\overline{`r sfc`}_{j,i}}{\overline{`r pfc`}_j}
 $$
 
 where:
 
-- $\overline{s}_{j,i}$ is the mean $\log_2 (\text{fold-change})$ in intensities (for contrast $j$) of known substrates of the kinase $i$,
-- $\overline{{\lvert}p{\rvert}}_j$ is the mean $\text{absolute value}({\log_2 (\text{fold-change})})$ of all phosphosites identified in contrast $j$, and
+- $\overline{`r sfc`}_{j,i}$ is the mean `r pfc_txt` in intensities of known substrates of the kinase $i$ in contrast $j$,
+- $\overline{`r pfc`}_j$ is the mean `r pfc_txt` of all phosphosites identified in contrast $j$, and
 - $m_{j,i}$ is the total number of phosphosite substrates of kinase $i$ identified in contrast $j$,
-- $\delta_j$ is the standard deviation of the $\log_2 (|\text{fold-change}|)$ for contrast $j$ across all phosphosites in the dataset.
+- $\delta_j$ is the standard deviation of the $\log_2 (\text{fold-change})$ for contrast $j$ across all phosphosites in the dataset.
 - Note that the absolute value of fold-change is used so that both increased and decreased substrates of a kinase will contribute to its enrichment score.
 
 $\text{FDR}_{j,i}$ is the False Discovery Rate corrected kinase enrichment score.
@@ -5161,7 +5517,7 @@ For each enriched kinase, a heatmap showing the intensities is presented for up 
 
 Where possible, a heatmap of the correlations among these the selected substrates is also presented; if correlations cannot be computed (because of too many missing values), then the covariances are heatmapped for substrates having a variance greater than 1.
 
-```{r ksea, echo = FALSE, fig.dim = c(12, 15), results = 'asis'}
+```{r ksea, echo = FALSE, fig.dim = c(12, 14.5), results = 'asis'}
 cat("\\clearpage\n")
 
 db <- RSQLite::dbConnect(RSQLite::SQLite(), ksea_app_prep_db)
@@ -5274,16 +5630,17 @@ for (i_cntrst in seq_len(nrow(contrast_metadata_df))) {
     expr = {
         ksea_scores_rslt <-
           ksea_scores(
-            ksdata           = pseudo_ksdata, # KSEAapp::KSData,
-            px               = kseaapp_input,
-            networkin        = TRUE,
-            networkin_cutoff = 2
+            ksdata                  = pseudo_ksdata,
+            px                      = kseaapp_input,
+            networkin               = TRUE,
+            networkin_cutoff        = 2,
+            minimum_substrate_count = ksea_min_substrate_count
             )
 
-        if (TRUE) {
+        if (FALSE) {
           ksea_scores_rslt <-
             ksea_scores_rslt[
-              ksea_scores_rslt$m >= ksea_min_kinase_count,
+              ksea_scores_rslt$m >= ksea_min_substrate_count,
               ,
               drop = FALSE
             ]
@@ -5300,7 +5657,7 @@ for (i_cntrst in seq_len(nrow(contrast_metadata_df))) {
         }
 
         if (FALSE) {
-          nbe("Output contents of `ksea_scores_rslt` table\n")
+          if (print_nb_messages) nbe("Output contents of `ksea_scores_rslt` table\n")
           cat_variable(ksea_scores_rslt)
           cat("\n\\clearpage\n")
         }
@@ -5414,15 +5771,9 @@ ksea_barplots <- list()
       tryCatch(
         expr = {
             ksea_scores_rslt <- rslt$score_list[[next_index]]
+            if (print_nb_messages) nbe(see_variable(ksea_scores_rslt)) #ACE
 
             if (0 < sum(!is.nan(ksea_scores_rslt$FDR))) {
-              # demo # > sink(f <- file())
-              # demo # > cat("hello\n")
-              # demo # > sink()
-              # demo # > readLines(f)
-              # demo # [1] "hello"
-              # demo # > close(f)
-              
               sink(deferred <- file())
               ksea_low_fdr_print(
                 rslt = rslt,
@@ -5437,7 +5788,7 @@ ksea_barplots <- list()
                 )
               cat("\n")
               sink()
-              lines <- 
+              lines <-
                 paste(
                  readLines(deferred, warn = FALSE),
                  collapse = "\n"
@@ -5447,7 +5798,7 @@ ksea_barplots <- list()
               sink(stderr())
               cat("\n---\n")
               cat_variable(ksea_prints)
-              barplot_closure <- 
+              barplot_closure <-
                 ksea_low_fdr_barplot_factory(
                   rslt = rslt,
                   i_cntrst = i_cntrst,
@@ -5460,7 +5811,7 @@ ksea_barplots <- list()
               if (rlang::is_closure(barplot_closure))
                 sq_put(ksea_barplots, barplot_closure)
               else
-                sq_put(ksea_barplots, function(){})
+                sq_put(ksea_barplots, no_op)
               str(ksea_barplots)
               cat("\n...\n")
               sink()
@@ -5553,17 +5904,16 @@ write_params <- function(db) {
     version = loaded_packages_df$loadedversion,
     date    = loaded_packages_df$date
     )
-  cat("\\clearpage\n\\section{R package versions}\n")
-  data_frame_tabbing_latex(
-    x = loaded_packages_df,
-    tabstops = c(2.5, 1.25),
-    caption = "R package versions"
-    )
+  #ACE cat("\\clearpage\n\\section{R package versions}\n")
+  #ACE data_frame_tabbing_latex(
+  #ACE   x = loaded_packages_df,
+  #ACE   tabstops = c(2.5, 1.25),
+  #ACE   caption = "R package versions"
+  #ACE   )
   cat("\\clearpage\n\\section{Input parameter settings}\n")
   data_frame_tabbing_latex(
     x = param_df,
     tabstops = c(1.75),
-    #landscape = TRUE,
     underscore_whack = TRUE,
     caption = "Input parameters",
     verbatim = FALSE
@@ -5574,6 +5924,7 @@ if (!have_kinase_descriptions) {
   write_params(db)
   # We are done with output
   RSQLite::dbDisconnect(db)
+  param_df_exit()
   knitr::knit_exit()
 }
 ```
@@ -5680,16 +6031,16 @@ if (have_kinase_descriptions) {
      ),
      p_value_data
    WHERE ppep = phosphopeptide
-   GROUP BY kinase, ppep 
+   GROUP BY kinase, ppep
    ORDER BY kinase, ppep, p_value_data.quality DESC
    ")
 
-  # ACE all_enriched_substrates <-
-  # ACE   all_enriched_substrates[
-  # ACE     is.null(all_enriched_substrates$min_group_obs_count) || all_enriched_substrates$min_group_obs_count >= g_intensity_min_per_class,
-  # ACE     ,
-  # ACE     drop = FALSE
-  # ACE   ]
+  all_enriched_substrates <-
+    all_enriched_substrates[
+      all_enriched_substrates$quality >= params$minQuality,
+      ,
+      drop = FALSE
+    ]
 
   all_enriched_substrates$sub_gene <-
     sub(
@@ -5758,8 +6109,8 @@ if (have_kinase_descriptions) {
         enriched_substrates$sub_gene,
         fixed = TRUE
       )
-    
-    nbe(see_variable(enriched_substrates))
+
+    if (print_nb_messages) nbe(see_variable(enriched_substrates))
     substrates_df <- with(
         enriched_substrates,
         data.frame(
@@ -5771,17 +6122,17 @@ if (have_kinase_descriptions) {
           sequence = trunc_n(30)(ppep)
         )
       )
-    
+
     substrates_df <- substrates_df[
       with(substrates_df, order(kinase, -quality)),
       ,
       drop = FALSE
       ]
-    
-    nbe(see_variable(substrates_df))
+
+    if (print_nb_messages) nbe(see_variable(substrates_df))
     if (nrow(substrates_df) < 1)
       substrates_df$sequence <- c()
-    nbe(see_variable(substrates_df))
+    if (print_nb_messages) nbe(see_variable(substrates_df))
     names(substrates_df) <- headers_2nd_line <-
       c("Kinase", "Substrate", "p-value", "per group)", "quality", "Sequence")
     headers_1st_line <- c("", "", "ANOVA", "min(values", "", "")
@@ -5802,7 +6153,7 @@ if (have_kinase_descriptions) {
   cat("\\clearpage\n")
   # hack end - show all substrates
   # --------------------------------
-  
+
   # print deferred tables and graphs for kinases from contrasts
   for (i_cntrst in seq_len(length(ksea_prints))) {
     #latex_samepage({
@@ -5842,7 +6193,13 @@ if (g_can_run_ksea) {
     # Get the intensity values for the heatmap
     enriched_intensities <-
       as.matrix(unimputed_quant_data_log[enriched_substrates$ppep, , drop = FALSE])
+
     # Remove rows having too many NA values to be relevant
+    good_rows <- (rowSums(enriched_intensities, na.rm = TRUE) != 0)
+    #ACE nbe(see_variable(good_rows), "\n")
+    enriched_substrates <- enriched_substrates[good_rows, , drop = FALSE]
+    enriched_intensities <- enriched_intensities[good_rows, , drop = FALSE]
+
     # Rename the rows with the display-name for the heatmap
     short_row_names <- sub(
         "$FAILED_MATCH_GENE_NAME",
@@ -5863,6 +6220,17 @@ if (g_can_run_ksea) {
     # Format as matrix for heatmap
     m <- as.matrix(enriched_intensities)
     rownames(m) <- trunc_enriched_substrate(rownames(m))
+
+    #ACE nb("m with bad rows: ", see_variable(m), "\n")
+    #ACE good_rows <- (rowSums(m, na.rm = TRUE) != 0)
+    #ACE nb(see_variable(good_rows), "\n")
+    #ACE m <- m[good_rows, , drop = FALSE]
+    #ACE nb("m without(?) bad rows: ", see_variable(m), "\n")
+    #ACE nb(see_variable(short_row_names), "\n")
+    #ACE local_short_row_names <- short_row_names[good_rows]
+    #ACE local_long_row_names  <- long_row_names[good_rows]
+    #ACE local_enriched_intensities <- enriched_intensities[local_long_row_names, ]
+
     # Draw the heading and heatmap
     nrow_m <- nrow(m)
     if (nrow_m > 0) {
@@ -5924,7 +6292,7 @@ if (g_can_run_ksea) {
             sequence = trunc_long_ppep(ppep),
             anova_p_value = signif(fdr_adjusted_anova_p, 2),
             min_group_obs_count = signif(min_group_obs_count, 0),
-            quality = signif(quality, 3) # round(quality)
+            quality = signif(quality, 3)
           )
         )
       excess_substrates <- nrow(substrates_df) > g_intensity_hm_rows
@@ -5953,14 +6321,18 @@ if (g_can_run_ksea) {
         tabstops = c(0.8, 3.8, 0.6, 0.8),
         headings = c(headers_1st_line, headers_2nd_line)
       )
+    } else {
+      if (print_nb_messages) nbe(see_variable(nrow_m > 0), "\n")
     }
+    if (print_nb_messages) nb("end kinase ", kinase_name, "\n")
   }
 
   # Write output tabular files
 
   # get kinase, ppep, concat(kinase) tuples for enriched kinases
 
-  nbe("kinase_ppep_label <- ...\n")
+  if (print_nb_messages) nb("kinase_ppep_label <- ...\n")
+  if (print_nb_messages) nbe("kinase_ppep_label <- ...\n")
   kinase_ppep_label <- sqldf("
     WITH
       t(ppep, label) AS
@@ -6007,7 +6379,8 @@ if (g_can_run_ksea) {
       data_table_imputed[, c(1:12, 14:ncol(data_table_imputed))]
 
   # Output imputed, un-normalized data
-  nbe("Output imputed, un-normalized data tabular file\n")
+  if (print_nb_messages) nb("Output imputed, un-normalized data tabular file\n")
+  if (print_nb_messages) nbe("Output imputed, un-normalized data tabular file\n")
   write.table(
       data_table_imputed
     , file = imputed_data_filename
@@ -6025,7 +6398,8 @@ if (g_can_run_ksea) {
   # Zap the duplicated 'Phosphopeptide' column named 'ppep'
   data_table_imputed <-
       data_table_imputed[, c(1:12, 14:ncol(data_table_imputed))]
-  nbe("Output quantile normalized data tabular file\n")
+  if (print_nb_messages) nb("Output quantile normalized data tabular file\n")
+  if (print_nb_messages) nbe("Output quantile normalized data tabular file\n")
   write.table(
     data_table_imputed,
     file = imp_qn_lt_data_filenm,
@@ -6052,6 +6426,8 @@ if (g_can_run_ksea) {
     append = FALSE
     )
 }
+
+if (print_nb_messages) nb("RSQLite::dbWriteTable anova_signif\n")
 
 RSQLite::dbWriteTable(
   conn = db,
@@ -6081,7 +6457,8 @@ RSQLite::dbWriteTable(
     "
   )
 
-nbe("Output contents of `stats_metadata_v` table to tabular file\n")
+if (print_nb_messages) nb("Output contents of `stats_metadata_v` table to tabular file\n")
+if (print_nb_messages) nbe("Output contents of `stats_metadata_v` table to tabular file\n")
 write.table(
   dbReadTable(db, "stats_metadata_v"),
   file = anova_ksea_mtdt_file,
@@ -6102,8 +6479,10 @@ cat("\n\\clearpage\n")
 ```{r parmlist, echo = FALSE, fig.dim = c(9, 10), results = 'asis'}
 cat("\\leavevmode\n\n\n")
 
-write_params(db) 
+write_params(db)
 # We are done with output
 RSQLite::dbDisconnect(db)
 
+cat("\\clearpage\n\\section{R package versions}\n")
+utils::toLatex(utils::sessionInfo())
 ```

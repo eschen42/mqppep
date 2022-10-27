@@ -70,3 +70,11 @@ tool_test_output.json
 
 
 .Rproj.user
+
+.fossil-settings/
+.fslckout
+shed.yml
+elm_networkin_psp_uniprot_lut.tabular
+phosphoelm_kinase_upid_desc.lut
+kseaapp_demo.R
+kinase_metadata.sql

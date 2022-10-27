@@ -8,13 +8,8 @@ library(tinytex)
 
 # parse options
 option_list <- list(
-  make_option(
-    c("-i", "--inputFile"),
-    action = "store",
-    default = NA,
-    type = "character",
-    help = "Phosphopeptide Intensities sparse input file path"
-  ),
+
+  # files
   make_option(
     c("-a", "--alphaFile"),
     action = "store",
@@ -24,90 +19,11 @@ option_list <- list(
              " path to text file having one column and no header")
   ),
   make_option(
-    c("-S", "--preproc_sqlite"),
+    c("-M", "--anova_ksea_metadata"),
     action = "store",
-    default = NA,
+    default = "anova_ksea_metadata.tsv",
     type = "character",
-    help = "Path to 'preproc_sqlite' produced by `mqppep_mrgfltr.py`"
-  ),
-  make_option(
-    c("-K", "--ksea_sqlite"),
-    action = "store",
-    default = NA,
-    type = "character",
-    help = "Path to 'ksea_sqlite' output produced by this tool"
-  ),
-  make_option(
-    c("-f", "--firstDataColumn"),
-    action = "store",
-    default = "^Intensity[^_]",
-    type = "character",
-    help = "First column of intensity values"
-  ),
-  make_option(
-    c("-m", "--imputationMethod"),
-    action = "store",
-    default = "random",
-    type = "character",
-    help = paste0("Method for missing-value imputation,",
-             " one of c('group-median','median','mean','random')")
-  ),
-  make_option(
-    c("-p", "--meanPercentile"),
-    action = "store",
-    default = 3,
-    type = "integer",
-    help = paste0("Mean percentile for randomly generated imputed values;",
-              ", range [1,99]")
-  ),
-  make_option(
-    c("-d", "--sdPercentile"),
-    action = "store",
-    default = 3,
-    type = "double",
-    help = paste0("Adjustment value for standard deviation of",
-              " randomly generated imputed values; real")
-  ),
-  make_option(
-    c("-s", "--regexSampleNames"),
-    action = "store",
-    default = "\\.(\\d+)[A-Z]$",
-    type = "character",
-    help = "Regular expression extracting sample-names"
-  ),
-  make_option(
-    c("-g", "--regexSampleGrouping"),
-    action = "store",
-    default = "(\\d+)",
-    type = "character",
-    help = paste0("Regular expression extracting sample-group",
-             " from an extracted sample-name")
-  ),
-  make_option(
-    c("-F", "--sampleGroupFilter"),
-    action = "store",
-    default = "none",
-    type = "character",
-    help = paste0("Should no filter be applied to sample group names (none)",
-             " or should the filter specify samples to include or exclude?")
-  ),
-  make_option(
-    c("-G", "--sampleGroupFilterPatterns"),
-    action = "store",
-    default = ".*",
-    type = "character",
-    help = paste0("Regular expression extracting sample-group",
-             " from an extracted sample-name")
-  ),
-  make_option(
-    c("--sampleGroupFilterMode"),
-    action = "store",
-    default = "r",
-    type = "character",
-    help = paste0("First character ('f', 'p', or 'r') indicating regular",
-      "expression matching mode ('fixed', 'perl', or 'grep'; ",
-      "see https://rdrr.io/r/base/grep.html).  Second character may be 'i;",
-      "to make search ignore case.")
+    help = "Phosphopeptide metadata, ANOVA FDR, and KSEA enribhments"
   ),
   make_option(
     c("-o", "--imputedDataFile"),
@@ -128,11 +44,56 @@ option_list <- list(
         )
   ),
   make_option(
+    c("-i", "--inputFile"),
+    action = "store",
+    default = NA,
+    type = "character",
+    help = "Phosphopeptide Intensities sparse input file path"
+  ),
+  make_option(
+    c("-K", "--ksea_sqlite"),
+    action = "store",
+    default = NA,
+    type = "character",
+    help = "Path to 'ksea_sqlite' output produced by this tool"
+  ),
+  make_option(
+    c("-S", "--preproc_sqlite"),
+    action = "store",
+    default = NA,
+    type = "character",
+    help = "Path to 'preproc_sqlite' produced by `mqppep_mrgfltr.py`"
+  ),
+  make_option(
     c("-r", "--reportFile"),
     action = "store",
     default = "mqppep_anova.pdf",
     type = "character",
     help = "PDF report file path"
+  ),
+
+  # parameters
+  make_option(
+    c("-f", "--firstDataColumn"),
+    action = "store",
+    default = "^Intensity[^_]",
+    type = "character",
+    help = "First column of intensity values"
+  ),
+  make_option(
+    c("-m", "--imputationMethod"),
+    action = "store",
+    default = "random",
+    type = "character",
+    help = paste0("Method for missing-value imputation,",
+             " one of c('group-median','median','mean','random')")
+  ),
+  make_option(
+    c("-C", "--intensityMinValuesPerClass"),
+    action = "store",
+    default = "0",
+    type = "integer",
+    help = "Minimum number of observed values per class"
   ),
   make_option(
     c("-k", "--ksea_cutoff_statistic"),
@@ -150,11 +111,35 @@ option_list <- list(
     help = paste0("Maximum score to be used to score a kinase enrichment as significant")
   ),
   make_option(
-    c("-M", "--anova_ksea_metadata"),
+    c("-c", "--kseaMinSubstrateCount"),
     action = "store",
-    default = "anova_ksea_metadata.tsv",
-    type = "character",
-    help = "Phosphopeptide metadata, ANOVA FDR, and KSEA enribhments"
+    default = "1",
+    type = "integer",
+    help = "Minimum number of substrates to consider any kinase for KSEA"
+  ),
+  make_option(
+    c("--kseaUseAbsoluteLog2FC"),
+    action = "store_true",
+    default = "FALSE",
+    type = "logical",
+    help = paste0("Should abs(log2(fold-change)) be used for KSEA?",
+                  " (TRUE may alter number of hits.)")
+  ),
+  make_option(
+    c("-p", "--meanPercentile"),
+    action = "store",
+    default = 3,
+    type = "integer",
+    help = paste0("Mean percentile for randomly generated imputed values;",
+              ", range [1,99]")
+  ),
+  make_option(
+    c("--minQuality"),
+    action = "store",
+    default = 0,
+    type = "integer",
+    help = paste0("Minimum quality (higher value reduces number of substrates",
+              " accepted; you may want to keep below 100), range [0,infinity]")
   ),
   make_option(
     c("--oneWayManyCategories"),
@@ -171,18 +156,53 @@ option_list <- list(
     help = "Name of R function for one-way tests between two categories"
   ),
   make_option(
-    c("-c", "--kseaMinSubstrateCount"),
+    c("-s", "--regexSampleNames"),
     action = "store",
-    default = "1",
-    type = "integer",
-    help = "Minimum number of substrates to consider any kinase for KSEA"
+    default = "\\.(\\d+)[A-Z]$",
+    type = "character",
+    help = "Regular expression extracting sample-names"
   ),
   make_option(
-    c("-C", "--intensityMinValuesPerClass"),
+    c("-g", "--regexSampleGrouping"),
     action = "store",
-    default = "0",
-    type = "integer",
-    help = "Minimum number of observed values per class"
+    default = "(\\d+)",
+    type = "character",
+    help = paste0("Regular expression extracting sample-group",
+             " from an extracted sample-name")
+  ),
+  make_option(
+    c("-d", "--sdPercentile"),
+    action = "store",
+    default = 3,
+    type = "double",
+    help = paste0("Adjustment value for standard deviation of",
+              " randomly generated imputed values; real")
+  ),
+  make_option(
+    c("-F", "--sampleGroupFilter"),
+    action = "store",
+    default = "none",
+    type = "character",
+    help = paste0("Should no filter be applied to sample group names (none)",
+             " or should the filter specify samples to include or exclude?")
+  ),
+  make_option(
+    c("--sampleGroupFilterMode"),
+    action = "store",
+    default = "r",
+    type = "character",
+    help = paste0("First character ('f', 'p', or 'r') indicating regular",
+      "expression matching mode ('fixed', 'perl', or 'grep'; ",
+      "see https://rdrr.io/r/base/grep.html).  Second character may be 'i;",
+      "to make search ignore case.")
+  ),
+  make_option(
+    c("-G", "--sampleGroupFilterPatterns"),
+    action = "store",
+    default = ".*",
+    type = "character",
+    help = paste0("Regular expression extracting sample-group",
+             " from an extracted sample-name")
   )
 )
 
@@ -213,19 +233,34 @@ cat(str(args))
 if (! file.exists(args$inputFile)) {
   stop((paste("Input file", args$inputFile, "does not exist")))
 }
-alpha_file             <- args$alphaFile
-anova_ksea_metadata    <- args$anova_ksea_metadata
-imp_qn_lt_data_filenm  <- args$imputedQNLTDataFile
-imputed_data_file_name <- args$imputedDataFile
-input_file             <- args$inputFile
+
+# files
+alpha_file                     <- args$alphaFile
+anova_ksea_metadata_file       <- args$anova_ksea_metadata
+imp_qn_lt_data_file            <- args$imputedQNLTDataFile
+imputed_data_file              <- args$imputedDataFile
+input_file                     <- args$inputFile
+ksea_sqlite_file               <- args$ksea_sqlite
+preproc_sqlite_file            <- args$preproc_sqlite
+report_file_name               <- args$reportFile
+
+# parameters
+# firstDataColumn - see below
+group_filter                   <- args$sampleGroupFilter
+group_filter_mode              <- args$sampleGroupFilterMode
+# imputationMethod - see below
 intensity_min_values_per_class <- args$intensityMinValuesPerClass
-ksea_cutoff_statistic  <- args$ksea_cutoff_statistic
-ksea_cutoff_threshold  <- args$ksea_cutoff_threshold
-ksea_min_substrate_count <- args$kseaMinSubstrateCount
-ksea_sqlite            <- args$ksea_sqlite
-preproc_sqlite         <- args$preproc_sqlite
-report_file_name       <- args$reportFile
-sample_group_filter    <- args$sampleGroupFilter
+ksea_cutoff_statistic          <- args$ksea_cutoff_statistic
+ksea_cutoff_threshold          <- args$ksea_cutoff_threshold
+ksea_min_substrate_count       <- args$kseaMinSubstrateCount
+ksea_use_absolute_log2_fc      <- args$kseaUseAbsoluteLog2FC
+# mean_percentile - see below
+min_quality                    <- args$minQuality
+# regexSampleNames - see below
+# regexSampleGrouping - see below
+# sampleGroupFilterPatterns - see below (becomes group_filter_patterns)
+# sd_percentile - see below
+
 if (
   sum(
     grepl(
@@ -311,7 +346,7 @@ cat(paste0("regex_sample_names file: ", args$regexSampleNames, "\n"))
 regex_sample_names <- read_config_file_string(args$regexSampleNames, nc)
 cat(paste0("regex_sample_names: ",    regex_sample_names,    "\n"))
 
-if (sample_group_filter != "none") {
+if (group_filter != "none") {
   cat(paste0("group_filter_patterns file: '", args$sampleGroupFilterPatterns, "'\n"))
   group_filter_patterns <- read_config_file_string(args$sampleGroupFilterPatterns, nc)
 } else {
@@ -362,25 +397,32 @@ location_of_this_script <- function() {
 if (!tinytex::is_tinytex()) tinytex::install_tinytex()
 
 rmarkdown_params <- list(
-    inputFile = input_file
-  , alphaFile = alpha_file
-  , anovaKseaMetadata = anova_ksea_metadata
+
+    # files
+    alphaFile = alpha_file
+  , anovaKseaMetadata = anova_ksea_metadata_file
+  , imputedDataFilename = imputed_data_file
+  , imputedQNLTDataFile = imp_qn_lt_data_file
+  , inputFile = input_file
+  , kseaAppPrepDb = ksea_sqlite_file
+  , preprocDb = preproc_sqlite_file
+
+    # parameters
   , firstDataColumn = first_data_column
-  , groupFilterPatterns = group_filter_patterns
+  , groupFilter = group_filter
+  , groupFilterMode = group_filter_mode         # arg sampleGroupFilterMode
+  , groupFilterPatterns = group_filter_patterns # arg sampleGroupFilterPatterns
   , imputationMethod = imputation_method
-  , imputedDataFilename = imputed_data_file_name
-  , imputedQNLTDataFile = imp_qn_lt_data_filenm
   , intensityMinValuesPerGroup = intensity_min_values_per_class
-  , kseaAppPrepDb = ksea_sqlite
   , kseaCutoffStatistic = ksea_cutoff_statistic
   , kseaCutoffThreshold = ksea_cutoff_threshold
   , kseaMinSubstrateCount = ksea_min_substrate_count
+  , kseaUseAbsoluteLog2FC = ksea_use_absolute_log2_fc # add
   , meanPercentile = mean_percentile
-  , preprocDb = preproc_sqlite
+  , minQuality = min_quality                          # add
   , regexSampleGrouping = regex_sample_grouping
   , regexSampleNames = regex_sample_names
   , sdPercentile = sd_percentile
-  , sampleGroupFilter = sample_group_filter
   )
 
 print("rmarkdown_params")
@@ -388,7 +430,14 @@ print(rmarkdown_params)
 print(
   lapply(
     X = rmarkdown_params,
-    FUN = function(x) paste0(nchar(as.character(x)), ": '", as.character(x),"'")
+    FUN = function(x) {
+      paste0(
+        nchar(as.character(x)),
+        ": '",
+        as.character(x),
+        "'"
+      )
+    }
   )
 )
 
@@ -405,7 +454,7 @@ rmarkdown::render(
 , params = rmarkdown_params
 , output_format = rmarkdown::pdf_document(
     includes = rmarkdown::includes(in_header = "mqppep_anova_preamble.tex")
-  , dev = 'pdf'
+  , dev = "pdf"
   , toc = TRUE
   , toc_depth = 2
   , number_sections = FALSE
