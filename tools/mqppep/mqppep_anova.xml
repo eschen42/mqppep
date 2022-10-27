@@ -12,14 +12,14 @@
                    help="Regular expression matching mode 'fixed', 'perl', or 'grep' with option for case insensitivity.  See https://rdrr.io/r/base/grep.html"
                    label="Sample-group matching mode"
             >
-                <option value="r" selected="true">ERE ("extended regular expressions")</option>
+                <option value="r">ERE ("extended regular expressions")</option>
                 <option value="ri">  - ERE, case insensitive</option>
-                <option value="p">PCRE ("PERL-compatible regular expressions")</option>
+                <option value="p" selected="true">PCRE ("PERL-compatible regular expressions")</option>
                 <option value="pi">  - PCRE, case insensitive</option>
                 <option value="f">fixed strings ("no regular expressions")</option>
                 <option value="fi">  - fixed strings, case insensitive</option>
             </param>
-            <param name="group_filter_patterns" type="text" value="\.+"
+            <param name="group_filter_patterns" type="text" value=".+"
                    help="Comma-separated list of regular expressions matching group-names"
                    label="Sample-group matching pattern">
               <sanitizer>
