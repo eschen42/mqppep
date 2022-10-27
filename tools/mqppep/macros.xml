@@ -4,7 +4,7 @@
     <xml name="requirements">
         <requirements>
             <requirement type="package" version="1.56.0"  >bioconductor-preprocesscore</requirement>
-            <requirement type="package"                   >gmp</requirement>
+            <requirement type="package" version="6.2.1"   >gmp</requirement>
             <requirement type="package" version="1.23.4"  >numpy</requirement>
             <requirement type="package" version="0.3.3"   >openblas</requirement>
             <requirement type="package" version="1.5.1"   >pandas</requirement>

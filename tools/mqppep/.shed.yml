@@ -1,8 +1,10 @@
 name: mqppep
 owner: eschen42
 description: MaxQuant Phosphoproteomic Enrichment Pipeline - Preprocessing and ANOVA
-homepage_url: 'https://github.com/galaxyproteomics/tools-galaxyp/'
+homepage_url: 'https://github.com/eschen42/mqppep'
 long_description: |
+  Sandbox version to prep for addition to 'https://github.com/galaxyproteomics/tools-galaxyp'
+
   Phosphoproteomic Enrichment Pipeline provides tools two tools for processing MaxQuant data for phosphoproteome-enriched samples.
  
   "MaxQuant Phosphopeptide Preprocessing" (mqppep_preproc) transforms the 'Phospho (STY)Sites.txt' output file that MaxQuant produces for for phosphoproteome-enriched samples to prepare it for ANOVA.
