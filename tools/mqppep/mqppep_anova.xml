@@ -12,14 +12,14 @@
                    help="Regular expression matching mode 'fixed', 'perl', or 'grep' with option for case insensitivity.  See https://rdrr.io/r/base/grep.html"
                    label="Sample-group matching mode"
             >
-                <option value="r" selected="true">ERE ("extended regular expressions")</option>
+                <option value="r">ERE ("extended regular expressions")</option>
                 <option value="ri">  - ERE, case insensitive</option>
-                <option value="p">PCRE ("PERL-compatible regular expressions")</option>
+                <option value="p" selected="true">PCRE ("PERL-compatible regular expressions")</option>
                 <option value="pi">  - PCRE, case insensitive</option>
                 <option value="f">fixed strings ("no regular expressions")</option>
                 <option value="fi">  - fixed strings, case insensitive</option>
             </param>
-            <param name="group_filter_patterns" type="text" value="\.+"
+            <param name="group_filter_patterns" type="text" value=".+"
                    help="Comma-separated list of regular expressions matching group-names"
                    label="Sample-group matching pattern">
               <sanitizer>
@@ -49,6 +49,16 @@
       both need access to a writeable directory, but most directories in a
       biocontainer are read-only, so this builds a pseudo-home under /tmp
     -->
+    <required_files>
+      <include path="KSEA_impl_flowchart.pdf" />
+      <include path="kinase_name_uniprot_lut.tabular.bz2" />
+      <include path="kinase_uniprot_description_lut.tabular.bz2" />
+      <include path="kinase_uniprot_description_lut.tabular.bz2" />
+      <include path="mqppep_anova.R" />
+      <include path="mqppep_anova_preamble.tex" />
+      <include path="mqppep_anova_script.Rmd" />
+      <include path="perpage.tex" />
+    </required_files>
     <command detect_errors="exit_code"><![CDATA[
       (printenv | sort) &&
       cp '$__tool_directory__/mqppep_anova_script.Rmd' . &&
