@@ -6493,5 +6493,4 @@ RSQLite::dbDisconnect(db)
 
 cat("\\clearpage\n\\section{R package versions}\n")
 utils::toLatex(utils::sessionInfo())
-
 ```
